@@ -1,9 +1,10 @@
 #!/bin/bash
 # .make.sh 
 # This script creates symlinks from ~/ to dotfiles dir
+# Forked from Wes Doyle (https;//github.com/wesdoyle/dotfiles) on 2019-10-23
 
-dir=~/dotfiles
-olddir=~/dotfiles_old
+dir=~/dotFiles
+olddir=~/dotFiles_old
 files=".bashrc .vimrc .zshrc .gitconfig .tmux.conf"
 
 echo "Creating $olddir for backup of any existing dotfiles in ~"
@@ -16,7 +17,7 @@ echo "...complete."
 
 for file in $files; do
     echo "Moving existing dotfiles from ~ to $olddir"
-    mv ~/$file ~/dotfiles_old/
+    mv ~/$file ~/dotFiles_old/ # Could this be changed to $olddir ?
     echo "Creating symlink to $file in home directory."
     ln -s $dir/$file ~/$file
 done
