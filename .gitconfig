@@ -3,3 +3,5 @@
 	email = watts_graham@hotmail.com
 [credential]
 	helper = store
+[push]
+	default = simple
