@@ -2,17 +2,13 @@
 # export PATH=$HOME/bin:/usr/local/bin:$PATH
 
 # Path to your oh-my-zsh installation.
-export ZSH="/home/gwatts/.oh-my-zsh"
+# export ZSH="/home/gwatts/.oh-my-zsh"
+export ZSH=~/.oh-my-zsh
 
 # Set name of the theme to load --- if set to "random", it will
 # load a random theme each time oh-my-zsh is loaded, in which case,
 # to know which specific one was loaded, run: echo $RANDOM_THEME
 # See https://github.com/robbyrussell/oh-my-zsh/wiki/Themes
-
-# I like dallas where I don't have powerline font installed as of 2019-08-30
-# ZSH_THEME="dallas"
-
-# Trying agnoster with powerline fonts installed as of 2019-08-30
 ZSH_THEME="agnoster"
 
 # Set list of themes to pick from when loading at random
@@ -32,10 +28,10 @@ ZSH_THEME="agnoster"
 # DISABLE_AUTO_UPDATE="true"
 
 # Uncomment the following line to automatically update without prompting.
-# DISABLE_UPDATE_PROMPT="true"
+DISABLE_UPDATE_PROMPT="true"
 
 # Uncomment the following line to change how often to auto-update (in days).
-# export UPDATE_ZSH_DAYS=13
+export UPDATE_ZSH_DAYS=7
 
 # Uncomment the following line if pasting URLs and other text is messed up.
 # DISABLE_MAGIC_FUNCTIONS=true
@@ -47,7 +43,7 @@ ZSH_THEME="agnoster"
 # DISABLE_AUTO_TITLE="true"
 
 # Uncomment the following line to enable command auto-correction.
-ENABLE_CORRECTION="true"
+# ENABLE_CORRECTION="true"
 
 # Uncomment the following line to display red dots whilst waiting for completion.
 # COMPLETION_WAITING_DOTS="true"
@@ -73,8 +69,37 @@ ENABLE_CORRECTION="true"
 # Custom plugins may be added to ~/.oh-my-zsh/custom/plugins/
 # Example format: plugins=(rails git textmate ruby lighthouse)
 # Add wisely, as too many plugins slow down shell startup.
-plugins=(git)
+plugins=(
+	git
+	git-auto-fetch
+	git-extras
+	gitfast
+	git-flow
+	git-flow-avh
+	github
+	git-hubflow
+	gitignore
+	git-prompt
+	git-remote-branch
+	jsontools
+	python
+	ssh-agent
+	tmux
+	tmux-cssh
+	ubuntu
+	ufw
+	vim-interaction
+	vscode
+)
 
+# ssh-agent plugin configuration
+# To enable **agent forwarding support** add the following to your zshrc file:
+# zstyle :omz:plugins:ssh-agent agent-forwarding on
+
+# To **load multiple identities** use the `identities` style, For example:
+# zstyle :omz:plugins:ssh-agent identities watts_graham_hotmail_azure_devops watts_graham_outlook_azure_devops watts_graham_outlook_github
+
+# Sourcing the shell now
 source $ZSH/oh-my-zsh.sh
 
 # User configuration
@@ -102,3 +127,8 @@ source $ZSH/oh-my-zsh.sh
 # Example aliases
 # alias zshconfig="mate ~/.zshrc"
 # alias ohmyzsh="mate ~/.oh-my-zsh"
+# Sourcing bash alias file
+source ~/.bash_aliases
+
+# Add ssh keys
+ssh-add ~/.ssh/watts_graham_outlook_github
