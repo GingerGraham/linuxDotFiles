@@ -10,3 +10,7 @@ alias gpull='git pull'
 # Tmux specific aliases
 alias tmux-new='tmux new-session -s graham'
 alias tmux-attach='tmux attach-session -t graham'
+
+# Vocera specific aliases
+alias oob='ssh TS-OOB'
+alias svc='ssh SVC'
