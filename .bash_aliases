@@ -1,6 +1,7 @@
 # General Shell Aliases
 alias lsa='ls -alh'
 alias apt-update='sudo apt update -y && sudo apt upgrade -y && sudo apt autoremove -y'
+alias python='python3'
 
 # Git specific aliases
 alias gst='git status'
