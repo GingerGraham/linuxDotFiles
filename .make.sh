@@ -21,3 +21,5 @@ for file in $files; do
     echo "Creating symlink to $file in home directory."
     ln -s $dir/$file ~/$file
 done
+
+cp $dir/gw-agnoster.zsh-theme ~/.oh-my-zsh/themes/

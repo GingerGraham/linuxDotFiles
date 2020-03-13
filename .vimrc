@@ -60,7 +60,7 @@ set ttyfast		" Speed up scrolling
 " Colour Config
 " =============
 " Settings here for UI colouration
-colorscheme slate
+colorscheme evening
 
 " Read in plugins
 " ===============
