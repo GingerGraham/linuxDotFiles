@@ -22,4 +22,5 @@ for file in $files; do
     ln -s $dir/$file ~/$file
 done
 
-cp $dir/gw-agnoster.zsh-theme ~/.oh-my-zsh/themes/
+#cp $dir/gw-agnoster.zsh-theme ~/.oh-my-zsh/themes/
+ln -s $dir/gw-agnoster.zsh-theme ~/.oh-my-zsh/themes/gw-agnoster.zsh-theme
