@@ -1,9 +1,9 @@
 [user]
 	name = Graham Watts
-	email = watts_graham@hotmail.com
+	email = 34165628+GingerGraham@users.noreply.github.com
 [credential]
 	helper = store
 [push]
 	default = simple
 [core]
-	editor = nano
+	editor = vim
