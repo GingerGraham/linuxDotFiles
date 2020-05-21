@@ -11,6 +11,8 @@ export ZSH=~/.oh-my-zsh
 # See https://github.com/robbyrussell/oh-my-zsh/wiki/Themes
 ZSH_THEME="gw-agnoster"
 
+# ZSH_THEME="dallas"
+
 # Set list of themes to pick from when loading at random
 # Setting this variable when ZSH_THEME=random will cause zsh to load
 # a theme from this variable instead of looking in ~/.oh-my-zsh/themes/
@@ -133,4 +135,4 @@ source ~/.bash_aliases
 # Add ssh keys
 # ssh-add ~/.ssh/watts_graham_outlook_github # Commented out on 2019-10-31 as the script currently
 # only handles one ssh-add cleanly
-ssh-add ~/.ssh/gwatts_ecdsa
+ssh-add ~/.ssh/gwatts_rsa4k
