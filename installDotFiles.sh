@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/sh
 # This script creates symlinks from ~/ to a dotfiles directory cloned from github
 # Github source is https://github.com/GingerGraham/linuxDotFiles
 # Forked from Wes Doyle (https://github.com/wesdoyle/dotfiles) on 2019-10-23
