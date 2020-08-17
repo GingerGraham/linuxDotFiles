@@ -1,5 +1,5 @@
 # General Shell Aliases
-alias lsa='ls -alh'
+alias lsa='ls -alhi'
 alias apt-update='sudo apt update -y && sudo apt upgrade -y && sudo apt autoremove -y'
 alias python='python3'
 
