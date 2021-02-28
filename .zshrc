@@ -82,7 +82,6 @@ plugins=(
 	git-hubflow
 	gitignore
 	git-prompt
-	git-remote-branch
 	jsontools
 	python
 	ssh-agent
