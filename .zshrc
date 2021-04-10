@@ -134,7 +134,7 @@ source ~/.bash_aliases
 # Add ssh keys
 # ssh-add ~/.ssh/watts_graham_outlook_github # Commented out on 2019-10-31 as the script currently
 # only handles one ssh-add cleanly
-ssh-add ~/.ssh/gwatts_rsa4k
+ssh-add ~/.ssh/gw-x260-fedora-01
 
 # Specifying the default EDITOR
 export EDITOR=vim
