@@ -135,6 +135,7 @@ source ~/.bash_aliases
 # ssh-add ~/.ssh/watts_graham_outlook_github # Commented out on 2019-10-31 as the script currently
 # only handles one ssh-add cleanly
 ssh-add ~/.ssh/GrahamWattsPersonal-RSA
+ssh-add ~/.ssh/GrahamWattsPersonal-ECDSA
 
 # Specifying the default EDITOR
 export EDITOR=vim

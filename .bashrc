@@ -116,5 +116,10 @@ if ! shopt -oq posix; then
   fi
 fi
 
+# adding use of website cheat.sh for command lookup
+cheat(){
+    curl "cheat.sh/$1"
+}
+
 # Specifying the default EDITOR
 export EDITOR=vim
