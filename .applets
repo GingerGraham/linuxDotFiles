@@ -1,0 +1,159 @@
+#!/bin/bash
+
+# Update AWS CLI
+aws-update () {
+  echo "Download AWS CLI"
+  cd /tmp || exit
+  curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
+  echo "AWS CLI downloaded"
+  echo "Unzipping"
+  unzip awscliv2.zip
+  echo "Unzipped"
+  echo "Installing"
+  sudo ./aws/install --bin-dir /usr/local/bin --install-dir /usr/local/aws-cli --update
+  echo "Installed"
+  echo "Cleaning up"
+  rm -rf ./awscliv2.zip ./aws
+  cd - || exit
+  echo "Completed"
+}
+
+# Use ansible-vault to decrypt a list of file
+avd () {
+  # Check if variables are already set and if so unset -f
+  if [[ -v VAULT_PASS ]]; then
+    VAULT_PASS=""
+  fi
+  if [[ -v FILES ]]; then
+    FILES=()
+  fi
+  # Check if ansible is installed
+  if ! command -v ansible &> /dev/null
+  then
+      echo "Ansible could not be found"
+      exit 1
+  fi
+  # Use getopts to parse the arguments
+  while getopts ":p:" opt; do
+    case $opt in
+      p) VAULT_PASS="$OPTARG"
+         echo "Pass file is ${VAULT_PASS}" >&2
+      ;;
+      \?) echo "Invalid option -$OPTARG" >&2
+          exit 1
+      ;;
+    esac
+  done
+
+  # Process arguments excluding arguments passed as options
+  shift $((OPTIND -1))
+  echo "Processing ${@}"
+  # If argument in $@ is not a switch or existing variable add it to an array of file names
+  for arg in "${@}"; do
+    if [[ ! $arg =~ ^-.* ]] || [[ ! -v $arg ]]; then
+      echo "adding $arg to FILES"
+      FILES+=("$arg")
+    fi
+  done
+
+  # If FILES is empty then report an error and exit
+  if [[ -z ${FILES[*]} ]]; then
+    echo "No files to decrypt"
+    exit 1
+  fi
+
+  echo "Pass file is ${VAULT_PASS}"
+
+  # Check if the vault password file exists
+  if [[ ! -f "${VAULT_PASS}" ]]; then
+    echo "Vault password file does not exist"
+    # Remove VAULT_PASS from the environment
+    VAULT_PASS=""
+  fi
+
+  if [[ ! -z "${VAULT_PASS}" ]]; then
+    echo "Decrypting ${FILES[@]} with password file: ${VAULT_PASS}"
+    for file in "${FILES[@]}"; do
+      ansible-vault decrypt --vault-password-file "${VAULT_PASS}" "${file}"
+    done
+  else
+    echo "Prompting for password to decrypt ${FILES[@]}"
+    for file in "${FILES[@]}"; do
+      ansible-vault decrypt "${file}"
+    done
+  fi
+
+  # Remove all variables
+  FILES=()
+  VAULT_PASS=""
+}
+
+# Use ansible-vault to encrypt a list of file
+ave () {
+  # Check if variables are already set and if so unset -f
+  if [[ -v VAULT_PASS ]]; then
+    VAULT_PASS=""
+  fi
+  if [[ -v FILES ]]; then
+    FILES=()
+  fi
+  # Check if ansible is installed
+  if ! command -v ansible &> /dev/null
+  then
+      echo "Ansible could not be found"
+      exit 1
+  fi
+  # Use getopts to parse the arguments
+  while getopts ":p:" opt; do
+    case $opt in
+      p) VAULT_PASS="$OPTARG"
+         echo "Pass file is ${VAULT_PASS}" >&2
+      ;;
+      \?) echo "Invalid option -$OPTARG" >&2
+          exit 1
+      ;;
+    esac
+  done
+
+  # Process arguments excluding arguments passed as options
+  shift $((OPTIND -1))
+  echo "Processing ${@}"
+  # If argument in $@ is not a switch or existing variable add it to an array of file names
+  for arg in "${@}"; do
+    if [[ ! $arg =~ ^-.* ]] || [[ ! -v $arg ]]; then
+      echo "adding $arg to FILES"
+      FILES+=("$arg")
+    fi
+  done
+
+  # If FILES is empty then report an error and exit
+  if [[ -z ${FILES[*]} ]]; then
+    echo "No files to encrypt"
+    exit 1
+  fi
+
+  echo "Pass file is ${VAULT_PASS}"
+
+  # Check if the vault password file exists
+  if [[ ! -f "${VAULT_PASS}" ]]; then
+    echo "Vault password file does not exist"
+    # Remove VAULT_PASS from the environment
+    VAULT_PASS=""
+  fi
+
+  if [[ ! -z "${VAULT_PASS}" ]]; then
+    echo "Encrypting ${FILES[@]} with password file: ${VAULT_PASS}"
+    for file in "${FILES[@]}"; do
+      ansible-vault encrypt --vault-password-file "${VAULT_PASS}" "${file}"
+    done
+  else
+    echo "Prompting for password to encrypt ${FILES[@]}"
+    for file in "${FILES[@]}"; do
+      ansible-vault encrypt "${file}"
+    done
+  fi
+
+  # Remove all variables
+  FILES=()
+  VAULT_PASS=""
+}

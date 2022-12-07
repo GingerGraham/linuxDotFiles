@@ -1,0 +1,32 @@
+# General shell aliases
+alias lsa="ls -alhi" # Show all hidden files
+alias lsr="ls -alhitr" # Similar to above but reverse listed by date
+alias cat="bat -p"
+alias dirsize="du -sh"
+alias sshclear="ssh-add -D"
+alias routeprint="netstat -rn"
+alias printrt="netstat -rn"
+alias cls="clear"
+
+# Dev and git aliases
+#alias code="code-insiders"
+alias gitgraph="git log --oneline --graph --decorate --all"
+alias gst="git status"
+alias gpl="git pull"
+alias gps="git push"
+alias addnode="source ~/.node"
+
+# Ansible aliases
+# alias ave="ansible-vault encrypt" # This is already defined in .applets
+#alias avd="ansible-vault decrypt" # This is already defined in .applets
+alias ap="ansible-playbook"
+
+# Virtualbox and Vagrant
+# alias vboxmanage="VBoxManage"
+
+# SSH aliases
+alias sshhosts="grep -E '^Host\s' ~/.ssh/config"
+alias esshhosts="grep -E '^Host\s' ~/.ssh/Edge/config"
+alias vsshhosts="grep -E '^Host\s' ~/.ssh/Vocera/config"
+alias essh="ssh -F ~/.ssh/Edge/config"
+alias vssh="ssh -F ~/.ssh/Vocera/config"
