@@ -128,13 +128,21 @@ fi
 # alias ohmyzsh="mate ~/.oh-my-zsh"
 
 # Adding aliases
-source ~/.alias
+if [ -f ~/.alias ]; then
+  source ~/.alias
+fi
 
 # Adding node.js / nvm
-source ~/.node
+if [ -f ~/.nvm/nvm.sh ]; then
+  source ~/.node
+fi
 
 # Adding path variables
-source ~/.pathVars
+if [ -f ~/.pathVars ]; then
+  source ~/.pathVars
+fi
 
 # Adding applets
-source ~/.applets
+if [ -f ~/.applets ]; then
+  source ~/.applets
+fi

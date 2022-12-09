@@ -3,7 +3,7 @@
 # Update AWS CLI
 aws-update () {
   echo "Download AWS CLI"
-  cd /tmp || exit
+  cd /tmp || return
   curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
   echo "AWS CLI downloaded"
   echo "Unzipping"
@@ -14,7 +14,7 @@ aws-update () {
   echo "Installed"
   echo "Cleaning up"
   rm -rf ./awscliv2.zip ./aws
-  cd - || exit
+  cd - || return
   echo "Completed"
 }
 
@@ -31,7 +31,7 @@ avd () {
   if ! command -v ansible &> /dev/null
   then
       echo "Ansible could not be found"
-      exit 1
+      return 1
   fi
   # Use getopts to parse the arguments
   while getopts ":p:" opt; do
@@ -40,29 +40,42 @@ avd () {
          echo "Pass file is ${VAULT_PASS}" >&2
       ;;
       \?) echo "Invalid option -$OPTARG" >&2
-          exit 1
+          return 1
       ;;
     esac
   done
 
   # Process arguments excluding arguments passed as options
   shift $((OPTIND -1))
-  echo "Processing ${@}"
+  echo "Processing ${*}"
   # If argument in $@ is not a switch or existing variable add it to an array of file names
   for arg in "${@}"; do
     if [[ ! $arg =~ ^-.* ]] || [[ ! -v $arg ]]; then
-      echo "adding $arg to FILES"
+      # echo "adding $arg to FILES"
       FILES+=("$arg")
     fi
   done
 
-  # If FILES is empty then report an error and exit
+  # If FILES is empty then report an error and return
   if [[ -z ${FILES[*]} ]]; then
     echo "No files to decrypt"
-    exit 1
+    return 1
   fi
 
-  echo "Pass file is ${VAULT_PASS}"
+  # Test if ansible.cfg exists and if vault_password_file is set, then test if the value for vault_password_file exists in the current directory.  If it does run ansible-vault decrypt without using the VAULT_PASS or prompting for a password
+  if [[ -f "ansible.cfg" ]]; then
+    if grep -q "vault_password_file" "ansible.cfg"; then
+      if [[ -f "$(grep "vault_password_file" "ansible.cfg" | cut -d'=' -f2 | tr -d ' ')" ]]; then
+        echo "Decrypting ${FILES[*]} with password file: $(grep "vault_password_file" "ansible.cfg" | cut -d'=' -f2 | tr -d ' ')"
+        for file in "${FILES[@]}"; do
+          # echo the command to be run
+          # echo "ansible-vault decrypt ${file}"
+          ansible-vault decrypt "${file}"
+        done
+        return 0
+      fi
+    fi
+  fi
 
   # Check if the vault password file exists
   if [[ ! -f "${VAULT_PASS}" ]]; then
@@ -101,7 +114,7 @@ ave () {
   if ! command -v ansible &> /dev/null
   then
       echo "Ansible could not be found"
-      exit 1
+      return 1
   fi
   # Use getopts to parse the arguments
   while getopts ":p:" opt; do
@@ -110,7 +123,7 @@ ave () {
          echo "Pass file is ${VAULT_PASS}" >&2
       ;;
       \?) echo "Invalid option -$OPTARG" >&2
-          exit 1
+          return 1
       ;;
     esac
   done
@@ -126,13 +139,26 @@ ave () {
     fi
   done
 
-  # If FILES is empty then report an error and exit
+  # If FILES is empty then report an error and return
   if [[ -z ${FILES[*]} ]]; then
     echo "No files to encrypt"
-    exit 1
+    return 1
   fi
 
-  echo "Pass file is ${VAULT_PASS}"
+  # Test if ansible.cfg exists and if vault_password_file is set, then test if the value for vault_password_file exists in the current directory.  If it does run ansible-vault encrypt without using the VAULT_PASS or prompting for a password
+  if [[ -f "ansible.cfg" ]]; then
+    if grep -q "vault_password_file" "ansible.cfg"; then
+      if [[ -f "$(grep "vault_password_file" "ansible.cfg" | cut -d'=' -f2 | tr -d ' ')" ]]; then
+        echo "Encrypting ${FILES[*]} with password file: $(grep "vault_password_file" "ansible.cfg" | cut -d'=' -f2 | tr -d ' ')"
+        for file in "${FILES[@]}"; do
+          # echo the command to be run
+          # echo "ansible-vault encrypt ${file}"
+          ansible-vault encrypt "${file}"
+        done
+        return 0
+      fi
+    fi
+  fi
 
   # Check if the vault password file exists
   if [[ ! -f "${VAULT_PASS}" ]]; then

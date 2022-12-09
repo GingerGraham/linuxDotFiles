@@ -65,6 +65,8 @@ usage () {
     # Display script help/usage
     echo "Version ${VERSION}"
     echo
+    echo "Purpose: This script creates symlinks from ~/ to a dotfiles directory cloned from github"
+    echo
     echo "Usage: $(basename $0) [-a] [-d] [-f <file>] [-h] [-l] [-o <dir>]"
     echo
     echo "  -a  Copy all dot files"
