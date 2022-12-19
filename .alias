@@ -7,6 +7,7 @@ alias sshclear="ssh-add -D"
 alias routeprint="netstat -rn"
 alias printrt="netstat -rn"
 alias cls="clear"
+alias zzz="sudo systemctl suspend"
 
 # Tmux specific aliases
 alias tmux-new='tmux new-session -s graham'
@@ -34,3 +35,7 @@ alias esshhosts="grep -E '^Host\s' ~/.ssh/Edge/config"
 alias vsshhosts="grep -E '^Host\s' ~/.ssh/Vocera/config"
 alias essh="ssh -F ~/.ssh/Edge/config"
 alias vssh="ssh -F ~/.ssh/Vocera/config"
+
+# ClamAV
+alias clam="sudo nice -n 15 clamscan && sudo clamscan --bell -i -r /home"
+alias av="sudo nice -n 15 clamscan && sudo clamscan --bell -i -r /home"
