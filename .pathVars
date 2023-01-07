@@ -1,0 +1,9 @@
+#!/usr/bin/env bash
+
+# Add additional paths to PATH by defining them here
+# This file is sourced by .zshrc
+
+# set PATH so it includes user's private ~/.local/bin if it exists
+if [ -d "$HOME/.local/bin" ] ; then
+    PATH="$HOME/.local/bin:$PATH"
+fi

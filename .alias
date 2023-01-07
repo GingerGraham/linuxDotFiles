@@ -1,3 +1,5 @@
+# Add aliases to this file and they will be sourced by .zshrc
+
 # General shell aliases
 alias lsa="ls -alhi" # Show all hidden files
 alias lsr="ls -alhitr" # Similar to above but reverse listed by date
@@ -7,7 +9,11 @@ alias sshclear="ssh-add -D"
 alias routeprint="netstat -rn"
 alias printrt="netstat -rn"
 alias cls="clear"
+
+# Power aliases
 alias zzz="sudo systemctl suspend"
+alias reboot="sudo systemctl reboot"
+alias bye="sudo systemctl poweroff"
 
 # Tmux specific aliases
 alias tmux-new='tmux new-session -s graham'
