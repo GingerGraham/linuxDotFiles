@@ -2,7 +2,7 @@
 # This script creates symlinks from ~/ to a dotfiles directory cloned from github
 # Github source is https://github.com/GingerGraham/linuxDotFiles
 
-VERSION=2.0.1
+VERSION=2.0.2
 OPT_STRING=":adf:hlo:"
 
 TASK="" # Task to perform
@@ -103,9 +103,22 @@ list_files () {
     exit 0
 }
 
+create_old_file_dir () {
+    if [ ! -d "${OLD_FILE_DIR}" ]; then
+        echo "Creating ${OLD_FILE_DIR} for existing dot files"
+        if [ "${DRY_RUN}" = true ]; then
+            echo "mkdir -p ${OLD_FILE_DIR}"
+        else
+            mkdir -p "${OLD_FILE_DIR}"
+        fi
+    fi
+}
+
 copy_all_files () {
+    echo "Ensuring ${OLD_FILE_DIR} exists and creating if it does not"
+    create_old_file_dir
     echo "Copying all dot files"
-    for FILE in $(find $dir -type f -name ".*" -exec basename {} \;); do
+    for FILE in $(find ${DIR} -type f -name ".*" -exec basename {} \;); do
         if [ $FILE != ".gitignore" ]; then
             echo "Moving existing dotfiles from ~ to ${OLD_FILE_DIR}"
             if [ "${DRY_RUN}" = true ]; then
@@ -124,6 +137,8 @@ copy_all_files () {
 }
 
 copy_selected_file () {
+    echo "Ensuring ${OLD_FILE_DIR} exists and creating if it does not"
+    create_old_file_dir
     echo "Copying ${COPY_FILE}"
     echo "Moving existing ${COPY_FILE} from ~ to ${OLD_FILE_DIR} if it exists"
     if [ "${DRY_RUN}" = true ]; then
