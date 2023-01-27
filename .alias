@@ -87,3 +87,9 @@ fi
 if command -v kubectl &> /dev/null; then
   alias kube-version="kubectl version --client --short | sed -r 's/Client Version: v([0-9]\.[0-9]+\.[0-9]+)/\1/'"
 fi
+
+# If nc is installed, set aliases for netcat and telnet
+if command -v nc &> /dev/null; then
+  alias netcat="nc"
+  alias telnet="nc"
+fi
