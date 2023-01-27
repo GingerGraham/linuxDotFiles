@@ -266,6 +266,7 @@ set_kubectl () {
     KUBECTL_VERSION=$(curl -s https://storage.googleapis.com/kubernetes-release/release/stable.txt)
     # remove the v from the version
     KUBECTL_VERSION="${KUBECTL_VERSION:1}"
+    echo "Latest version of kubectl is: ${KUBECTL_VERSION}"
   fi
   # If KUBECTL_VERSION is not set then use the first argument
   if [[ -z "${KUBECTL_VERSION}" ]]; then

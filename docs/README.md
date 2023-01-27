@@ -1,6 +1,8 @@
 # Graham Watts Dot File Install
 
-My personal collection of dot files for Linux and MacOS installs
+My personal collection of dot files for Linux and MacOS installs.  The primary focus of the tools and utilities here are for tools I primarily use for DevOps and Cloud Engineering.  With some additional tools development or system administration.
+
+Tested on MacOS and Linux.
 
 ## Pre-requisites
 
