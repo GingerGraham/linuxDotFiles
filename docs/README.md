@@ -2,13 +2,28 @@
 
 My personal collection of dot files for Linux and MacOS installs
 
+## Pre-requisites
+
+This collection of dot files has the following expectations and external dependencies:
+
+- `zsh` is installed and configured as the default shell
+  - This applies for MacOS and Linux
+- `oh-my-zsh` is installed
+  - This applies for MacOS and Linux
+  - See [oh-my-zsh](https://ohmyz.sh/) for more details
+- Some plugins for `oh-my-zsh` are also expected by `.zshrc`
+  - [zsh-autosuggestions](https://github.com/zsh-users/zsh-autosuggestions)
+  - [zsh-syntax-highlighting](https://github.com/zsh-users/zsh-syntax-highlighting)
+
+If `zsh` is not installed then most of the files here are not used as only the `.zshrc` files supplied is configured to use them, the same configurations are not contained in the `.bashrc` files.
+
 ## Installation
 
 Installation on the available dot files is completed using the `installDotFiles.sh` script
 
 ### Output Directory
 
-If not alternative output directory is specified then `~/.oldDotFiles` is used.
+If no alternative output directory is specified then `~/.oldDotFiles` is used.
 
 If an output directory is specified that the script will confirm if the directory exists and if not, create it.
 
@@ -51,3 +66,16 @@ mv ~/.alias /Users/gwatts/.oldDotFiles
 Creating symlink to .alias in home directory.
 ln -s /Users/gwatts/Development/Personal/GitHub/linuxDotFiles/.alias ~/.alias
 ```
+
+## OS Support
+
+The following OS's are supported
+
+- Linux
+- MacOS
+
+### OS Specific Commands
+
+The various add-on scripts included here such as `.alias` or `.applets` have been developed with `if` based filters to filter for OS and where appropriate specific commands within the OS before applying their configuration.  Future development should follow this pattern too.
+
+Within `.zshrc` is a small OS detection function which will detect the OS based on the `uname` command and set the `OS` variable to the OS name.  This can then be used in the various scripts to filter for OS.

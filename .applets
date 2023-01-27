@@ -1,11 +1,37 @@
 #!/bin/bash
 
+# Path: .applets
+# Purpose: Applets for shell commands
+# Use: Add applets to this file and they will be sourced by .zshrc
+
 # This script adds helper functions to the shell
 # It is sourced by .zshrc
 # Define additional functions here
 
 # Update AWS CLI
 aws-update () {
+  # Check if the OS variable is set - should be set in .zshrc
+  if [[ -z ${OS+x} ]]; then
+    echo "[WARN] OS variable is not set"
+    return 1
+  fi
+  # If the OS is Linux then run the Linux function
+  if [[ "${OS}" == "Linux" ]]; then
+    aws-update-linux
+    return 0
+  fi
+  # If the OS is Mac then run the Mac function
+  if [[ "${OS}" == "Mac" ]]; then
+    aws-update-mac
+    return 0
+  fi
+  # If the OS is not Linux or Mac then report an error - will only get here if OS is not set
+  echo "[ERROR] OS not supported: OS is not Linux or Mac"
+  return 1
+}
+
+# Update AWS CLI on Linux
+aws-update-linux () {
   echo "Download AWS CLI"
   cd /tmp || return
   curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
@@ -20,6 +46,23 @@ aws-update () {
   rm -rf ./awscliv2.zip ./aws
   cd - || return
   echo "Completed"
+  return 0
+}
+
+# Update AWS CLI on Mac
+aws-update-mac () {
+  echo "Download AWS CLI"
+  cd /tmp || return
+  curl "https://awscli.amazonaws.com/AWSCLIV2.pkg" -o "AWSCLIV2.pkg"
+  echo "AWS CLI downloaded"
+  echo "Installing"
+  sudo installer -pkg ./AWSCLIV2.pkg -target /
+  echo "Installed"
+  echo "Cleaning up"
+  rm -rf ./AWSCLIV2.pkg
+  cd - || return
+  echo "Completed"
+  return 0
 }
 
 # Use ansible-vault to decrypt a list of file
@@ -34,7 +77,7 @@ avd () {
   # Check if ansible is installed
   if ! command -v ansible &> /dev/null
   then
-      echo "Ansible could not be found"
+      echo "[ERROR] Ansible could not be found"
       return 1
   fi
   # Use getopts to parse the arguments
@@ -43,7 +86,7 @@ avd () {
       p) VAULT_PASS="$OPTARG"
          echo "Pass file is ${VAULT_PASS}" >&2
       ;;
-      \?) echo "Invalid option -$OPTARG" >&2
+      \?) echo "[ERROR] Invalid option -$OPTARG" >&2
           return 1
       ;;
     esac
@@ -62,7 +105,7 @@ avd () {
 
   # If FILES is empty then report an error and return
   if [[ -z ${FILES[*]} ]]; then
-    echo "No files to decrypt"
+    echo "[ERROR] No files to decrypt"
     return 1
   fi
 
@@ -83,7 +126,7 @@ avd () {
 
   # Check if the vault password file exists
   if [[ ! -f "${VAULT_PASS}" ]]; then
-    echo "Vault password file does not exist"
+    echo "[WARN] Vault password file does not exist"
     # Remove VAULT_PASS from the environment
     VAULT_PASS=""
   fi
@@ -117,7 +160,7 @@ ave () {
   # Check if ansible is installed
   if ! command -v ansible &> /dev/null
   then
-      echo "Ansible could not be found"
+      echo "[ERROR] Ansible could not be found"
       return 1
   fi
   # Use getopts to parse the arguments
@@ -126,7 +169,7 @@ ave () {
       p) VAULT_PASS="$OPTARG"
          echo "Pass file is ${VAULT_PASS}" >&2
       ;;
-      \?) echo "Invalid option -$OPTARG" >&2
+      \?) echo "[ERROR] Invalid option -$OPTARG" >&2
           return 1
       ;;
     esac
@@ -145,7 +188,7 @@ ave () {
 
   # If FILES is empty then report an error and return
   if [[ -z ${FILES[*]} ]]; then
-    echo "No files to encrypt"
+    echo "[ERROR] No files to encrypt"
     return 1
   fi
 
@@ -166,7 +209,7 @@ ave () {
 
   # Check if the vault password file exists
   if [[ ! -f "${VAULT_PASS}" ]]; then
-    echo "Vault password file does not exist"
+    echo "[WARN] Vault password file does not exist"
     # Remove VAULT_PASS from the environment
     VAULT_PASS=""
   fi
@@ -209,7 +252,7 @@ set_kubectl () {
       ;;
       v) KUBECTL_VERSION="$OPTARG"
       ;;
-      \?) echo "Invalid option -$OPTARG" >&2
+      \?) echo "[ERROR] Invalid option -$OPTARG" >&2
           return 1
       ;;
       *) PARAMS="$PARAMS -$OPTARG"
@@ -230,7 +273,7 @@ set_kubectl () {
   fi
   # Check the passed value is a valid version
   if [[ ! "${KUBECTL_VERSION}" =~ ^[0-9]\.[0-9]+\.[0-9]+$ ]]; then
-    echo "Invalid version of kubectl specified: ${KUBECTL_VERSION}"
+    echo "[WARN] Invalid version of kubectl specified: ${KUBECTL_VERSION}"
     # If version passed is missing the patch version then add it as 0
     if [[ "${KUBECTL_VERSION}" =~ ^[0-9]\.[0-9]+$ ]]; then
       echo "Adding patch version of 0 to ${KUBECTL_VERSION}"
@@ -241,7 +284,7 @@ set_kubectl () {
   fi
   # If KUBECTL_VERSION is still not set then report an error and return
   if [[ -z "${KUBECTL_VERSION}" ]]; then
-    echo "No version of kubectl specified"
+    echo "[ERROR] No version of kubectl specified"
     return 1
   fi
   # Confirm the version is set back to the user
@@ -249,7 +292,7 @@ set_kubectl () {
   # Check if kubectl is already installed and if the current version matches the version to be set
   # Using kubeclt version --client --short to get the version as it is faster than using kubectl version --short
   if command -v kubectl &> /dev/null; then
-    if [[ "$(kubectl version --client --short | grep -oP '(?<=Client Version: v)[0-9]\.[0-9]+\.[0-9]+')" == "${KUBECTL_VERSION}" ]]; then
+    if [[ "$(kubectl version --client --short | sed -r 's/Client Version: v([0-9]\.[0-9]+\.[0-9]+)/\1/')" == "${KUBECTL_VERSION}" ]]; then
       echo "kubectl is already installed and is the correct version"
       return 0
     fi
@@ -277,8 +320,8 @@ set_kubectl () {
   fi
   # Check that the version downloaded is available executable and if it report and error and exit
   if [[ ! -x "${KUBECTL_DIR}/kubectl" ]]; then
-    echo "Error downloading kubectl v${KUBECTL_VERSION}"
-    echo "Please check the version is valid and try again"
+    echo "[ERROR] Error downloading kubectl v${KUBECTL_VERSION}"
+    echo "[ERROR] Please check the version is valid and try again"
     return 1
   fi
   echo "kubectl v${KUBECTL_VERSION} downloaded to ${KUBECTL_DIR}"
@@ -289,15 +332,20 @@ set_kubectl () {
   fi
   # If current version of kubectl is not a symlink then rename it to kubectl.old
   if command -v kubectl &> /dev/null; then
-    echo "Renaming current version of kubectl (located at $(command -v kubectl)) to kubectl.old"
+    echo "[WARN] Renaming current version of kubectl (located at $(command -v kubectl)) to kubectl.old"
     mv "$(command -v kubectl)" "$(command -v kubectl).old"
-    echo "If a permission error is reported then run the following command with sudo"
+    echo "[WARN] If a permission error is reported then run the following command with sudo"
     echo "sudo mv $(command -v kubectl) $(command -v kubectl).old"
-    echo "If you wish to revert to the previous version of kubectl then run the following command:"
+    echo "[WARN] If you wish to revert to the previous version of kubectl then run the following command:"
     echo "mv $(command -v kubectl).old $(command -v kubectl)"
   fi
   # Create a symlink to the requested version of kubectl
   echo "Creating symlink to ${KUBECTL_VERSION} located at ${KUBECTL_DIR}/kubectl"
   ln -s "${KUBECTL_DIR}/kubectl" "${HOME}/.local/bin/kubectl"
   return 0
+}
+
+# adding use of website cheat.sh for command lookup
+cheat(){
+    curl "cheat.sh/$1"
 }

@@ -40,6 +40,10 @@ zstyle ':omz:update' frequency 7
 # Uncomment the following line to disable auto-setting terminal title.
 # DISABLE_AUTO_TITLE="true"
 
+# don't put duplicate lines or lines starting with space in the history.
+# See bash(1) for more options
+HISTCONTROL=ignoreboth
+
 # Uncomment the following line to enable command auto-correction.
 ENABLE_CORRECTION="true"
 
@@ -103,16 +107,43 @@ source $ZSH/oh-my-zsh.sh
 ZSH_AUTOSUGGEST_HIGHLIGHT_STYLE="fg=#c6c6c6"
 ZSH_AUTOSUGGEST_STRATEGY=(history completion)
 
+# Checking what OS we're running on and setting a variable accordingly
+unameOut="$(uname -s)"
+case "${unameOut}" in
+    Linux*)     OS=Linux;;
+    Darwin*)    OS=Mac;;
+    CYGWIN*)    OS=Cygwin;;
+    MINGW*)     OS=MinGw;;
+    *)          OS="UNKNOWN:${unameOut}"
+esac
+# echo "Operating System is: ${OS}" # Debugging
+
 # export MANPATH="/usr/local/man:$MANPATH"
 
 # You may need to manually set your language environment
 # export LANG=en_US.UTF-8
 
+# Test which editor(s) are available and set a variable $PREFFERED_EDITOR based on the preference order vim, vi, nano
+if command -v vim &> /dev/null; then
+	PREFFERED_EDITOR="vim"
+elif command -v vi &> /dev/null; then
+	PREFFERED_EDITOR="vi"
+elif command -v nano &> /dev/null; then
+	PREFFERED_EDITOR="nano"
+else
+	PREFFERED_EDITOR="vim"
+fi
+
 # Preferred editor for local and remote sessions
 if [[ -n $SSH_CONNECTION ]]; then
-  export EDITOR='vim'
+  export EDITOR=${PREFFERED_EDITOR}
 else
-  export EDITOR='vim'
+  export EDITOR=${PREFFERED_EDITOR}
+fi
+
+# If OS is Mac then load the apple keychain for SSH
+if [[ ${OS} == "Mac" ]]; then
+	ssh-add --apple-load-keychain
 fi
 
 # Compilation flags
@@ -128,21 +159,26 @@ fi
 # alias ohmyzsh="mate ~/.oh-my-zsh"
 
 # Adding aliases
-if [ -f ~/.alias ]; then
+if [[ -f ~/.alias ]]; then
   source ~/.alias
 fi
 
 # Adding node.js / nvm
-if [ -f ~/.nvm/nvm.sh ]; then
+if [[ -f ~/.nvm/nvm.sh ]]; then
   source ~/.node
 fi
 
 # Adding path variables
-if [ -f ~/.pathVars ]; then
+if [[ -f ~/.pathVars ]]; then
   source ~/.pathVars
 fi
 
 # Adding applets
-if [ -f ~/.applets ]; then
+if [[ -f ~/.applets ]]; then
   source ~/.applets
+fi
+
+# If OS is Mac test if iTerm2 is installed and if so, load the shell integration
+if [ "${OS}" = "Mac" ]; then
+	test -e "${HOME}/.iterm2_shell_integration.zsh" && source "${HOME}/.iterm2_shell_integration.zsh"
 fi
