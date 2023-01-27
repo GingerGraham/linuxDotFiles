@@ -93,3 +93,8 @@ if command -v nc &> /dev/null; then
   alias netcat="nc"
   alias telnet="nc"
 fi
+
+# If vscode insiders is installed, set an alias for it to replace GA vscode
+if command -v code-insiders &> /dev/null; then
+  alias code="code-insiders"
+fi
