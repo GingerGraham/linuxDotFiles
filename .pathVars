@@ -5,8 +5,8 @@
 # Use: Add additional paths to PATH by defining them here and they will be sourced by .zshrc
 
 # set PATH so it includes user's private ~/.local/bin if it exists
-if [[ -d "$HOME/.local/bin" ]] ; then
-    PATH="$HOME/.local/bin:$PATH"
+if [[ -d "${HOME}/.local/bin" ]] ; then
+    PATH="${HOME}/.local/bin:${PATH}"
 fi
 
 # If OS is Mac add Homebrew to PATH
@@ -27,4 +27,11 @@ fi
 # If pyenv-virtualenv-init is also installed init that too
 if [[ ${OS} == "Mac" ]] && which pyenv-virtualenv-init > /dev/null; then
   eval "$(pyenv virtualenv-init -)"
+fi
+
+# If NVM is installed (https://github.com/nvm-sh/nvm#installing-and-updating) apply configuration to load NVM
+if [[ -d "${HOME}/.nvm" ]]; then
+  export NVM_DIR="${HOME}/.nvm"
+  [ -s "${NVM_DIR}/nvm.sh" ] && \. "${NVM_DIR}/nvm.sh"  # This loads nvm
+  [ -s "${NVM_DIR}/bash_completion" ] && \. "${NVM_DIR}/bash_completion"  # This loads nvm bash_completion
 fi
