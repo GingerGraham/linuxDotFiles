@@ -34,6 +34,7 @@ if command -v it2profile &> /dev/null; then
   # iTerm2 Colour Profiles
   alias solarized="it2profile -s Solarized"
   alias black="it2profile -s Black"
+  alias smooth="it2profile -s Smooth"
 fi
 
 # If OS is Linux and systemd is installed, set aliases for power management

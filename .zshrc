@@ -158,6 +158,11 @@ fi
 # alias zshconfig="mate ~/.zshrc"
 # alias ohmyzsh="mate ~/.oh-my-zsh"
 
+# If OS is Mac test if iTerm2 is installed and if so, load the shell integration
+if [ "${OS}" = "Mac" ]; then
+	test -e "${HOME}/.iterm2_shell_integration.zsh" && source "${HOME}/.iterm2_shell_integration.zsh"
+fi
+
 # Adding aliases
 if [[ -f ~/.alias ]]; then
   source ~/.alias
@@ -176,9 +181,4 @@ fi
 # Adding applets
 if [[ -f ~/.applets ]]; then
   source ~/.applets
-fi
-
-# If OS is Mac test if iTerm2 is installed and if so, load the shell integration
-if [ "${OS}" = "Mac" ]; then
-	test -e "${HOME}/.iterm2_shell_integration.zsh" && source "${HOME}/.iterm2_shell_integration.zsh"
 fi
