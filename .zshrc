@@ -182,3 +182,8 @@ fi
 if [[ -f ~/.applets ]]; then
   source ~/.applets
 fi
+
+# Adding tasks
+if [[ -f ~/.tasks ]]; then
+	source ~/.tasks
+fi

@@ -46,13 +46,40 @@
 	smudge = git-lfs smudge -- %f
 	process = git-lfs filter-process
 
-[includeIf "gitdir:/home/gwatts/Development/Vocera/AWS/"]
-    path = /home/gwatts/Development/Vocera/AWS/.gitconfig-aws
+; Includes for Linux
+[includeIf "gitdir:/home/gwatts/Development/AL/AWS/"]
+    path = /home/gwatts/Development/AL/AWS/.gitconfig-aws
+[includeIf "gitdir:/home/gwatts/Development/AL/Bitbucket/"]
+    path = /home/gwatts/Development/AL/Bitbucket/.gitconfig-bitbucket
 [includeIf "gitdir:/home/gwatts/Development/Personal/AzureDevOps/"]
     path = /home/gwatts/Development/Personal/AzureDevOps/.gitconfig-azure
-[includeIf "gitdir:/home/gwatts/Development/Vocera/Bitbucket/"]
-    path = /home/gwatts/Development/Vocera/Bitbucket/.gitconfig-bitbucket
 [includeIf "gitdir:/home/gwatts/Development/Personal/GitHub/"]
     path = /home/gwatts/Development/Personal/GitHub/.gitconfig-github
 [includeIf "gitdir:/home/gwatts/Development/Personal/GitLab/"]
     path = /home/gwatts/Development/Personal/GitLab/.gitconfig-gitlab
+
+; Includes for Windows
+[includeIf "gitdir:C:/Users/gwatts/Development/AL/AWS/"]
+		path = C:/Users/gwatts/Development/AL/AWS/.gitconfig-aws
+[includeIf "gitdir:C:/Users/gwatts/Development/AL/Bitbucket/"]
+		path = C:/Users/gwatts/Development/AL/Bitbucket/.gitconfig-bitbucket
+[includeIf "gitdir:C:/Users/gwatts/Development/Personal/AzureDevOps/"]
+		path = C:/Users/gwatts/Development/Personal/AzureDevOps/.gitconfig-azure
+[includeIf "gitdir:C:/Users/gwatts/Development/Personal/GitHub/"]
+		path = C:/Users/gwatts/Development/Personal/GitHub/.gitconfig-github
+[includeIf "gitdir:C:/Users/gwatts/Development/Personal/GitLab/"]
+		path = C:/Users/gwatts/Development/Personal/GitLab/.gitconfig-gitlab
+
+; Includes for Apple
+[includeIf "gitdir:/Users/gwatts/Development/AL/AWS/"]
+		path = /Users/gwatts/Development/AL/AWS/.gitconfig-aws
+[includeIf "gitdir:/Users/gwatts/Development/AL/Bitbucket/"]
+		path = /Users/gwatts/Development/AL/Bitbucket/.gitconfig-bitbucket
+[includeIf "gitdir:/Users/gwatts/Development/Personal/AzureDevOps/"]
+		path = /Users/gwatts/Development/Personal/AzureDevOps/.gitconfig-azure
+[includeIf "gitdir:/Users/gwatts/Development/Personal/GitHub/"]
+		path = /Users/gwatts/Development/Personal/GitHub/.gitconfig-github
+[includeIf "gitdir:/Users/gwatts/Development/Personal/GitLab/"]
+		path = /Users/gwatts/Development/Personal/GitLab/.gitconfig-gitlab
+[credential]
+	helper = /mnt/c/Program\\ Files/Git/mingw64/bin/git-credential-manager.exe

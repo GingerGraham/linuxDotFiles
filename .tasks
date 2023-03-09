@@ -1,0 +1,34 @@
+#!/usr/bin/env bash
+
+# This script is used to run the tasks and is called by .zshrc and .bashrc
+
+# Detect if the OS is running in WSL
+if grep -qEi "(Microsoft|WSL)" /proc/version &> /dev/null ; then
+    # WSL
+    WSL=true
+else
+    # Not WSL
+    WSL=false
+fi
+
+# If WSL=true test if git credential manager is installed in Windows
+if [ "${WSL}" = true ]; then
+    if [ ! -f /mnt/c/Program\ Files/Git/mingw64/bin/git-credential-manager.exe ]; then
+        CRED_MANAGER=false
+    else
+        CRED_MANAGER=true
+    fi
+fi
+
+# If WSL=true and git credential manager is installed in Windows
+if [ "${WSL}" = true ] && [ "${CRED_MANAGER}" = true ]; then
+    # Set git credential manager to use Windows
+    git config --global credential.helper "/mnt/c/Program\ Files/Git/mingw64/bin/git-credential-manager.exe"
+fi
+
+# If WSL=false remove git credential manager from git config if it points to the Windows git-credential-manager.exe
+if [ "${WSL}" = false ]; then
+    if [ "$(git config --global credential.helper)" = "/mnt/c/Program\ Files/Git/mingw64/bin/git-credential-manager.exe" ]; then
+        git config --global --unset credential.helper
+    fi
+fi
