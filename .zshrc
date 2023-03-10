@@ -118,6 +118,15 @@ case "${unameOut}" in
 esac
 # echo "Operating System is: ${OS}" # Debugging
 
+# Detect if the OS is running in WSL
+if grep -qEi "(Microsoft|WSL)" /proc/version &> /dev/null ; then
+    # WSL
+    export WSL=true
+else
+    # Not WSL
+    export WSL=false
+fi
+
 # export MANPATH="/usr/local/man:$MANPATH"
 
 # You may need to manually set your language environment
@@ -145,6 +154,25 @@ fi
 if [[ ${OS} == "Mac" ]]; then
 	ssh-add --apple-load-keychain
 fi
+
+# If WSL is true and keychain is installed then load the keychain
+if [[ "${WSL}" = true ]] && command -v keychain &> /dev/null; then
+	if [[ ! -z "${HOSTNAME}" ]]; then
+		source ${HOME}/.keychain/${HOSTNAME}-sh
+	elif [[ ! -z "${HOST}" ]]; then
+		source ${HOME}/.keychain/${HOST}-sh
+	elif [[ ! -z "${NAME}" ]]; then
+		source ${HOME}/.keychain/${NAME}-sh
+	else
+		echo "Unable to load keychain"
+	fi
+fi
+
+# if [[ "${WSL}" = true ]]; then
+# 	if command -v keychain &> /dev/null; then
+# 		source ${HOME}/.keychain/${HOSTNAME}-sh
+# 	fi
+# fi
 
 # Compilation flags
 # export ARCHFLAGS="-arch x86_64"
