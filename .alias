@@ -39,7 +39,7 @@ fi
 
 # If OS is Linux and systemd is installed, set aliases for power management
 if [[ "${OS}" = "Linux" ]] && command -v systemctl &> /dev/null; then
-  alias zzz="sudo systemctl suspend"
+  alias zzz="sudo systemctl suspend --check-inhibitors=no"
   alias reboot="sudo systemctl reboot"
   alias bye="sudo systemctl poweroff"
 fi
