@@ -47,8 +47,10 @@
 	process = git-lfs filter-process
 
 ; Includes for Linux
-[includeIf "gitdir:/home/gwatts/Development/AL/AWS/"]
-    path = /home/gwatts/Development/AL/AWS/.gitconfig-aws
+;[includeIf "gitdir:/home/gwatts/Development/AL/AWS/"]
+;    path = /home/gwatts/Development/AL/AWS/.gitconfig-aws
+[includeIf "gitdir:/home/gwatts/Development/AL/AWS/NetReveal/"]
+    path = /home/gwatts/Development/AL/AWS/NetReveal/.gitconfig-aws-nr
 [includeIf "gitdir:/home/gwatts/Development/AL/Bitbucket/"]
     path = /home/gwatts/Development/AL/Bitbucket/.gitconfig-bitbucket
 [includeIf "gitdir:/home/gwatts/Development/Personal/AzureDevOps/"]

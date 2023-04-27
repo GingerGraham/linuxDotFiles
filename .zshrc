@@ -159,6 +159,7 @@ fi
 if [[ "${WSL}" = true ]] && command -v keychain &> /dev/null; then
 	if [[ ! -z "${HOSTNAME}" ]]; then
 		source ${HOME}/.keychain/${HOSTNAME}-sh
+		ssh-add -A
 	elif [[ ! -z "${HOST}" ]]; then
 		source ${HOME}/.keychain/${HOST}-sh
 	elif [[ ! -z "${NAME}" ]]; then

@@ -14,12 +14,13 @@ cheat(){
 }
 
 # Test sudo access
-sudo-test () {
-  if [[ $(sudo -l -U ${USER}) -eq 0 ]]; then
+sudo-test (){
+  if [[ ! $(sudo -l -U "${USER}") ]]; then
     echo "[ERROR] User does not have sudo access"
     return 1
+  else
+    return 0
   fi
-  return 0
 }
 
 # Single command to update all tools including in this script
@@ -43,7 +44,7 @@ update_tools () {
 aws-update () {
   # Check if user has sudo access using provided function and exit if not
   if ! sudo-test; then
-    echo "[ERROR] Cannot update AWS CLI - user does not have sudo accessß"
+    echo "[ERROR] Cannot update AWS CLI - user does not have sudo access"
     return 1
   fi
   # Check if the OS variable is set - should be set in .zshrc
@@ -77,9 +78,14 @@ aws-update-linux () {
   echo "Unzipped"
   echo "Installing"
   sudo ./aws/install --bin-dir /usr/local/bin --install-dir /usr/local/aws-cli --update
+  # If the install fails then exit
+  if [[ $? -ne 0 ]]; then
+    echo "[ERROR] AWS CLI install failed"
+    return 1
+  fi
   echo "Installed"
   echo "Cleaning up"
-  rm -rf ./awscliv2.zip ./aws
+  # rm -rf ./awscliv2.zip ./aws
   cd - || return
   echo "Completed"
   return 0
@@ -93,6 +99,11 @@ aws-update-mac () {
   echo "AWS CLI downloaded"
   echo "Installing"
   sudo installer -pkg ./AWSCLIV2.pkg -target /
+  # If the install fails then exit
+  if [[ $? -ne 0 ]]; then
+    echo "[ERROR] AWS CLI install failed"
+    return 1
+  fi
   echo "Installed"
   echo "Cleaning up"
   rm -rf ./AWSCLIV2.pkg
@@ -321,11 +332,13 @@ terraform-install () {
     tf-linux-install
     tflint-linux-install
     tfsec-linux-install
+    terraform_docs-linux-install
   fi
   if [[ ${OS} == "Mac" ]]; then
     tf-mac-install
     tflint-mac-install
     tfsec-mac-install
+    terraform_docs-mac-install
   fi
   # If OS is not set or is not Linux or Darwin then report an error
   if [[ ${OS} != "Linux" ]] && [[ ${OS} != "Mac" ]]; then
@@ -336,7 +349,7 @@ terraform-install () {
 
 # Install Terraform for Linux
 tf-linux-install () {
-  # Check the latest abvailable version of Terraform
+  # Check the latest available version of Terraform
   TF_VERSION=$(curl -s https://checkpoint-api.hashicorp.com/v1/check/terraform | grep -Eo '\"current_version\":\"[0-9]\.[0-9]+\.[0-9]+\"' | grep -Eo '[0-9]\.[0-9]+\.[0-9]+')
   # Check if the version is set and if not report an error
   if [[ -z ${TF_VERSION} ]]; then
@@ -400,7 +413,7 @@ tf-linux-install () {
 
 # Install Terraform for Mac
 tf-mac-install () {
-  # Check the latest abvailable version of Terraform
+  # Check the latest available version of Terraform
   TF_VERSION=$(curl -s https://checkpoint-api.hashicorp.com/v1/check/terraform | grep -Eo '\"current_version\":\"[0-9]\.[0-9]+\.[0-9]+\"' | grep -Eo '[0-9]\.[0-9]+\.[0-9]+')
   # Check if the version is set and if not report an error
   if [[ -z ${TF_VERSION} ]]; then
@@ -464,7 +477,7 @@ tf-mac-install () {
 # Install TFLint for Linux
 tflint-linux-install () {
   # Referring to https://github.com/terraform-linters/tflint/blob/master/README.md
-  # Check the latest abvailable version of TFLint
+  # Check the latest available version of TFLint
   TFLINT_VERSION=$(curl -s https://api.github.com/repos/terraform-linters/tflint/releases/latest | grep '"tag_name":' | sed -E 's/.+"v([^"]+)".+/\1/')
   # Check if the version is set and if not report an error
   if [[ -z ${TFLINT_VERSION} ]]; then
@@ -519,7 +532,7 @@ tflint-linux-install () {
 # Install TFLint for macOS
 tflint-mac-install () {
   # Referring to https://github.com/terraform-linters/tflint/blob/master/README.md
-  # Check the latest abvailable version of TFLint
+  # Check the latest available version of TFLint
   TFLINT_VERSION=$(curl -s https://api.github.com/repos/terraform-linters/tflint/releases/latest | grep '"tag_name":' | sed -E 's/.+"v([^"]+)".+/\1/')
   # Check if the version is set and if not report an error
   if [[ -z ${TFLINT_VERSION} ]]; then
@@ -561,15 +574,43 @@ tflint-mac-install () {
 tfsec-linux-install () {
   # Referring to https://aquasecurity.github.io/tfsec/v1.28.1/guides/installation/
   # Options for Linux are more limited than for macOS and either require homebrew for Linux or to use Go package management
-  echo "[ERROR] Automated installation of tfsec is not available for Linux.  Please install tfsec manually"
-  echo "[ERROR] For more information please refer to https://aquasecurity.github.io/tfsec/v1.28.1/guides/installation/"
-  return 1
+  # Test if go/golang is not installed; if not then exit and refer user to the tfsec installation page
+  if ! command -v go &> /dev/null; then
+    echo "[ERROR] Automated installation of tfsec is not available for Linux.  Please install tfsec manually"
+    echo "[ERROR] For more information please refer to https://aquasecurity.github.io/tfsec/v1.28.1/guides/installation/"
+    return 1
+  fi
+  # Check the latest available version of tfsec
+  TFSEC_VERSION=$(curl -s https://api.github.com/repos/aquasecurity/tfsec/releases/latest | grep '"tag_name":' | sed -E 's/.+"v([^"]+)".+/\1/')
+  # Check if the version is set and if not report an error
+  if [[ -z ${TFSEC_VERSION} ]]; then
+    echo "[ERROR] Unable to determine the latest version of tfsec"
+    return 1
+  fi
+  # Check if tfsec is already installed and if the current version matches the version to be set
+  if command -v tfsec &> /dev/null; then
+    if [[ "$(tfsec --version | sed -r 's/tfsec version ([0-9]\.[0-9]+\.[0-9]+)/\1/' | grep -E -m 1 '[0-9]\.[0-9]+\.[0-9]+')" == "${TFSEC_VERSION}" ]]; then
+      echo "tfsec ${TFSEC_VERSION} is already installed and is the latest version"
+      return 0
+    fi
+  fi
+  echo "tfsec is not installed or is not the correct version.  Installing tfsec v${TFSEC_VERSION}"
+  # Install tfsec using Go
+  echo "Installing tfsec using Go"
+  go get -u github.com/aquasecurity/tfsec/cmd/tfsec@latest
+  # Check if the version installed is the correct version and if not report an error
+  if [[ "$(tfsec --version | sed -r 's/tfsec version ([0-9]\.[0-9]+\.[0-9]+)/\1/' | grep -E -m 1 '[0-9]\.[0-9]+\.[0-9]+')" != "${TFSEC_VERSION}" ]]; then
+    echo "[ERROR] Error installing tfsec v${TFSEC_VERSION}"
+    echo "[ERROR] Please check the version is valid and try again"
+    return 1
+  fi
+  echo "tfsec v${TFSEC_VERSION} installed"
 }
 
 # Install tfsec for Mac
 tfsec-mac-install () {
   # Referring to https://aquasecurity.github.io/tfsec/v1.28.1/guides/installation/
-  # Check the latest abvailable version of tfsec
+  # Check the latest available version of tfsec
   TFSEC_VERSION=$(curl -s https://api.github.com/repos/aquasecurity/tfsec/releases/latest | grep '"tag_name":' | sed -E 's/.+"v([^"]+)".+/\1/')
   # Check if the version is set and if not report an error
   if [[ -z ${TFSEC_VERSION} ]]; then
@@ -605,6 +646,84 @@ tfsec-mac-install () {
     return 1
   fi
   echo "tfsec ${TFSEC_VERSION} installed"
+}
+
+# Install terraform-docs for Linux
+terraform-docs-linux-install () {
+  # Referring to https://github.com/terraform-docs/terraform-docs#installation
+  # Options for Linux are more limited than for macOS and either require homebrew for Linux or to use Go package management
+  # Test if go/golang is not installed; if not then exit and refer user to the terraform-docs installation page
+  if ! command -v go &> /dev/null; then
+    echo "[ERROR] Automated installation of terraform-docs is not available for Linux.  Please install terraform-docs manually"
+    echo "[ERROR] For more information please refer to https://github.com/terraform-docs/terraform-docs#installation"
+    return 1
+  fi
+  # Check the latest available version of terraform-docs
+  TERRAFORM_DOCS_VERSION=$(curl -s https://api.github.com/repos/terraform-docs/terraform-docs/releases/latest | grep '"tag_name":' | sed -E 's/.+"v([^"]+)".+/\1/')
+  # Check if the version is set and if not report an error
+  if [[ -z ${TERRAFORM_DOCS_VERSION} ]]; then
+    echo "[ERROR] Unable to determine the latest version of terraform-docs"
+    return 1
+  fi
+  # Check if terraform-docs is already installed and if the current version matches the version to be set
+  if command -v terraform-docs &> /dev/null; then
+    if [[ "$(terraform-docs --version | sed -r 's/v([0-9]\.[0-9]+\.[0-9]+)/\1/')" == "${TERRAFORM_DOCS_VERSION}" ]]; then
+      echo "terraform-docs ${TERRAFORM_DOCS_VERSION} is already installed and is the latest version"
+      return 0
+    fi
+  fi
+  echo "terraform-docs is not installed or is not the correct version.  Installing terraform-docs v${TERRAFORM_DOCS_VERSION}"
+  # Install terraform-docs using Go
+  echo "Installing terraform-docs using Go"
+  go get -u github.com/terraform-docs/terraform-docs/cmd/terraform-docs@latest
+  # Check if the version installed is the correct version and if not report an error
+  if [[ "$(terraform-docs --version | sed -r 's/v([0-9]\.[0-9]+\.[0-9]+)/\1/')" != "${TERRAFORM_DOCS_VERSION}" ]]; then
+    echo "[ERROR] Error installing terraform-docs v${TERRAFORM_DOCS_VERSION}"
+    echo "[ERROR] Please check the version is valid and try again"
+    return 1
+  fi
+  echo "terraform-docs v${TERRAFORM_DOCS_VERSION} installed"
+}
+
+# Install terraform-docs for Mac
+terraform-docs-mac-install () {
+  # Referring to https://github.com/terraform-docs/terraform-docs#installation
+  # Check the latest available version of terraform-docs
+  TERRAFORM_DOCS_VERSION=$(curl -s https://api.github.com/repos/terraform-docs/terraform-docs/releases/latest | grep '"tag_name":' | sed -E 's/.+"v([^"]+)".+/\1/')
+  # Check if the version is set and if not report an error
+  if [[ -z ${TERRAFORM_DOCS_VERSION} ]]; then
+    echo "[ERROR] Unable to determine the latest version of terraform-docs"
+    return 1
+  fi
+  # Check if terraform-docs is already installed and if the current version matches the version to be set
+  if command -v terraform-docs &> /dev/null; then
+    if [[ "$(terraform-docs --version | sed -r 's/v([0-9]\.[0-9]+\.[0-9]+)/\1/')" == "${TERRAFORM_DOCS_VERSION}" ]]; then
+      echo "terraform-docs ${TERRAFORM_DOCS_VERSION} is already installed and is the latest version"
+      return 0
+    fi
+  fi
+  echo "terraform-docs is not installed or is not the correct version.  Installing terraform-docs v${TERRAFORM_DOCS_VERSION}"
+  # Use Homebrew to install terraform-docs
+  # Check if Homebrew is installed and if not report an error
+  if ! command -v brew &> /dev/null; then
+    echo "[ERROR] Homebrew is not installed.  Please install Homebrew and try again"
+    return 1
+  fi
+  # Check if terraform-docs is already installed, if not install it, if it is then upgrade it
+  if command -v terraform-docs &> /dev/null; then
+    echo "Upgrading terraform-docs"
+    brew upgrade terraform-docs
+  else
+    echo "Installing terraform-docs"
+    brew install terraform-docs
+  fi
+  # Check if terraform-docs is installed and if not report an error
+  if ! command -v terraform-docs &> /dev/null; then
+    echo "[ERROR] Error installing terraform-docs"
+    echo "[ERROR] Please check the version is valid and try again"
+    return 1
+  fi
+  echo "terraform-docs ${TERRAFORM_DOCS_VERSION} installed"
 }
 
 # Install ansible using pip3 after confirming that the latest version is not already installed
