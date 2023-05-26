@@ -730,7 +730,8 @@ terraform-docs-mac-install () {
 ansible-install () {
   # Check the latest available version of Ansible by grepping the "version" field from the JSON output of the PyPi API
   PYPI_ANSIBLE_VERSION=$(curl -s https://pypi.org/pypi/ansible/json | grep -Eo '"version":"[0-9]+\.[0-9]+\.[0-9]+",' | sed -E 's/.+"([0-9]+\.[0-9]+\.[0-9]+)",/\1/')
-  PYPI_ANSIBLE_CORE=$(curl -s https://pypi.org/pypi/ansible/json | grep -Eo '\[\"ansible-core.*\"],' | grep -Eo '[0-9]+\.[0-9]+\.[0-9]+')
+  # PYPI_ANSIBLE_CORE=$(curl -s https://pypi.org/pypi/ansible/json | grep -Eo '\[\"ansible-core.*\"],' | grep -Eo '[0-9]+\.[0-9]+\.[0-9]+')
+  PYPI_ANSIBLE_CORE=$(curl -s https://pypi.org/pypi/ansible/json | grep -Eo '\["ansible-core.*"],' | grep -Eo '[0-9]+\.[0-9]+\.[0-9]+')
   # Check if the version is set and if not report an error
   if [[ -z ${PYPI_ANSIBLE_VERSION} ]]; then
     echo "[ERROR] Unable to determine the latest version of Ansible"
