@@ -597,7 +597,7 @@ tfsec-linux-install () {
   echo "tfsec is not installed or is not the correct version.  Installing tfsec v${TFSEC_VERSION}"
   # Install tfsec using Go
   echo "Installing tfsec using Go"
-  go get -u github.com/aquasecurity/tfsec/cmd/tfsec@latest
+  go install -u github.com/aquasecurity/tfsec/cmd/tfsec@latest
   # Check if the version installed is the correct version and if not report an error
   if [[ "$(tfsec --version | sed -r 's/tfsec version ([0-9]\.[0-9]+\.[0-9]+)/\1/' | grep -E -m 1 '[0-9]\.[0-9]+\.[0-9]+')" != "${TFSEC_VERSION}" ]]; then
     echo "[ERROR] Error installing tfsec v${TFSEC_VERSION}"
