@@ -1,0 +1,35 @@
+#!/usr/bin/env bash
+
+# Path: .pathVars
+# Purpose: Add additional paths to PATH
+# Use: Add additional paths to PATH by defining them here and they will be sourced by .zshrc
+
+# set PATH so it includes user's private ~/.local/bin if it exists
+if [[ -d "${HOME}/.local/bin" ]] ; then
+    PATH="${HOME}/.local/bin:${PATH}"
+fi
+
+# If OS is Mac add Homebrew to PATH
+# If OS is Mac then load the apple keychain for SSH
+if [[ ${OS} == "Mac" ]]; then
+	eval "$(/opt/homebrew/bin/brew shellenv)"
+fi
+
+# # Add Cargo to PATH
+# if command -v cargo &> /dev/null; then
+#   export PATH="$HOME/.cargo/bin:$PATH"
+# fi
+
+# If OS is Mac and pyenv is installed initialise pyenv
+if [[ ${OS} == "Mac" ]] && command -v pyenv 1>/dev/null 2>&1; then
+	eval "$(pyenv init -)"
+fi
+# If pyenv-virtualenv-init is also installed init that too
+if [[ ${OS} == "Mac" ]] && which pyenv-virtualenv-init > /dev/null; then
+  eval "$(pyenv virtualenv-init -)"
+fi
+
+# If go/golang is installed add to PATH
+if [[ -d "${HOME}/go" ]]; then
+  export PATH="${PATH}:${HOME}/go/bin"
+fi

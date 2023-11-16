@@ -1,0 +1,12 @@
+#!/usr/bin/env bash
+
+# Path: .node
+# Purpose: Node.js and NVM configuration
+# Use: Add aliases to this file and they will be sourced by .zshrc
+
+# If NVM is installed (https://github.com/nvm-sh/nvm#installing-and-updating) apply configuration to load NVM
+if [[ -d "${HOME}/.nvm" ]]; then
+  export NVM_DIR="${HOME}/.nvm"
+  [ -s "${NVM_DIR}/nvm.sh" ] && \. "${NVM_DIR}/nvm.sh"  # This loads nvm
+  [ -s "${NVM_DIR}/bash_completion" ] && \. "${NVM_DIR}/bash_completion"  # This loads nvm bash_completion
+fi
