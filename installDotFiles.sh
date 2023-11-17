@@ -1,41 +1,176 @@
-#!/bin/sh
+#!/bin/bash
 # This script creates symlinks from ~/ to a dotfiles directory cloned from github
 # Github source is https://github.com/GingerGraham/linuxDotFiles
-# Forked from Wes Doyle (https://github.com/wesdoyle/dotfiles) on 2019-10-23
 
-# This script accepts 1 input parameter of an alternate directory for previously exists dot files in
-# place of olddir (default value)
+VERSION=2.0.2
+OPT_STRING=":adf:hlo:"
 
-# Variables for script use
-input=$1
-dir=$PWD
-olddir=~/.oldDotFiles # Default value, replace with $input if valid
+TASK="" # Task to perform
+DIR=$(pwd)
+OLD_FILE_DIR=~/.oldDotFiles
+COPY_FILE="" # File to copy
+DRY_RUN=false
 
-if [ -d $input ]
-then
-	$olddir=$input
-else
-	echo "Directory $input does not exist, using $olddir for existing dot files"
-fi
+main () {
+    opts "${@}"
+    if [[ -z ${TASK} ]]; then
+        echo "No task selected" >&2
+        usage
+        exit 1
+    fi
+    for task in "${TASK[@]}"; do
+        ${task}
+    done
+}
 
-echo "Creating $olddir for backup of any existing dotfiles in ~"
-mkdir -p $olddir
-echo "...complete."
+opts () {
+    while getopts ${OPT_STRING} opt; do
+        case $opt in
+            a)
+                TASK=("copy_all_files")
+                ;;
+            d)
+                echo "Dry run" >&2
+                DRY_RUN=true
+                ;;
+            f)
+                set_copy_file "${OPTARG}"
+                TASK=("copy_selected_file")
+                ;;
+            h)
+                usage
+                exit 0
+                ;;
+            l)
+                list_files
+                ;;
+            o)
+                set_old_file_dir "${OPTARG}"
+                ;;
+            \?)
+                echo "Invalid option: -${OPTARG}" >&2
+                usage
+                exit 1
+                ;;
+            :)
+                echo "Option -${OPTARG} requires an argument." >&2
+                usage
+                exit 1
+                ;;
+        esac
+    done
+}
 
-echo "Changing to the $dir directory"
-cd $dir
-echo "...complete."
+usage () {
+    # Display script help/usage
+    echo "Version ${VERSION}"
+    echo
+    echo "Purpose: This script creates symlinks from ~/ to a dotfiles directory cloned from github"
+    echo
+    echo "Usage: $(basename $0) [-a] [-d] [-f <file>] [-h] [-l] [-o <dir>]"
+    echo
+    echo "  -a  Copy all dot files"
+    echo "  -d  Dry run"
+    echo "  -f  Copy file <file>"
+    echo "  -h  Display this help message"
+    echo "  -l  List available files"
+    echo "  -o  Use <dir> for existing dot files"
+    exit 0
+}
 
-for file in $(find $dir -type f -name ".*" -exec basename {} \;);
-do
-	if [ $file != ".gitignore" ]
-	then
-		 echo "Moving existing dotfiles from ~ to $olddir"
-	     mv ~/$file $olddir
-         echo "Creating symlink to $file in home directory."
-	     ln -s $dir/$file ~/$file
-	fi
-done
+set_old_file_dir () {
+    if [ -d "${1}" ]; then
+        OLD_FILE_DIR="${1}"
+    else
+        echo "Directory ${1} does not exist, using ${OLD_FILE_DIR} for existing dot files"
+    fi
+}
 
-# TODO move this to a new script to install zsh, oh-my-zsh and then deploy this
-ln -s $dir/gw-agnoster.zsh-theme ~/.oh-my-zsh/themes/gw-agnoster.zsh-theme
+set_copy_file () {
+    if [ -f "${1}" ]; then
+        COPY_FILE="${1}"
+    else
+        echo "File ${1} does not exist, exiting"
+        exit 1
+    fi
+}
+
+list_files () {
+    echo "Listing available files in ${DIR}"
+    for FILE in $(find ${DIR} -type f -name ".*" -exec basename {} \;); do
+        echo "${FILE}"
+    done
+    exit 0
+}
+
+create_old_file_dir () {
+    if [ ! -d "${OLD_FILE_DIR}" ]; then
+        echo "Creating ${OLD_FILE_DIR} for existing dot files"
+        if [ "${DRY_RUN}" = true ]; then
+            echo "mkdir -p ${OLD_FILE_DIR}"
+        else
+            mkdir -p "${OLD_FILE_DIR}"
+        fi
+    fi
+}
+
+copy_all_files () {
+    echo "Ensuring ${OLD_FILE_DIR} exists and creating if it does not"
+    create_old_file_dir
+    echo "Copying all dot files"
+    for FILE in $(find ${DIR} -type f -name ".*" -exec basename {} \;); do
+        if [ $FILE != ".gitignore" ]; then
+            echo "Moving existing dotfiles from ~ to ${OLD_FILE_DIR}"
+            if [ "${DRY_RUN}" = true ]; then
+                echo "mv ~/${FILE} ${OLD_FILE_DIR}"
+            else
+                mv ~/"${FILE}" "${OLD_FILE_DIR}"
+            fi
+            echo "Creating symlink to ${FILE} in home directory."
+            if [ "${DRY_RUN}" = true ]; then
+                echo "ln -s ${DIR}/${FILE} ~/${FILE}"
+            else
+                ln -s "${DIR}"/"${FILE}" ~/"${FILE}"
+            fi
+        fi
+    done
+}
+
+copy_selected_file () {
+    echo "Ensuring ${OLD_FILE_DIR} exists and creating if it does not"
+    create_old_file_dir
+    echo "Copying ${COPY_FILE}"
+    echo "Moving existing ${COPY_FILE} from ~ to ${OLD_FILE_DIR} if it exists"
+    if [ "${DRY_RUN}" = true ]; then
+        echo "mv ~/${COPY_FILE} ${OLD_FILE_DIR}"
+    else
+        mv ~/"${COPY_FILE}" "${OLD_FILE_DIR}"
+    fi
+    echo "Creating symlink to ${COPY_FILE} in home directory."
+    if [ "${DRY_RUN}" = true ]; then
+        echo "ln -s ${DIR}/${COPY_FILE} ~/${COPY_FILE}"
+    else
+        ln -s "${DIR}"/"${COPY_FILE}" ~/"${COPY_FILE}"
+    fi
+}
+
+copy_theme_files () {
+    echo "Copying theme files"
+    # ln -s ${DIR}/gw-agnoster.zsh-theme ~/.oh-my-zsh/themes/gw-agnoster.zsh-theme
+    for FILE in $(find ${DIR} -type f -name "*.zsh-theme" -exec basename {} \;); do
+        echo "Moving existing dotfile from ~ to ${OLD_FILE_DIR}"
+        if [ "${DRY_RUN}" = true ]; then
+            echo "mv ~/${FILE} ${OLD_FILE_DIR}"
+        else
+            mv ~/"${FILE}" "${OLD_FILE_DIR}"
+        fi
+        echo "Creating symlink to ${FILE} in home directory."
+        if [ "${DRY_RUN}" = true ]; then
+            echo "ln -s ${DIR}/${FILE} ~/${FILE}"
+        else
+            ln -s "${DIR}"/"${FILE}" ~/"${FILE}"
+        fi
+    done
+}
+
+main "${@}"

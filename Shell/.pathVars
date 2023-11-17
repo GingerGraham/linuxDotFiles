@@ -33,3 +33,8 @@ fi
 if [[ -d "${HOME}/go" ]]; then
   export PATH="${PATH}:${HOME}/go/bin"
 fi
+
+# If rust is installed add cargo to PATH
+if [[ -d "${HOME}/.cargo/bin" ]]; then
+  export PATH="${PATH}:${HOME}/.cargo/bin"
+fi

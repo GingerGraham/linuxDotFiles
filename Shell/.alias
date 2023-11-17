@@ -12,6 +12,10 @@ alias sshclear="ssh-add -D"
 alias routeprint="netstat -rn"
 alias printrt="netstat -rn"
 alias cls="clear"
+# If system is Debian based and uses apt, set apt aliases
+if [[ "${OS}" = "Linux" ]] && command -v apt &> /dev/null; then
+  alias apt-update='sudo apt update -y && sudo apt upgrade -y && sudo apt autoremove -y'
+fi
 # No longer using python2
 # If python 3 is installed alias python to python3
 if command -v python3 &> /dev/null; then
