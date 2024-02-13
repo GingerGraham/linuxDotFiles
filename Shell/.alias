@@ -1,0 +1,106 @@
+#!/usr/bin/env bash
+
+# Path: .alias
+# Purpose: Aliases for shell commands
+# Use: Add aliases to this file and they will be sourced by .zshrc
+
+# General shell aliases
+alias lsa="ls -alhi" # Show all hidden files
+alias lsr="ls -alhitr" # Similar to above but reverse listed by date
+alias dirsize="du -sh"
+alias sshclear="ssh-add -D"
+alias routeprint="netstat -rn"
+alias printrt="netstat -rn"
+alias cls="clear"
+# If system is Debian based and uses apt, set apt aliases
+if [[ "${OS}" = "Linux" ]] && command -v apt &> /dev/null; then
+  alias apt-update='sudo apt update -y && sudo apt upgrade -y && sudo apt autoremove -y'
+fi
+# No longer using python2
+# If python 3 is installed alias python to python3
+if command -v python3 &> /dev/null; then
+  alias python="python3"
+fi
+if command -v pip3 &> /dev/null; then
+  alias pip="pip3"
+fi
+
+# If batcat or bat is installed, use it for cat
+if command -v batcat &> /dev/null; then
+  alias cat="batcat -p"
+  alias bat="batcat"
+elif command -v bat &> /dev/null; then
+  alias cat="bat -p"
+fi
+
+# If iTerm2 is installed with the shell integrations set iTerm2 specific aliases
+if command -v it2profile &> /dev/null; then
+  # iTerm2 Colour Profiles
+  alias solarized="it2profile -s Solarized"
+  alias black="it2profile -s Black"
+  alias smooth="it2profile -s Smooth"
+fi
+
+# If OS is Linux and systemd is installed, set aliases for power management
+if [[ "${OS}" = "Linux" ]] && command -v systemctl &> /dev/null; then
+  alias zzz="sudo systemctl suspend --check-inhibitors=no"
+  alias reboot="sudo systemctl reboot"
+  alias bye="sudo systemctl poweroff"
+fi
+
+# If tmux is installed, set tmux specific aliases
+if command -v tmux &> /dev/null; then
+  alias tmux-new='tmux new-session -s graham'
+  alias tmux-attach='tmux attach-session -t graham'
+fi
+
+# If git is installed, set git specific aliases
+if command -v git &> /dev/null; then
+  alias gitgraph="git log --oneline --graph --decorate --all"
+  alias gst="git status"
+  alias gpl="git pull"
+  alias gps="git push"
+  alias git-remove-untracked='git fetch --prune && git branch -r | awk "{print \$1}" | egrep -v -f /dev/fd/0 <(git branch -vv | grep origin) | awk "{print \$1}" | xargs git branch -D'
+fi
+
+# If ansible is installed, set ansible specific aliases
+if command -v ansible &> /dev/null; then
+  alias ap="ansible-playbook"
+  # Also see .applets for other ansible aliases
+fi
+
+# If virtualbox and vagrant are installed, set aliases for them
+if command -v virtualbox &> /dev/null && command -v vagrant &> /dev/null; then
+  alias vboxmanage="VBoxManage"
+fi
+
+# SSH aliases
+alias sshhosts="grep -E '^Host\s' ~/.ssh/config"
+
+# Now defunct aliases as no longer with Vocera/Stryker (interesting to keep for review)
+# alias esshhosts="grep -E '^Host\s' ~/.ssh/Edge/config"
+# alias vsshhosts="grep -E '^Host\s' ~/.ssh/Vocera/config"
+# alias essh="ssh -F ~/.ssh/Edge/config"
+# alias vssh="ssh -F ~/.ssh/Vocera/config"
+
+# If OS is Linux and ClamAV is installed, set aliases for ClamAV
+if [[ "${OS}" = "Linux" ]] && command -v clamscan &> /dev/null; then
+  alias clam="sudo nice -n 15 clamscan && sudo clamscan --bell -i -r /home"
+  alias av="sudo nice -n 15 clamscan && sudo clamscan --bell -i -r /home"
+fi
+
+# If kubectl is installed configure an alias for kube-version
+if command -v kubectl &> /dev/null; then
+  alias kube-version="kubectl version --client --short | sed -r 's/Client Version: v([0-9]\.[0-9]+\.[0-9]+)/\1/'"
+fi
+
+# If nc is installed, set aliases for netcat and telnet
+if command -v nc &> /dev/null; then
+  alias netcat="nc"
+  alias telnet="nc"
+fi
+
+# If vscode insiders is installed, set an alias for it to replace GA vscode
+if command -v code-insiders &> /dev/null; then
+  alias code="code-insiders"
+fi

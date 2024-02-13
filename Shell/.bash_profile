@@ -2,6 +2,8 @@
 # see /usr/share/doc/bash/examples/startup-files (in the package bash-doc)
 # for examples
 
+# shellcheck source=/dev/null
+
 # If not running interactively, don't do anything
 case $- in
     *i*) ;;
@@ -101,8 +103,8 @@ alias alert='notify-send --urgency=low -i "$([ $? = 0 ] && echo terminal || echo
 # ~/.bash_aliases, instead of adding them here directly.
 # See /usr/share/doc/bash-doc/examples in the bash-doc package.
 
-if [ -f ~/.bash_aliases ]; then
-    . ~/.bash_aliases
+if [ -f "${HOME}/.alias" ]; then
+    source "${HOME}/.alias"
 fi
 
 # enable programmable completion features (you don't need to enable
@@ -110,8 +112,39 @@ fi
 # sources /etc/bash.bashrc).
 if ! shopt -oq posix; then
   if [ -f /usr/share/bash-completion/bash_completion ]; then
-    . /usr/share/bash-completion/bash_completion
+    source /usr/share/bash-completion/bash_completion
   elif [ -f /etc/bash_completion ]; then
-    . /etc/bash_completion
+    source /etc/bash_completion
   fi
+fi
+
+# adding use of website cheat.sh for command lookup
+# cheat(){
+#     curl "cheat.sh/$1"
+# }
+
+# Specifying the default EDITOR
+export EDITOR=vim
+
+# If the current shell is bash then check if oh-my-posh is installed
+
+  # If oh-my-posh is installed then call ~/.omp to configure it
+  if command -v oh-my-posh &> /dev/null; then
+    # echo "$(date +'%Y-%m-%d %H:%M:%S.%3N') [DEBUG] [bash profile] oh-my-posh is installed"
+    source "${HOME}/.omp"
+  fi
+
+# Adding node.js / nvm
+if [ -f ~/.nvm/nvm.sh ]; then
+  source ~/.node
+fi
+
+# Adding path variables
+if [ -f ~/.pathVars ]; then
+  source ~/.pathVars
+fi
+
+# Adding applets
+if [ -f ~/.applets ]; then
+  source ~/.applets
 fi

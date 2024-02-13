@@ -14,6 +14,7 @@ set encoding=utf-8
 " Turn on line numbering
 set nocompatible
 set number
+set relativenumber
 
 " Handle lines and word wrap
 set linebreak		" Break lines at word (requires wrap lines)
@@ -60,7 +61,7 @@ set ttyfast		" Speed up scrolling
 " Colour Config
 " =============
 " Settings here for UI colouration
-colorscheme evening
+colorscheme industry
 
 " Read in plugins
 " ===============

@@ -1,0 +1,126 @@
+#!/usr/bin/env bash
+
+# Path: .omp
+# Purpose: Configure oh-my-posh
+# Use: Sourced by either .zprofile or .bash_profile
+
+# shellcheck source=/dev/null
+
+# echo "$(date +'%Y-%m-%d %H:%M:%S.%3N') [DEBUG] Configuring oh-my-posh"
+
+# This file is called from either .zprofile or .bash_profile depending on which shell is being used
+
+OMP_THEME="atomic"
+# Determine the current shell
+CURRENT_SHELL="$(ps -p $$ | tail -1 | awk '{print $NF}')"
+
+# Use which to find where oh-my-posh is installed if it is installed
+if command -v oh-my-posh &> /dev/null; then
+  OMP_LOCATION="$(which oh-my-posh)"
+  # If OMP_LOCATION is the user's home directory/bin/oh-my-posh then the themes are located in ~/.cache/oh-my-posh/themes
+  if [[ "${OMP_LOCATION}" == "${HOME}/bin/oh-my-posh" ]]; then
+    if [[ -d "${HOME}/.cache/oh-my-posh/themes" ]]; then
+      OMP_THEME_DIR="${HOME}/.cache/oh-my-posh/themes"
+    elif [[ -d "${HOME}/themes" ]]; then
+      OMP_THEME_DIR="${HOME}/themes"
+    else
+      # Prompt user to provide the location of the oh-my-posh themes
+      echo "Please provide the location of the oh-my-posh themes directory:"
+      read -r OMP_THEME_DIR
+    fi
+  elif [[ "${OMP_LOCATION}" == "${HOME}/.local/bin/oh-my-posh" ]]; then
+    OMP_THEME_DIR="${HOME}/.cache/oh-my-posh/themes"
+  elif [[ "${OMP_LOCATION}" == "/usr/local/bin/oh-my-posh" ]]; then
+    OMP_THEME_DIR="/root/themes"
+  else
+    # Prompt user to provide the location of the oh-my-posh themes
+    echo "Please provide the location of the oh-my-posh themes directory:"
+    read -r OMP_THEME_DIR
+  fi
+  # Check that the OMP_THEME_DIR variable is set and is a valid directory
+  if [[ -z "${OMP_THEME_DIR}" ]] || [[ ! -d "${OMP_THEME_DIR}" ]]; then
+    echo "[ERROR] The oh-my-posh themes directory is not set or is not a valid directory"
+    echo "[INFO] Please set the OMP_THEME_DIR variable to a valid directory manually"
+    echo "[INFO] OMP_THEME_DIR is currently set to: ${OMP_THEME_DIR}"
+  fi
+  # If the OMP_THEME_DIR variable is set and is a valid directory eval oh-my-posh and set the theme
+  if [[ -n "${OMP_THEME_DIR}" ]] && [[ -d "${OMP_THEME_DIR}" ]]; then
+    eval "$(oh-my-posh --init --shell "${CURRENT_SHELL}" --config "${OMP_THEME_DIR}/${OMP_THEME}.omp.json")"
+  else # eval oh-my-posh without setting the theme
+    eval "$(oh-my-posh --init --shell "${CURRENT_SHELL}")"
+  fi
+fi
+
+
+# Function to update the current prompt to another theme
+set_omp_theme() {
+  if [[ -z "${1}" ]]; then
+    echo "[ERROR] No theme name provided"
+    echo "[INFO] Please provide the name of the theme to change to"
+    echo "Usage: set_omp_theme <theme_name>"
+    echo "Example: set_omp_theme jonathan"
+    return 1
+  elif [[ "${#}" -gt 1 ]]; then
+    echo "[ERROR] Too many arguments provided"
+    echo "[INFO] Please provide the name of the theme to change to"
+    echo "Usage: set_omp_theme <theme_name>"
+    echo "Example: set_omp_theme jonathan"
+    return 1
+  else
+    # Check if the theme exists
+    if [[ -f "${OMP_THEME_DIR}/${1}.omp.json" ]]; then
+      # If the theme exists then change to it
+      eval "$(oh-my-posh --init --shell "${CURRENT_SHELL}" --config "${OMP_THEME_DIR}/${1}.omp.json")"
+    else
+      # If the theme does not exist then print an error message and exit
+      echo "[ERROR] The theme ${1} does not exist"
+      echo "[INFO] Please provide the name of a valid theme"
+      echo "Usage: set_omp_theme <theme_name>"
+      echo "Example: set_omp_theme agnoster"
+      return 1
+    fi
+  fi
+}
+
+# Function to update the current theme and update the OMP_THEME variable is this file permanently to the new theme
+set_omp_theme_permanent() {
+  if [[ -z "${1}" ]]; then
+    echo "[ERROR] No theme name provided"
+    echo "[INFO] Please provide the name of the theme to change to"
+    echo "Usage: set_omp_theme_permanent <theme_name>"
+    echo "Example: set_omp_theme_permanent jonathan"
+    return 1
+  elif [[ "${#}" -gt 1 ]]; then
+    echo "[ERROR] Too many arguments provided"
+    echo "[INFO] Please provide the name of the theme to change to"
+    echo "Usage: set_omp_theme_permanent <theme_name>"
+    echo "Example: set_omp_theme_permanent jonathan"
+    return 1
+  else
+    # Check if the theme exists
+    if [[ -f "${OMP_THEME_DIR}/${1}.omp.json" ]]; then
+      # If the theme exists then change to it
+      eval "$(oh-my-posh --init --shell "${CURRENT_SHELL}" --config "${OMP_THEME_DIR}/${1}.omp.json")"
+      # Update the OMP_THEME variable in this file to the new theme
+      sed -i "s/OMP_THEME=\".*\"/OMP_THEME=\"${1}\"/g" "${HOME}/.omp"
+    else
+      # If the theme does not exist then print an error message and exit
+      echo "[ERROR] The theme ${1} does not exist"
+      echo "[INFO] Please provide the name of a valid theme"
+      echo "Usage: set_omp_theme_permanent <theme_name>"
+      echo "Example: set_omp_theme_permanent agnoster"
+      return 1
+    fi
+  fi
+}
+
+# Function to update Oh-My-Posh based on https://ohmyposh.dev/docs/installation/linux using the manual installation method
+update_omp() {
+  echo "[INFO] Updating oh-my-posh"
+  # Split the OMP_LOCATION variable into the directory and the file name
+  OMP_DIR="$(dirname "${OMP_LOCATION}")"
+  curl -s https://ohmyposh.dev/install.sh | bash -s -- -d "${OMP_DIR}"
+  echo "[INFO] oh-my-posh updated"
+}
+
+# echo "$(date +'%Y-%m-%d %H:%M:%S.%3N') [DEBUG] oh-my-posh configured"
