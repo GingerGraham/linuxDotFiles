@@ -307,6 +307,8 @@ helm-linux-install () {
   echo "Cleaning up downloaded script"
   rm -f "get_helm.sh"
   echo "Completed"
+  # Return to the previous working directory
+  cd - || return 1
 }
 
 helm-mac-install () {
