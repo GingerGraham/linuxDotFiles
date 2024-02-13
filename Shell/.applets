@@ -774,7 +774,7 @@ ansible-install () {
   fi
   echo "Ansible is not installed or is not the correct version.  Installing Ansible v${PYPI_ANSIBLE_VERSION} from PyPi with core version ${PYPI_ANSIBLE_CORE}"
   # Install Ansible using pip3
-  pip3 install ansible --disable-pip-version-check
+  pip3 install --upgrade ansible --disable-pip-version-check
   # Check if the version installed is the correct version and if not report an error
   if [[ "$(pip3 list --disable-pip-version-check | grep -E 'ansible\s+' | grep -Eo '[0-9]+\.[0-9]+\.[0-9]+')" != "${PYPI_ANSIBLE_VERSION}" ]]; then
     echo "[ERROR] Error installing Ansible v${PYPI_ANSIBLE_VERSION}"
