@@ -1,0 +1,6 @@
+primary git message helper
+
+- Add additional lines
+- Here if you like
+
+Ticket: [ID-###]
