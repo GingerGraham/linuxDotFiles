@@ -13,6 +13,11 @@ cheat(){
     curl "cheat.sh/$1"
 }
 
+# Show SSH Tunnel
+show_ssh_tunnel(){
+  ps -aux | grep -iE 'ssh\s+(-[fNL]+\s+)*-?[fNL]+'
+}
+
 # Test sudo access
 sudo-test (){
   if [[ ! $(sudo -l -U "${USER}") ]]; then
