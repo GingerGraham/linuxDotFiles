@@ -5,8 +5,8 @@
 # Use: Add aliases to this file and they will be sourced by .zshrc
 
 # General shell aliases
-alias lsa="ls -alhi" # Show all hidden files
-alias lsr="ls -alhitr" # Similar to above but reverse listed by date
+alias lsa="ls -Alhi" # Show all hidden files
+alias lsr="ls -Alhitr" # Similar to above but reverse listed by date
 alias dirsize="du -sh"
 alias sshclear="ssh-add -D"
 alias routeprint="netstat -rn"
@@ -15,6 +15,18 @@ alias cls="clear"
 # If system is Debian based and uses apt, set apt aliases
 if [[ "${OS}" = "Linux" ]] && command -v apt &> /dev/null; then
   alias apt-update='sudo apt update -y && sudo apt upgrade -y && sudo apt autoremove -y'
+fi
+# If system is RedHat based and uses dnf, set dnf aliases
+if [[ "${OS}" = "Linux" ]] && command -v dnf &> /dev/null; then
+  alias dnf-update='sudo dnf update -y && sudo dnf autoremove -y'
+fi
+# If system is RedHat based and uses yum, set yum aliases
+if [[ "${OS}" = "Linux" ]] && command -v yum &> /dev/null; then
+  alias yum-update='sudo yum update -y && sudo yum autoremove -y'
+fi
+# If system is SUSe based and uses zypper, set zypper aliases
+if [[ "${OS}" = "Linux" ]] && command -v zypper &> /dev/null; then
+  alias zypper-update='sudo zypper update -y && sudo zypper clean -a'
 fi
 # No longer using python2
 # If python 3 is installed alias python to python3
@@ -103,4 +115,40 @@ fi
 # If vscode insiders is installed, set an alias for it to replace GA vscode
 if command -v code-insiders &> /dev/null; then
   alias code="code-insiders"
+fi
+
+# If Terraform is installed set aliases for common Terraform commands
+if command -v terraform &> /dev/null; then
+  alias tf="terraform"
+  alias tfi="terraform init"
+  alias tfp="terraform plan"
+  alias tfpd="terraform plan -destroy"
+  alias tfa="terraform apply"
+  alias tfaa="terraform apply -auto-approve"
+  alias tfd="terraform destroy"
+  alias tfr="terraform refresh"
+  alias tfsh="terraform show"
+  alias tfsl="terraform state list"
+  alias tfo="terraform output"
+  alias tfv="terraform version"
+  alias tffmt="terraform fmt"
+  alias tfva="terraform validate"
+  alias tfws="terraform workspace"
+fi
+
+# If Terragrunt is installed set aliases for common Terragrunt commands
+if command -v terragrunt &> /dev/null; then
+  alias tg="terragrunt"
+  alias tgi="terragrunt init"
+  alias tgp="terragrunt plan"
+  alias tgpd="terragrunt plan -destroy"
+  alias tga="terragrunt apply"
+  alias tgaa="terragrunt apply -auto-approve"
+  alias tgd="terragrunt destroy"
+  alias tgr="terragrunt refresh"
+  alias tgo="terragrunt output"
+  alias tgv="terragrunt version"
+  alias tgfmt="terragrunt fmt"
+  alias tgva="terragrunt validate"
+  alias tgws="terragrunt workspace"
 fi
