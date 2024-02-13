@@ -239,11 +239,25 @@ helm-install () {
     echo "[ERROR] OS variable not set"
     return 1
   fi
+  # Check the latest version of helm
+  HELM_VERSION="$(curl -s https://api.github.com/repos/helm/helm/releases/latest | grep '"tag_name":' | sed -E 's/.+"v([^"]+)".+/\1/')"
+  # Check if the version is set and if not report an error and exit
+  if [[ -z "${HELM_VERSION}" ]]; then
+    echo "[ERROR] No version of helm specified"
+    return 1
+  fi
+    # Check if helm is already installed and if so check the version
+  if command -v helm &> /dev/null; then
+    if [[ "$(helm version --short | sed -r 's/v([0-9]\.[0-9]+\.[0-9]+).*/\1/')" == "${HELM_VERSION}" ]]; then
+      echo "helm ${HELM_VERSION} is already installed and is the correct version"
+      return 0
+    fi
+  fi
   # Check if the OS is Linux or Mac and if so call the relevant function
   if [[ "${OS}" == "Linux" ]]; then
-    helm-linux-install
+    helm-linux-install "${HELM_VERSION}"
   elif [[ "${OS}" == "Mac" ]]; then
-    helm-mac-install
+    helm-mac-install "${HELM_VERSION}"
   else
     echo "[ERROR] Unsupported OS"
     return 1
@@ -253,20 +267,8 @@ helm-install () {
 helm-linux-install () {
   # Install and update helm for Linux referencing: https://helm.sh/docs/intro/install/
   # Using the script mechanism to make this easier to support across distros
-  # Check the latest version of helm
-  HELM_VERSION="$(curl -s https://api.github.com/repos/helm/helm/releases/latest | grep '"tag_name":' | sed -E 's/.+"v([^"]+)".+/\1/')"
-  # Check if the version is set and if not report an error and exit
-  if [[ -z "${HELM_VERSION}" ]]; then
-    echo "[ERROR] No version of helm specified"
-    return 1
-  fi
-  # Check if helm is already installed and if so check the version
-  if command -v helm &> /dev/null; then
-    if [[ "$(helm version --short | sed -r 's/v([0-9]\.[0-9]+\.[0-9]+).*/\1/')" == "${HELM_VERSION}" ]]; then
-      echo "helm ${HELM_VERSION} is already installed and is the correct version"
-      return 0
-    fi
-  fi
+  # Accept a passed variable for the HELM_VERSION from the calling function
+  HELM_VERSION="${1}"
   # Setting the directory to download helm to
   HELM_DIR="${HOME}/.local/bin/k8s/helm-${HELM_VERSION}"
   # Check if the directory exists and if not create it
@@ -275,6 +277,11 @@ helm-linux-install () {
   fi
   # Set the working directory to the helm directory
   cd "${HELM_DIR}" || return 1
+  # Check if OpenSSL is installed and if not set VERIFY_CHECKSUM to false
+  if ! command -v openssl &> /dev/null; then
+    VERIFY_CHECKSUM=false
+    export VERIFY_CHECKSUM
+  fi
   # Echo the version of helm being installed
   echo "Installing helm v${HELM_VERSION}"
   # Download the helm install script
@@ -288,24 +295,24 @@ helm-linux-install () {
   chmod 700 "get_helm.sh"
   # Run the script
   ./get_helm.sh
+  # Remove the VELIFY_CHECKSUM variable
+  unset VERIFY_CHECKSUM
+  # Check if helm is installed and if not report an error and exit
+  if ! command -v helm &> /dev/null; then
+    echo "[ERROR] helm is not installed"
+    return 1
+  fi
+  echo "helm v${HELM_VERSION} installed"
+  # Cleanup downloaded script
+  echo "Cleaning up downloaded script"
+  rm -f "get_helm.sh"
+  echo "Completed"
 }
 
 helm-mac-install () {
   # Install and update helm for Mac referencing: https://helm.sh/docs/intro/install/
-  # Check the latest version of helm
-  HELM_VERSION="$(curl -s https://api.github.com/repos/helm/helm/releases/latest | grep '"tag_name":' | sed -E 's/.+"v([^"]+)".+/\1/')"
-  # Check if the version is set and if not report an error and exit
-  if [[ -z "${HELM_VERSION}" ]]; then
-    echo "[ERROR] No version of helm specified"
-    return 1
-  fi
-  # Check if helm is already installed and if so check the version
-  if command -v helm &> /dev/null; then
-    if [[ "$(helm version --short | sed -r 's/v([0-9]\.[0-9]+\.[0-9]+).*/\1/')" == "${HELM_VERSION}" ]]; then
-      echo "helm ${HELM_VERSION} is already installed and is the correct version"
-      return 0
-    fi
-  fi
+  # Accept a passed variable for the HELM_VERSION from the calling function
+  HELM_VERSION="${1}"
   # Test if brew is installed and if not report an error and exit
   if ! command -v brew &> /dev/null; then
     echo "[ERROR] brew is not installed"
@@ -333,17 +340,24 @@ terraform-install () {
     echo "[WARN] OS variable is not set"
     return 1
   fi
+  # Check the latest available version of Terraform
+  TF_VERSION=$(curl -s https://checkpoint-api.hashicorp.com/v1/check/terraform | tr -d '\r' | grep -Eo '"current_version":"[0-9]+\.[0-9]+\.[0-9]+"' | grep -Eo '[0-9]+\.[0-9]+\.[0-9]+')
+  # Check if the version is set and if not report an error
+  if [[ -z ${TF_VERSION} ]]; then
+    echo "[ERROR] Unable to determine the latest version of Terraform"
+    return 1
+  fi
   if [[ ${OS} == "Linux" ]]; then
-    tf-linux-install
+    tf-linux-install "${TF_VERSION}"
     tflint-linux-install
     tfsec-linux-install
-    terraform_docs-linux-install
+    terraform-docs-linux-install
   fi
   if [[ ${OS} == "Mac" ]]; then
-    tf-mac-install
+    tf-mac-install "${TF_VERSION}"
     tflint-mac-install
     tfsec-mac-install
-    terraform_docs-mac-install
+    terraform-docs-mac-install
   fi
   # If OS is not set or is not Linux or Darwin then report an error
   if [[ ${OS} != "Linux" ]] && [[ ${OS} != "Mac" ]]; then
@@ -354,13 +368,8 @@ terraform-install () {
 
 # Install Terraform for Linux
 tf-linux-install () {
-  # Check the latest available version of Terraform
-  TF_VERSION=$(curl -s https://checkpoint-api.hashicorp.com/v1/check/terraform | grep -Eo '\"current_version\":\"[0-9]\.[0-9]+\.[0-9]+\"' | grep -Eo '[0-9]\.[0-9]+\.[0-9]+')
-  # Check if the version is set and if not report an error
-  if [[ -z ${TF_VERSION} ]]; then
-    echo "[ERROR] Unable to determine the latest version of Terraform"
-    return 1
-  fi
+  # Terraform version passed from calling function
+  TF_VERSION="${1}"
   # Check if Terraform is already installed and if the current version matches the version to be set
   if command -v terraform &> /dev/null; then
     if [[ "$(terraform version | sed -r 's/Terraform v([0-9]\.[0-9]+\.[0-9]+)/\1/' | grep -E '[0-9]\.[0-9]+\.[0-9]+' )" == "${TF_VERSION}" ]]; then
@@ -418,13 +427,8 @@ tf-linux-install () {
 
 # Install Terraform for Mac
 tf-mac-install () {
-  # Check the latest available version of Terraform
-  TF_VERSION=$(curl -s https://checkpoint-api.hashicorp.com/v1/check/terraform | grep -Eo '\"current_version\":\"[0-9]\.[0-9]+\.[0-9]+\"' | grep -Eo '[0-9]\.[0-9]+\.[0-9]+')
-  # Check if the version is set and if not report an error
-  if [[ -z ${TF_VERSION} ]]; then
-    echo "[ERROR] Unable to determine the latest version of Terraform"
-    return 1
-  fi
+  # Terraform version passed from calling function
+  TF_VERSION="${1}"
   # Check if Terraform is already installed and if the current version matches the version to be set
   if command -v terraform &> /dev/null; then
     if [[ "$(terraform version | sed -r 's/Terraform v([0-9]\.[0-9]+\.[0-9]+)/\1/' | grep -E '[0-9]\.[0-9]+\.[0-9]+')" == "${TF_VERSION}" ]]; then
@@ -740,6 +744,15 @@ ansible-install () {
   # Check if the version is set and if not report an error
   if [[ -z ${PYPI_ANSIBLE_VERSION} ]]; then
     echo "[ERROR] Unable to determine the latest version of Ansible"
+    return 1
+  fi
+  # Test if pip3 is installed and if not report an error
+  if ! command -v pip3 &> /dev/null; then
+    echo "[ERROR] pip3 is not installed"
+    echo "[INFO] Please install pip3 and try again"
+    # Give an example of how to install pip3 using python3
+    echo "[INFO] Example: python3 -m ensurepip --default-pip"    
+    echo "[INFO] Confirm details with your specific distro, package manager of by referring to https://pip.pypa.io/en/stable/installation/"
     return 1
   fi
   # Using pip check if Ansible is already installed using pip and if the current version matches the version to be set
