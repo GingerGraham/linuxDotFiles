@@ -9,7 +9,7 @@
 # Define additional functions here
 
 # Source all applets files in the ${HOME}/applets directory
-for file in "${HOME}"/applets/*.applet; do
+for file in "${HOME}"/applets/*.applets; do
   # shellcheck source=/dev/null
   source "${file}"
 done
