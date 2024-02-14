@@ -38,12 +38,12 @@ set-kubectl () {
   done
   # If USE_LATEST is set to true then get the USE_LATEST version of kubectl
   if [[ "${USE_LATEST}" == "true" ]]; then
-    echo "-l or -s is set"
-    echo "Getting latest stable version of kubectl from https://storage.googleapis.com/kubernetes-release/release/stable.txt and ignoring any version passed"
+    echo "[INFO] -l or -s is set"
+    echo "[INFO] Getting latest stable version of kubectl from https://storage.googleapis.com/kubernetes-release/release/stable.txt and ignoring any version passed"
     KUBECTL_VERSION=$(curl -s https://storage.googleapis.com/kubernetes-release/release/stable.txt)
     # remove the v from the version
     KUBECTL_VERSION="${KUBECTL_VERSION:1}"
-    echo "Latest version of kubectl is: ${KUBECTL_VERSION}"
+    echo "[INFO] Latest version of kubectl is: ${KUBECTL_VERSION}"
   fi
   # If KUBECTL_VERSION is not set then use the first argument
   if [[ -z "${KUBECTL_VERSION}" ]]; then
@@ -54,7 +54,7 @@ set-kubectl () {
     echo "[WARN] Invalid version of kubectl specified: ${KUBECTL_VERSION}"
     # If version passed is missing the patch version then add it as 0
     if [[ "${KUBECTL_VERSION}" =~ ^[0-9]\.[0-9]+$ ]]; then
-      echo "Adding patch version of 0 to ${KUBECTL_VERSION}"
+      echo "[INFO] Adding patch version of 0 to ${KUBECTL_VERSION}"
       KUBECTL_VERSION="${KUBECTL_VERSION}.0"
     else
       return 1
@@ -66,12 +66,12 @@ set-kubectl () {
     return 1
   fi
   # Confirm the version is set back to the user
-  echo "Taking ${KUBECTL_VERSION} as the version of kubectl to use"
+  echo "[INFO] Taking ${KUBECTL_VERSION} as the version of kubectl to use"
   # Check if kubectl is already installed and if the current version matches the version to be set
   # Using kubeclt version --client --short to get the version as it is faster than using kubectl version --short
   if command -v kubectl &> /dev/null; then
-    if [[ "$(kubectl version --client --short | sed -r 's/Client Version: v([0-9]\.[0-9]+\.[0-9]+)/\1/')" == "${KUBECTL_VERSION}" ]]; then
-      echo "kubectl is already installed and is the correct version"
+    if [[ "$(kubectl version --client --short 2>/dev/null || kubectl version --client | awk '/Client Version: /{print $NF}' | sed -r 's/v([0-9]\.[0-9]+\.[0-9]+)/\1/')" == "${KUBECTL_VERSION}" ]]; then
+      echo "[INFO] kubectl is already installed and is the correct version"
       return 0
     fi
   fi
@@ -87,12 +87,12 @@ set-kubectl () {
   elif [[ "$(uname)" == "Linux" ]]; then
     KUBECTL_URL="https://dl.k8s.io/release/v${KUBECTL_VERSION}/bin/linux/amd64/kubectl"
   else
-    echo "Unsupported OS"
+    echo "[ERROR] Unsupported OS"
     return 1
   fi
   # Check if the requested version is available in the directory and if not download it
   if [[ ! -f "${KUBECTL_DIR}/kubectl" ]]; then
-    echo "Downloading kubectl-${KUBECTL_VERSION}"
+    echo "[INFO] Downloading kubectl-${KUBECTL_VERSION}"
     curl -s -L "${KUBECTL_URL}" -o "${KUBECTL_DIR}/kubectl"
     chmod +x "${KUBECTL_DIR}/kubectl"
   fi
@@ -102,10 +102,10 @@ set-kubectl () {
     echo "[ERROR] Please check the version is valid and try again"
     return 1
   fi
-  echo "kubectl v${KUBECTL_VERSION} downloaded to ${KUBECTL_DIR}"
+  echo "[INFO] kubectl v${KUBECTL_VERSION} downloaded to ${KUBECTL_DIR}"
   # Check if the current version of kubectl is a symlink and if so remove it
   if [[ -L "$(command -v kubectl)" ]]; then
-    echo "Removing symlink to kubectl"
+    echo "[INFO] Removing symlink to kubectl"
     rm "$(command -v kubectl)"
   fi
   # If current version of kubectl is not a symlink then rename it to kubectl.old
@@ -118,7 +118,7 @@ set-kubectl () {
     echo "mv $(command -v kubectl).old $(command -v kubectl)"
   fi
   # Create a symlink to the requested version of kubectl
-  echo "Creating symlink to ${KUBECTL_VERSION} located at ${KUBECTL_DIR}/kubectl"
+  echo "[INFO] Creating symlink to ${KUBECTL_VERSION} located at ${KUBECTL_DIR}/kubectl"
   ln -s "${KUBECTL_DIR}/kubectl" "${HOME}/.local/bin/kubectl"
   return 0
 }
@@ -140,7 +140,7 @@ helm-install () {
     # Check if helm is already installed and if so check the version
   if command -v helm &> /dev/null; then
     if [[ "$(helm version --short | sed -r 's/v([0-9]\.[0-9]+\.[0-9]+).*/\1/')" == "${HELM_VERSION}" ]]; then
-      echo "helm ${HELM_VERSION} is already installed and is the correct version"
+      echo "[INFO] helm ${HELM_VERSION} is already installed and is the correct version"
       return 0
     fi
   fi
@@ -193,11 +193,11 @@ helm-linux-install () {
     echo "[ERROR] helm is not installed"
     return 1
   fi
-  echo "helm v${HELM_VERSION} installed"
+  echo "[INFO] helm v${HELM_VERSION} installed"
   # Cleanup downloaded script
-  echo "Cleaning up downloaded script"
+  echo "[INFO] Cleaning up downloaded script"
   rm -f "get_helm.sh"
-  echo "Completed"
+  echo "[INFO] Completed"
   # Return to the previous working directory
   cd - || return 1
 }
@@ -213,10 +213,10 @@ helm-mac-install () {
   fi
   # Check if helm is already installed, if it is update it, if not install it
   if command -v helm &> /dev/null; then
-    echo "Updating helm to v${HELM_VERSION}"
+    echo "[INFO] Updating helm to v${HELM_VERSION}"
     brew upgrade helm
   else
-    echo "Installing helm v${HELM_VERSION}"
+    echo "[INFO] Installing helm v${HELM_VERSION}"
     brew install helm
   fi
   # Check if helm is installed and if not report an error and exit
@@ -224,5 +224,5 @@ helm-mac-install () {
     echo "[ERROR] helm is not installed"
     return 1
   fi
-  echo "helm v${HELM_VERSION} installed"
+  echo "[INFO] helm v${HELM_VERSION} installed"
 }

@@ -31,7 +31,7 @@ ansible-install () {
   # Using pip check if Ansible is already installed using pip and if the current version matches the version to be set
   if pip3 list --disable-pip-version-check | grep ansible &> /dev/null; then
     if [[ "$(pip3 list --disable-pip-version-check | grep -E 'ansible\s+' | grep -Eo '[0-9]+\.[0-9]+\.[0-9]+')" == "${PYPI_ANSIBLE_VERSION}" ]]; then
-      echo "Ansible ${PYPI_ANSIBLE_VERSION} with core version ${PYPI_ANSIBLE_CORE} is already installed and is the latest version"
+      echo "[INFO] Ansible ${PYPI_ANSIBLE_VERSION} with core version ${PYPI_ANSIBLE_CORE} is already installed and is the latest version"
       return 0
     fi
   fi
@@ -39,11 +39,11 @@ ansible-install () {
   if command -v ansible &> /dev/null; then
     ANSIBLE_VERSION=$(ansible --version | grep -Eo 'core\s+[0-9]+\.[0-9]+\.[0-9]+' | grep -Eo '[0-9]+\.[0-9]+\.[0-9]+')
     if [[ "${ANSIBLE_VERSION}" == "${PYPI_ANSIBLE_CORE}" ]]; then
-      echo "Ansible core version ${ANSIBLE_VERSION} is already installed using a method other than pip and is the latest version"
+      echo "[INFO] Ansible core version ${ANSIBLE_VERSION} is already installed using a method other than pip and is the latest version"
       return 0
     fi
   fi
-  echo "Ansible is not installed or is not the correct version.  Installing Ansible v${PYPI_ANSIBLE_VERSION} from PyPi with core version ${PYPI_ANSIBLE_CORE}"
+  echo "[INFO] Ansible is not installed or is not the correct version.  Installing Ansible v${PYPI_ANSIBLE_VERSION} from PyPi with core version ${PYPI_ANSIBLE_CORE}"
   # Install Ansible using pip3
   pip3 install --upgrade ansible --disable-pip-version-check
   # Check if the version installed is the correct version and if not report an error
@@ -53,7 +53,7 @@ ansible-install () {
     return 1
   fi
   # Extract the version of Ansible installed and report it
-  echo "Ansible core ${PYPI_ANSIBLE_CORE} installed from PyPi Ansible v${PYPI_ANSIBLE_VERSION} using pip3"
+  echo "[INFO] Ansible core ${PYPI_ANSIBLE_CORE} installed from PyPi Ansible v${PYPI_ANSIBLE_VERSION} using pip3"
 }
 
 # Use ansible-vault to decrypt a list of file
@@ -75,7 +75,7 @@ avd () {
   while getopts ":p:" opt; do
     case $opt in
       p) VAULT_PASS="$OPTARG"
-         echo "Pass file is ${VAULT_PASS}" >&2
+         echo "[INFO] Pass file is ${VAULT_PASS}" >&2
       ;;
       \?) echo "[ERROR] Invalid option -$OPTARG" >&2
           return 1
@@ -85,7 +85,7 @@ avd () {
 
   # Process arguments excluding arguments passed as options
   shift $((OPTIND -1))
-  echo "Processing ${*}"
+  echo "[INFO] Processing ${*}"
   # If argument in $@ is not a switch or existing variable add it to an array of file names
   for arg in "${@}"; do
     if [[ ! $arg =~ ^-.* ]] || [[ ! -v $arg ]]; then
@@ -104,7 +104,7 @@ avd () {
   if [[ -f "ansible.cfg" ]]; then
     if grep -q "vault_password_file" "ansible.cfg"; then
       if [[ -f "$(grep "vault_password_file" "ansible.cfg" | cut -d'=' -f2 | tr -d ' ')" ]]; then
-        echo "Decrypting ${FILES[*]} with password file: $(grep "vault_password_file" "ansible.cfg" | cut -d'=' -f2 | tr -d ' ')"
+        echo "[INFO] Decrypting ${FILES[*]} with password file: $(grep "vault_password_file" "ansible.cfg" | cut -d'=' -f2 | tr -d ' ')"
         for file in "${FILES[@]}"; do
           # echo the command to be run
           # echo "ansible-vault decrypt ${file}"
@@ -123,12 +123,12 @@ avd () {
   fi
 
   if [[ ! -z "${VAULT_PASS}" ]]; then
-    echo "Decrypting ${FILES[@]} with password file: ${VAULT_PASS}"
+    echo "[INFO] Decrypting ${FILES[@]} with password file: ${VAULT_PASS}"
     for file in "${FILES[@]}"; do
       ansible-vault decrypt --vault-password-file "${VAULT_PASS}" "${file}"
     done
   else
-    echo "Prompting for password to decrypt ${FILES[@]}"
+    echo "[INFO] Prompting for password to decrypt ${FILES[@]}"
     for file in "${FILES[@]}"; do
       ansible-vault decrypt "${file}"
     done
@@ -158,7 +158,7 @@ ave () {
   while getopts ":p:" opt; do
     case $opt in
       p) VAULT_PASS="$OPTARG"
-         echo "Pass file is ${VAULT_PASS}" >&2
+         echo "[INFO] Pass file is ${VAULT_PASS}" >&2
       ;;
       \?) echo "[ERROR] Invalid option -$OPTARG" >&2
           return 1
@@ -168,11 +168,11 @@ ave () {
 
   # Process arguments excluding arguments passed as options
   shift $((OPTIND -1))
-  echo "Processing ${@}"
+  echo "[INFO] Processing ${@}"
   # If argument in $@ is not a switch or existing variable add it to an array of file names
   for arg in "${@}"; do
     if [[ ! $arg =~ ^-.* ]] || [[ ! -v $arg ]]; then
-      echo "adding $arg to FILES"
+      echo "[INFO] adding $arg to FILES"
       FILES+=("$arg")
     fi
   done
@@ -187,7 +187,7 @@ ave () {
   if [[ -f "ansible.cfg" ]]; then
     if grep -q "vault_password_file" "ansible.cfg"; then
       if [[ -f "$(grep "vault_password_file" "ansible.cfg" | cut -d'=' -f2 | tr -d ' ')" ]]; then
-        echo "Encrypting ${FILES[*]} with password file: $(grep "vault_password_file" "ansible.cfg" | cut -d'=' -f2 | tr -d ' ')"
+        echo "[INFO] Encrypting ${FILES[*]} with password file: $(grep "vault_password_file" "ansible.cfg" | cut -d'=' -f2 | tr -d ' ')"
         for file in "${FILES[@]}"; do
           # echo the command to be run
           # echo "ansible-vault encrypt ${file}"
@@ -211,7 +211,7 @@ ave () {
       ansible-vault encrypt --vault-password-file "${VAULT_PASS}" "${file}"
     done
   else
-    echo "Prompting for password to encrypt ${FILES[@]}"
+    echo "[INFO] Prompting for password to encrypt ${FILES[@]}"
     for file in "${FILES[@]}"; do
       ansible-vault encrypt "${file}"
     done
