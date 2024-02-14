@@ -82,7 +82,7 @@ set_old_file_dir () {
     if [ -d "${1}" ]; then
         OLD_FILE_DIR="${1}"
     else
-        echo "Directory ${1} does not exist, using ${OLD_FILE_DIR} for existing dot files"
+        echo "[WARN] Directory ${1} does not exist, using ${OLD_FILE_DIR} for existing dot files"
     fi
 }
 
@@ -90,15 +90,15 @@ set_copy_file () {
     if [ -f "${1}" ]; then
         COPY_FILE="${1}"
     else
-        echo "File ${1} does not exist, exiting"
+        echo "[ERROR] File ${1} does not exist, exiting"
         exit 1
     fi
 }
 
 list_files () {
-    echo "Listing available files in ${DIR}"
+    echo "[INFO] Listing available files in ${DIR}"
     find ${DIR} -type d -not -path "*/.git/*" -not -name ".git" -not -name "docs" | while IFS= read -r SUBDIR; do
-        echo "Subdirectory: ${SUBDIR}"
+        echo "[INFO] Subdirectory: ${SUBDIR}"
         find ${SUBDIR} -type f -name ".*" -exec basename {} \; | while IFS= read -r FILE; do
             echo "${FILE}"
         done
@@ -112,7 +112,7 @@ create_old_file_dir () {
 	SUBDIR="${OLD_FILE_DIR}/${CURRENT_DATE}/${CURRENT_TIME}"
 	
 	if [ ! -d "${SUBDIR}" ]; then
-		echo "Creating ${SUBDIR} for existing dot files"
+		echo "[INFO] Creating ${SUBDIR} for existing dot files"
 		if [ "${DRY_RUN}" = true ]; then
 			echo "mkdir -p ${SUBDIR}"
 		else
@@ -124,26 +124,26 @@ create_old_file_dir () {
 }
 
 copy_all_files () {
-    echo "Ensuring ${OLD_FILE_DIR} exists and creating if it does not"
+    echo "[INFO] Ensuring ${OLD_FILE_DIR} exists and creating if it does not"
     create_old_file_dir
-    echo "Copying all dot files"
+    echo "[INFO] Copying all dot files"
     
     # Find the dot files in any subdirectory
     find ${DIR} -type d -not -path "*/.git/*" -not -name ".git" -not -name "docs" | while IFS= read -r SUBDIR; do
-        echo "Subdirectory: ${SUBDIR}"
+        echo "[INFO] Subdirectory: ${SUBDIR}"
         find "${SUBDIR}" -type f -name ".*" -exec basename {} \; | while IFS= read -r FILE; do
             if [ "${FILE}" != ".gitignore" ]; then
-                echo "Moving existing ${FILE} from ${HOME} to ${OLD_FILE_DIR} if it exists"
+                echo "[INFO] Moving existing ${FILE} from ${HOME} to ${OLD_FILE_DIR} if it exists"
                 if [ "${DRY_RUN}" = true ]; then
                     echo "mv ${HOME}/${FILE} ${OLD_FILE_DIR}"
                 else
                     if [ ! -L "${HOME}/${FILE}" ]; then
                         mv ${HOME}/"${FILE}" "${OLD_FILE_DIR}"
                     else
-                        echo "Skipping symlink: ${HOME}/${FILE}"
+                        echo "[INFO] Skipping symlink: ${HOME}/${FILE}"
                     fi
                 fi
-                echo "Creating symlink from ${SUBDIR}/${FILE} to $(readlink -f ${HOME}/${FILE})"
+                echo "[INFO] Creating symlink from ${SUBDIR}/${FILE} to $(readlink -f ${HOME}/${FILE})"
                 if [ "${DRY_RUN}" = true ]; then
                     echo "ln -s ${SUBDIR}/${FILE} ${HOME}/${FILE}"
                 else
@@ -154,9 +154,9 @@ copy_all_files () {
     done
     # If there are one or more subdirectories of ./Shell (relative to the current directory of this script) then create directory links to them in ${HOME}
     if [ -d "${DIR}/Shell" ]; then
-        echo "Creating directory links to ${DIR}/Shell subdirectories in ${HOME}"
+        echo "[INFO] Creating directory links to ${DIR}/Shell subdirectories in ${HOME}"
         find "${DIR}/Shell" -type d -not -path "*/.git/*" -not -name ".git" -not -name "docs" | while IFS= read -r SUBDIR; do
-            echo "Creating symlink from ${SUBDIR} to ${HOME}/$(basename ${SUBDIR})"
+            echo "[INFO] Creating symlink from ${SUBDIR} to ${HOME}/$(basename ${SUBDIR})"
             if [ "${DRY_RUN}" = true ]; then
                 echo "ln -sf ${SUBDIR} ${HOME}/$(basename ${SUBDIR})"
             else
@@ -167,40 +167,36 @@ copy_all_files () {
 }
 
 copy_selected_file () {
-    echo "Ensuring ${OLD_FILE_DIR} exists and creating if it does not"
+    echo "[INFO] Ensuring ${OLD_FILE_DIR} exists and creating if it does not"
     create_old_file_dir
-    echo "Copying ${COPY_FILE}"
+    echo "[INFO] Copying ${COPY_FILE}"
 
     # Find the file(s) in any subdirectory
     find ${DIR} -type d -not -path "*/.git/*" -not -name ".git" -not -name "docs" | while IFS= read -r SUBDIR; do
-        echo "Subdirectory: ${SUBDIR}"
+        echo "[INFO] Subdirectory: ${SUBDIR}"
         find "${SUBDIR}" -type f -name "${COPY_FILE}" -exec basename {} \; | while IFS= read -r FILE; do
-            echo "Moving existing ${FILE} from ${HOME} to ${OLD_FILE_DIR} if it exists"
+            echo "[INFO] Moving existing ${FILE} from ${HOME} to ${OLD_FILE_DIR} if it exists"
             if [ "${DRY_RUN}" = true ]; then
                 echo "mv ${HOME}/${FILE} ${OLD_FILE_DIR}"
             else
                 if [ ! -L "${HOME}/${FILE}" ]; then
                     mv ${HOME}/"${FILE}" "${OLD_FILE_DIR}"
                 else
-                    echo "Skipping symlink: ${HOME}/${FILE}"
+                    echo "[INFO] Skipping symlink: ${HOME}/${FILE}"
                 fi
             fi
-            echo "Creating symlink from ${SUBDIR}/${FILE} to $(readlink -f ${HOME}/${FILE})"
+            echo "[INFO] Creating symlink from ${SUBDIR}/${FILE} to $(readlink -f ${HOME}/${FILE})"
             if [ "${DRY_RUN}" = true ]; then
-                echo "ln -s ${SUBDIR}/${FILE} ${HOME}/${FILE}"
+                echo "ln -sf ${SUBDIR}/${FILE} ${HOME}/${FILE}"
             else
-                if [ "${DRY_RUN}" = true ]; then
-                    echo "ln -sf ${SUBDIR}/${FILE} ${HOME}/${FILE}"
-                else
-                    ln -sf "${SUBDIR}"/"${FILE}" ${HOME}/"${FILE}"
-                fi
+                ln -sf "${SUBDIR}"/"${FILE}" ${HOME}/"${FILE}"
             fi
         done
     done
     # If the file being copied is .applets then also look for a ./Shell/applets directory in the repo relative to this script and create a symlink to it in ${HOME}
     if [ "${COPY_FILE}" = ".applets" ]; then
         if [ -d "${DIR}/Shell/applets" ]; then
-            echo "Creating symlink from ${DIR}/Shell/applets to ${HOME}/applets"
+            echo "[INFO] Creating symlink from ${DIR}/Shell/applets to ${HOME}/applets"
             if [ "${DRY_RUN}" = true ]; then
                 echo "ln -s ${DIR}/Shell/applets ${HOME}/applets"
             else
@@ -211,16 +207,16 @@ copy_selected_file () {
 }
 
 copy_theme_files () {
-    echo "Copying theme files"
+    echo "[INFO] Copying theme files"
     # ln -s ${DIR}/gw-agnoster.zsh-theme ${HOME}/.oh-my-zsh/themes/gw-agnoster.zsh-theme
     for FILE in $(find ${DIR} -type f -name "*.zsh-theme" -exec basename {} \;); do
-        echo "Moving existing dotfile from ${HOME} to ${OLD_FILE_DIR}"
+        echo "[INFO] Moving existing dotfile from ${HOME} to ${OLD_FILE_DIR}"
         if [ "${DRY_RUN}" = true ]; then
             echo "mv ${HOME}/${FILE} ${OLD_FILE_DIR}"
         else
             mv ${HOME}/"${FILE}" "${OLD_FILE_DIR}"
         fi
-        echo "Creating symlink to ${FILE} in home directory."
+        echo "[INFO] Creating symlink to ${FILE} in home directory."
         if [ "${DRY_RUN}" = true ]; then
             echo "ln -s ${DIR}/${FILE} ${HOME}/${FILE}"
         else
