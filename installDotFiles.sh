@@ -155,7 +155,7 @@ copy_all_files () {
     # If there are one or more subdirectories of ./Shell (relative to the current directory of this script) then create directory links to them in ${HOME}
     if [ -d "${DIR}/Shell" ]; then
         echo "[INFO] Creating directory links to ${DIR}/Shell subdirectories in ${HOME}"
-        find "${DIR}/Shell" -type d -not -path "*/.git/*" -not -name ".git" -not -name "docs" | while IFS= read -r SUBDIR; do
+        find "${DIR}/Shell" -mindepth 1 -maxdepth 1 -type d -not -path "*/.git/*" -not -name ".git" -not -name "docs" | while IFS= read -r SUBDIR; do
             echo "[INFO] Creating symlink from ${SUBDIR} to ${HOME}/$(basename ${SUBDIR})"
             if [ "${DRY_RUN}" = true ]; then
                 echo "ln -sf ${SUBDIR} ${HOME}/$(basename ${SUBDIR})"
