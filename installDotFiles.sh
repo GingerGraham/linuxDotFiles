@@ -145,9 +145,9 @@ copy_all_files () {
                 fi
                 echo "[INFO] Creating symlink from ${SUBDIR}/${FILE} to $(readlink -f ${HOME}/${FILE})"
                 if [ "${DRY_RUN}" = true ]; then
-                    echo "ln -s ${SUBDIR}/${FILE} ${HOME}/${FILE}"
+                    echo "ln -sf ${SUBDIR}/${FILE} ${HOME}/${FILE}"
                 else
-                    ln -s "${SUBDIR}"/"${FILE}" ${HOME}/"${FILE}"
+                    ln -sf "${SUBDIR}"/"${FILE}" ${HOME}/"${FILE}"
                 fi
             fi
         done
@@ -198,9 +198,9 @@ copy_selected_file () {
         if [ -d "${DIR}/Shell/applets" ]; then
             echo "[INFO] Creating symlink from ${DIR}/Shell/applets to ${HOME}/applets"
             if [ "${DRY_RUN}" = true ]; then
-                echo "ln -s ${DIR}/Shell/applets ${HOME}/applets"
+                echo "ln -sf ${DIR}/Shell/applets ${HOME}/applets"
             else
-                ln -s "${DIR}/Shell/applets" ${HOME}/applets
+                ln -sf "${DIR}/Shell/applets" ${HOME}/applets
             fi
         fi
     fi
@@ -218,9 +218,9 @@ copy_theme_files () {
         fi
         echo "[INFO] Creating symlink to ${FILE} in home directory."
         if [ "${DRY_RUN}" = true ]; then
-            echo "ln -s ${DIR}/${FILE} ${HOME}/${FILE}"
+            echo "ln -sf ${DIR}/${FILE} ${HOME}/${FILE}"
         else
-            ln -s "${DIR}"/"${FILE}" ${HOME}/"${FILE}"
+            ln -sf "${DIR}"/"${FILE}" ${HOME}/"${FILE}"
         fi
     done
 }
