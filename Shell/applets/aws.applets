@@ -37,50 +37,50 @@ aws-update () {
 
 # Update AWS CLI on Linux
 aws-update-linux () {
-  echo "Download AWS CLI"
+  echo "[INFO] Downloading AWS CLI"
   cd /tmp || return
   curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
-  echo "AWS CLI downloaded"
-  echo "Unzipping"
-  unzip awscliv2.zip > /dev/null 2>&1
+  echo "[INFO] AWS CLI downloaded"
+  echo "[INFO] Unzipping AWS CLI"
+  unzip -qo awscliv2.zip
   # Verify the unzip was successful
   if [[ $? -ne 0 ]]; then
     echo "[ERROR] Unzipping AWS CLI failed"
     return 1
   fi
-  echo "Unzipped"
-  echo "Installing"
+  echo "[INFO] Unzipped AWS CLI"
+  echo "[INFO] Installing AWS CLI"
   sudo ./aws/install --bin-dir /usr/local/bin --install-dir /usr/local/aws-cli --update
   # If the install fails then exit
   if [[ $? -ne 0 ]]; then
     echo "[ERROR] AWS CLI install failed"
     return 1
   fi
-  echo "Installed"
-  echo "Cleaning up"
-  # rm -rf ./awscliv2.zip ./aws
+  echo "[INFO] Installed AWS CLI"
+  echo "[INFO] Cleaning up"
+  rm -rf ./awscliv2.zip ./aws
   cd - || return
-  echo "Completed"
+  echo "[INFO] Completed"
   return 0
 }
 
 # Update AWS CLI on Mac
 aws-update-mac () {
-  echo "Download AWS CLI"
+  echo "[INFO] Downloading AWS CLI"
   cd /tmp || return
   curl "https://awscli.amazonaws.com/AWSCLIV2.pkg" -o "AWSCLIV2.pkg"
-  echo "AWS CLI downloaded"
-  echo "Installing"
+  echo "[INFO] AWS CLI downloaded"
+  echo "[INFO] Installing AWS CLI"
   sudo installer -pkg ./AWSCLIV2.pkg -target /
   # If the install fails then exit
   if [[ $? -ne 0 ]]; then
     echo "[ERROR] AWS CLI install failed"
     return 1
   fi
-  echo "Installed"
-  echo "Cleaning up"
+  echo "[INFO] Installed AWS CLI"
+  echo "[INFO] Cleaning up"
   rm -rf ./AWSCLIV2.pkg
   cd - || return
-  echo "Completed"
+  echo "[INFO] Completed"
   return 0
 }

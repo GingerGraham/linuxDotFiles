@@ -158,9 +158,9 @@ copy_all_files () {
         find "${DIR}/Shell" -type d -not -path "*/.git/*" -not -name ".git" -not -name "docs" | while IFS= read -r SUBDIR; do
             echo "Creating symlink from ${SUBDIR} to ${HOME}/$(basename ${SUBDIR})"
             if [ "${DRY_RUN}" = true ]; then
-                echo "ln -s ${SUBDIR} ${HOME}/$(basename ${SUBDIR})"
+                echo "ln -sf ${SUBDIR} ${HOME}/$(basename ${SUBDIR})"
             else
-                ln -s "${SUBDIR}" ${HOME}/$(basename ${SUBDIR})
+                ln -sf "${SUBDIR}" ${HOME}/$(basename ${SUBDIR})
             fi
         done
     fi
@@ -189,7 +189,11 @@ copy_selected_file () {
             if [ "${DRY_RUN}" = true ]; then
                 echo "ln -s ${SUBDIR}/${FILE} ${HOME}/${FILE}"
             else
-                ln -s "${SUBDIR}"/"${FILE}" ${HOME}/"${FILE}"
+                if [ "${DRY_RUN}" = true ]; then
+                    echo "ln -sf ${SUBDIR}/${FILE} ${HOME}/${FILE}"
+                else
+                    ln -sf "${SUBDIR}"/"${FILE}" ${HOME}/"${FILE}"
+                fi
             fi
         done
     done
