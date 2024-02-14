@@ -1,0 +1,410 @@
+#!/usr/bin/env bash
+
+# Path: .applets
+# Purpose: Terraform (and Terragrunt) focused applets for shell commands
+# Use: Add applets to this file and they will be sourced by ~/.applets
+
+# This script adds helper functions to the shell
+# It is sourced by .bashrc or .zshrc via ~/.applets
+# Define additional functions here
+
+# Update/Intstall Terraform for both Linux and mac
+terraform-install () {
+  if [[ -z ${OS} ]]; then
+    echo "[WARN] OS variable is not set"
+    return 1
+  fi
+  # Check the latest available version of Terraform
+  TF_VERSION=$(curl -s https://checkpoint-api.hashicorp.com/v1/check/terraform | tr -d '\r' | grep -Eo '"current_version":"[0-9]+\.[0-9]+\.[0-9]+"' | grep -Eo '[0-9]+\.[0-9]+\.[0-9]+')
+  # Check if the version is set and if not report an error
+  if [[ -z ${TF_VERSION} ]]; then
+    echo "[ERROR] Unable to determine the latest version of Terraform"
+    return 1
+  fi
+  if [[ ${OS} == "Linux" ]]; then
+    tf-linux-install "${TF_VERSION}"
+    tflint-linux-install
+    tfsec-linux-install
+    terraform-docs-linux-install
+  fi
+  if [[ ${OS} == "Mac" ]]; then
+    tf-mac-install "${TF_VERSION}"
+    tflint-mac-install
+    tfsec-mac-install
+    terraform-docs-mac-install
+  fi
+  # If OS is not set or is not Linux or Darwin then report an error
+  if [[ ${OS} != "Linux" ]] && [[ ${OS} != "Mac" ]]; then
+    echo "[ERROR] OS variable is not set to Linux or Darwin"
+    return 1
+  fi
+}
+
+# Install Terraform for Linux
+tf-linux-install () {
+  # Terraform version passed from calling function
+  TF_VERSION="${1}"
+  # Check if Terraform is already installed and if the current version matches the version to be set
+  if command -v terraform &> /dev/null; then
+    if [[ "$(terraform version | sed -r 's/Terraform v([0-9]\.[0-9]+\.[0-9]+)/\1/' | grep -E '[0-9]\.[0-9]+\.[0-9]+' )" == "${TF_VERSION}" ]]; then
+      echo "[INFO] Terraform ${TF_VERSION} is already installed and is the latest version"
+      return 0
+    fi
+  fi
+  echo "[INFO] Terraform is not installed or is not the latest version.  Installing Terraform ${TF_VERSION}"
+  # Setting the directory to download Terraform to
+  TF_DIR="${HOME}/.local/bin/tf/terraform-${TF_VERSION}"
+  # Check if the directory exists and if not create it
+  if [[ ! -d "${TF_DIR}" ]]; then
+    mkdir -p "${TF_DIR}"
+  fi
+  # Check the OS and set the download URL
+  if [[ "${OS}" == "Linux" ]]; then
+    TF_URL="https://releases.hashicorp.com/terraform/${TF_VERSION}/terraform_${TF_VERSION}_linux_amd64.zip"
+  else
+    echo "[ERROR] Unsupported OS"
+    return 1
+  fi
+  # Check if the requested version is available in the directory and if not download it
+  if [[ ! -f "${TF_DIR}/terraform" ]]; then
+    echo "[INFO] Downloading Terraform-${TF_VERSION}"
+    curl -s -L "${TF_URL}" -o "${TF_DIR}/terraform.zip"
+    unzip -o "${TF_DIR}/terraform.zip" -d "${TF_DIR}"
+    chmod +x "${TF_DIR}/terraform"
+  fi
+  # Check that the version downloaded is available executable and if it report and error and exit
+  if [[ ! -x "${TF_DIR}/terraform" ]]; then
+    echo "[ERROR] Error downloading Terraform v${TF_VERSION}"
+    echo "[ERROR] Please check the version is valid and try again"
+    return 1
+  fi
+  echo "[INFO] Terraform v${TF_VERSION} downloaded to ${TF_DIR}"
+  # Check if the current version of Terraform is a symlink and if so remove it
+  if [[ -L "$(command -v terraform)" ]]; then
+    echo "[INFO] Removing symlink to Terraform"
+    rm "$(command -v terraform)"
+  fi
+  # If current version of Terraform is not a symlink then rename it to Terraform.old
+  if command -v terraform &> /dev/null; then
+    echo "[WARN] Renaming current version of Terraform (located at $(command -v terraform)) to Terraform.old"
+    mv "$(command -v terraform)" "$(command -v terraform).old"
+    echo "[WARN] If a permission error is reported then run the following command with sudo"
+    echo "sudo mv $(command -v terraform) $(command -v terraform).old"
+    echo "[WARN] If you wish to revert to the previous version of Terraform then run the following command:"
+    echo "mv $(command -v terraform).old $(command -v terraform)"
+  fi
+  # Create a symlink to the requested version of Terraform
+  echo "[INFO] Creating symlink to ${TF_VERSION} located at ${TF_DIR}/terraform"
+  ln -s "${TF_DIR}/terraform" "${HOME}/.local/bin/terraform"
+  return 0
+}
+
+# Install Terraform for Mac
+tf-mac-install () {
+  # Terraform version passed from calling function
+  TF_VERSION="${1}"
+  # Check if Terraform is already installed and if the current version matches the version to be set
+  if command -v terraform &> /dev/null; then
+    if [[ "$(terraform version | sed -r 's/Terraform v([0-9]\.[0-9]+\.[0-9]+)/\1/' | grep -E '[0-9]\.[0-9]+\.[0-9]+')" == "${TF_VERSION}" ]]; then
+      echo "[INFO] Terraform ${TF_VERSION} is already installed and is the latest version"
+      return 0
+    fi
+  fi
+  echo "[INFO] Terraform is not installed or is not the correct version.  Installing Terraform v${TF_VERSION}"
+  # Setting the directory to download Terraform to
+  TF_DIR="${HOME}/.local/bin/tf/terraform-${TF_VERSION}"
+  # Check if the directory exists and if not create it
+  if [[ ! -d "${TF_DIR}" ]]; then
+    mkdir -p "${TF_DIR}"
+  fi
+  # Check the OS and set the download URL
+  if [[ "${OS}" == "Mac" ]]; then
+    TF_URL="https://releases.hashicorp.com/terraform/${TF_VERSION}/terraform_${TF_VERSION}_darwin_amd64.zip"
+  else
+    echo "[ERROR] Unsupported OS"
+    return 1
+  fi
+  # Check if the requested version is available in the directory and if not download it
+  if [[ ! -f "${TF_DIR}/terraform" ]]; then
+    echo "[INFO] Downloading Terraform-${TF_VERSION}"
+    curl -s -L "${TF_URL}" -o "${TF_DIR}/terraform.zip"
+    unzip -o "${TF_DIR}/terraform.zip" -d "${TF_DIR}"
+    chmod +x "${TF_DIR}/terraform"
+  fi
+  # Check that the version downloaded is available executable and if it report and error and exit
+  if [[ ! -x "${TF_DIR}/terraform" ]]; then
+    echo "[ERROR] Error downloading Terraform v${TF_VERSION}"
+    echo "[ERROR] Please check the version is valid and try again"
+    return 1
+  fi
+  echo "[INFO] Terrform v${TF_VERSION} downloaded to ${TF_DIR}"
+  # Check if the current version of Terraform is a symlink and if so remove it
+  if [[ -L "$(command -v terraform)" ]]; then
+    echo "Removing symlink to Terraform"
+    rm "$(command -v terraform)"
+  fi
+  # If current version of Terraform is not a symlink then rename it to Terraform.old
+  if command -v terraform &> /dev/null; then
+    echo "[WARN] Renaming current version of Terraform (located at $(command -v terraform)) to Terraform.old"
+    mv "$(command -v terraform)" "$(command -v terraform).old"
+    echo "[WARN] If a permission error is reported then run the following command with sudo"
+    echo "sudo mv $(command -v terraform) $(command -v terraform).old"
+    echo "[WARN] If you wish to revert to the previous version of Terraform then run the following command:"
+    echo "mv $(command -v terraform).old $(command -v terraform)"
+  fi
+  # Create a symlink to the requested version of Terraform
+  echo "[INFO] Creating symlink to ${TF_VERSION} located at ${TF_DIR}/terraform"
+  ln -s "${TF_DIR}/terraform" "${HOME}/.local/bin/terraform"
+}
+
+# Install TFLint for Linux
+tflint-linux-install () {
+  # Referring to https://github.com/terraform-linters/tflint/blob/master/README.md
+  # Check the latest available version of TFLint
+  TFLINT_VERSION=$(curl -s https://api.github.com/repos/terraform-linters/tflint/releases/latest | grep '"tag_name":' | sed -E 's/.+"v([^"]+)".+/\1/')
+  # Check if the version is set and if not report an error
+  if [[ -z ${TFLINT_VERSION} ]]; then
+    echo "[ERROR] Unable to determine the latest version of TFLint"
+    return 1
+  fi
+  # Check if TFLint is already installed and if the current version matches the version to be set
+  if command -v tflint &> /dev/null; then
+    if [[ "$(tflint --version | sed -r 's/TFLint version ([0-9]\.[0-9]+\.[0-9]+)/\1/' | grep -E -m 1 '[0-9]\.[0-9]+\.[0-9]+')" == "${TFLINT_VERSION}" ]]; then
+      echo "[INFO] TFLint ${TFLINT_VERSION} is already installed and is the latest version"
+      return 0
+    fi
+  fi
+  echo "[INFO] TFLint is not installed or is not the correct version.  Installing TFLint v${TFLINT_VERSION}"
+  # Setting the directory to download TFLint to
+  TFLINT_DIR="${HOME}/.local/bin/tflint/tflint-${TFLINT_VERSION}"
+  # Check if the directory exists and if not create it
+  if [[ ! -d "${TFLINT_DIR}" ]]; then
+    mkdir -p "${TFLINT_DIR}"
+  fi
+  # Set the working directory to the TFLint directory
+  cd "${TFLINT_DIR}" || return 1
+  # Follow the installation instructions for Linux from the TFLint GitHub page
+  echo "[INFO] Downloading TFLint-${TFLINT_VERSION}"
+  curl -s https://raw.githubusercontent.com/terraform-linters/tflint/master/install_linux.sh | bash
+  # Check that the version downloaded is available executable and if it report and error and exit
+  if [[ ! -x "${TFLINT_DIR}/tflint" ]]; then
+    echo "[ERROR] Error downloading TFLint v${TFLINT_VERSION}"
+    echo "[ERROR] Please check the version is valid and try again"
+    return 1
+  fi
+  echo "[INFO] TFLint v${TFLINT_VERSION} downloaded to ${TFLINT_DIR}"
+  # Check if the current version of TFLint is a symlink and if so remove it
+  if [[ -L "$(command -v tflint)" ]]; then
+    echo "[INFO] Removing symlink to TFLint"
+    rm "$(command -v tflint)"
+  fi
+  # If current version of TFLint is not a symlink then rename it to TFLint.old
+  if command -v tflint &> /dev/null; then
+    echo "[WARN] Renaming current version of TFLint (located at $(command -v tflint)) to TFLint.old"
+    mv "$(command -v tflint)" "$(command -v tflint).old"
+    echo "[WARN] If a permission error is reported then run the following command with sudo"
+    echo "sudo mv $(command -v tflint) $(command -v tflint).old"
+    echo "[WARN] If you wish to revert to the previous version of TFLint then run the following command:"
+    echo "mv $(command -v tflint).old $(command -v tflint)"
+  fi
+  # Create a symlink to the requested version of TFLint
+  echo "Creating symlink to ${TFLINT_VERSION} located at ${TFLINT_DIR}/tflint"
+  ln -s "${TFLINT_DIR}/tflint" "${HOME}/.local/bin/tflint"
+}
+
+# Install TFLint for macOS
+tflint-mac-install () {
+  # Referring to https://github.com/terraform-linters/tflint/blob/master/README.md
+  # Check the latest available version of TFLint
+  TFLINT_VERSION=$(curl -s https://api.github.com/repos/terraform-linters/tflint/releases/latest | grep '"tag_name":' | sed -E 's/.+"v([^"]+)".+/\1/')
+  # Check if the version is set and if not report an error
+  if [[ -z ${TFLINT_VERSION} ]]; then
+    echo "[ERROR] Unable to determine the latest version of TFLint"
+    return 1
+  fi
+  # Check if TFLint is already installed and if the current version matches the version to be set
+  if command -v tflint &> /dev/null; then
+    if [[ "$(tflint --version | sed -r 's/TFLint version ([0-9]\.[0-9]+\.[0-9]+)/\1/' | grep -E -m 1 '[0-9]\.[0-9]+\.[0-9]+')" == "${TFLINT_VERSION}" ]]; then
+      echo "[INFO] TFLint ${TFLINT_VERSION} is already installed and is the latest version"
+      return 0
+    fi
+  fi
+  echo "[INFO] TFLint is not installed or is not the correct version.  Installing TFLint v${TFLINT_VERSION}"
+  # Per https://github.com/terraform-linters/tflint/blob/master/README.md use Homebrew to install TFLint
+  # Check if Homebrew is installed and if not report an error
+  if ! command -v brew &> /dev/null; then
+    echo "[ERROR] Homebrew is not installed.  Please install Homebrew and try again"
+    return 1
+  fi
+  # Check if TFLint is already installed, if not install it, if it is then upgrade it
+  if command -v tflint &> /dev/null; then
+    echo "[INFO] Upgrading TFLint to v${TFLINT_VERSION}"
+    brew upgrade tflint
+  else
+    echo "[INFO] Installing TFLint v${TFLINT_VERSION}"
+    brew install tflint
+  fi
+  # Check if the version installed is the correct version and if not report an error
+  if [[ "$(tflint --version | sed -r 's/TFLint version ([0-9]\.[0-9]+\.[0-9]+)/\1/' | grep -E -m 1 '[0-9]\.[0-9]+\.[0-9]+')" != "${TFLINT_VERSION}" ]]; then
+    echo "[ERROR] Error installing TFLint v${TFLINT_VERSION}"
+    echo "[ERROR] Please check the version is valid and try again"
+    return 1
+  fi
+  echo "[INFO] TFLint v${TFLINT_VERSION} installed"
+}
+
+# Install tfsec for Linux
+tfsec-linux-install () {
+  # Referring to https://aquasecurity.github.io/tfsec/v1.28.1/guides/installation/
+  # Options for Linux are more limited than for macOS and either require homebrew for Linux or to use Go package management
+  # Test if go/golang is not installed; if not then exit and refer user to the tfsec installation page
+  if ! command -v go &> /dev/null; then
+    echo "[ERROR] Automated installation of tfsec is not available for Linux.  Please install tfsec manually"
+    echo "[ERROR] For more information please refer to https://aquasecurity.github.io/tfsec/v1.28.1/guides/installation/"
+    return 1
+  fi
+  # Check the latest available version of tfsec
+  TFSEC_VERSION=$(curl -s https://api.github.com/repos/aquasecurity/tfsec/releases/latest | grep '"tag_name":' | sed -E 's/.+"v([^"]+)".+/\1/')
+  # Check if the version is set and if not report an error
+  if [[ -z ${TFSEC_VERSION} ]]; then
+    echo "[ERROR] Unable to determine the latest version of tfsec"
+    return 1
+  fi
+  # Check if tfsec is already installed and if the current version matches the version to be set
+  if command -v tfsec &> /dev/null; then
+    if [[ "$(tfsec --version | sed -r 's/tfsec version ([0-9]\.[0-9]+\.[0-9]+)/\1/' | grep -E -m 1 '[0-9]\.[0-9]+\.[0-9]+')" == "${TFSEC_VERSION}" ]]; then
+      echo "[INFO] tfsec ${TFSEC_VERSION} is already installed and is the latest version"
+      return 0
+    fi
+  fi
+  echo "[INFO] tfsec is not installed or is not the correct version.  Installing tfsec v${TFSEC_VERSION}"
+  # Install tfsec using Go
+  echo "[INFO] Installing tfsec using Go"
+  go install -u github.com/aquasecurity/tfsec/cmd/tfsec@latest
+  # Check if the version installed is the correct version and if not report an error
+  if [[ "$(tfsec --version | sed -r 's/tfsec version ([0-9]\.[0-9]+\.[0-9]+)/\1/' | grep -E -m 1 '[0-9]\.[0-9]+\.[0-9]+')" != "${TFSEC_VERSION}" ]]; then
+    echo "[ERROR] Error installing tfsec v${TFSEC_VERSION}"
+    echo "[ERROR] Please check the version is valid and try again"
+    return 1
+  fi
+  echo "[INFO] tfsec v${TFSEC_VERSION} installed"
+}
+
+# Install tfsec for Mac
+tfsec-mac-install () {
+  # Referring to https://aquasecurity.github.io/tfsec/v1.28.1/guides/installation/
+  # Check the latest available version of tfsec
+  TFSEC_VERSION=$(curl -s https://api.github.com/repos/aquasecurity/tfsec/releases/latest | grep '"tag_name":' | sed -E 's/.+"v([^"]+)".+/\1/')
+  # Check if the version is set and if not report an error
+  if [[ -z ${TFSEC_VERSION} ]]; then
+    echo "[ERROR] Unable to determine the latest version of tfsec"
+    return 1
+  fi
+  # Check if tfsec is already installed and if the current version matches the version to be set
+  if command -v tfsec &> /dev/null; then
+    if [[ "$(tfsec --version | sed -r 's/v([0-9]\.[0-9]+\.[0-9]+)/\1/')" == "${TFSEC_VERSION}" ]]; then
+      echo "tfsec ${TFSEC_VERSION} is already installed and is the latest version"
+      return 0
+    fi
+  fi
+  echo "[INFO] tfsec is not installed or is not the correct version.  Installing tfsec v${TFSEC_VERSION}"
+  # Use Homebrew to install tfsec
+  # Check if Homebrew is installed and if not report an error
+  if ! command -v brew &> /dev/null; then
+    echo "[ERROR] Homebrew is not installed.  Please install Homebrew and try again"
+    return 1
+  fi
+  # Check if tfsec is already installed, if not install it, if it is then upgrade it
+  if command -v tfsec &> /dev/null; then
+    echo "[INFO] Upgrading tfsec"
+    brew upgrade tfsec
+  else
+    echo "[INFO] Installing tfsec"
+    brew install tfsec
+  fi
+  # Check if tfsec is installed and if not report an error
+  if ! command -v tfsec &> /dev/null; then
+    echo "[ERROR] Error installing tfsec"
+    echo "[ERROR] Please check the version is valid and try again"
+    return 1
+  fi
+  echo "[INFO] tfsec ${TFSEC_VERSION} installed"
+}
+
+# Install terraform-docs for Linux
+terraform-docs-linux-install () {
+  # Referring to https://github.com/terraform-docs/terraform-docs#installation
+  # Options for Linux are more limited than for macOS and either require homebrew for Linux or to use Go package management
+  # Test if go/golang is not installed; if not then exit and refer user to the terraform-docs installation page
+  if ! command -v go &> /dev/null; then
+    echo "[ERROR] Automated installation of terraform-docs is not available for Linux.  Please install terraform-docs manually"
+    echo "[ERROR] For more information please refer to https://github.com/terraform-docs/terraform-docs#installation"
+    return 1
+  fi
+  # Check the latest available version of terraform-docs
+  TERRAFORM_DOCS_VERSION=$(curl -s https://api.github.com/repos/terraform-docs/terraform-docs/releases/latest | grep '"tag_name":' | sed -E 's/.+"v([^"]+)".+/\1/')
+  # Check if the version is set and if not report an error
+  if [[ -z ${TERRAFORM_DOCS_VERSION} ]]; then
+    echo "[ERROR] Unable to determine the latest version of terraform-docs"
+    return 1
+  fi
+  # Check if terraform-docs is already installed and if the current version matches the version to be set
+  if command -v terraform-docs &> /dev/null; then
+    if [[ "$(terraform-docs --version | sed -r 's/v([0-9]\.[0-9]+\.[0-9]+)/\1/')" == "${TERRAFORM_DOCS_VERSION}" ]]; then
+      echo "[INFO] terraform-docs ${TERRAFORM_DOCS_VERSION} is already installed and is the latest version"
+      return 0
+    fi
+  fi
+  echo "[INFO] terraform-docs is not installed or is not the correct version.  Installing terraform-docs v${TERRAFORM_DOCS_VERSION}"
+  # Install terraform-docs using Go
+  echo "[INFO] Installing terraform-docs using Go"
+  go get -u github.com/terraform-docs/terraform-docs/cmd/terraform-docs@latest
+  # Check if the version installed is the correct version and if not report an error
+  if [[ "$(terraform-docs --version | sed -r 's/v([0-9]\.[0-9]+\.[0-9]+)/\1/')" != "${TERRAFORM_DOCS_VERSION}" ]]; then
+    echo "[ERROR] Error installing terraform-docs v${TERRAFORM_DOCS_VERSION}"
+    echo "[ERROR] Please check the version is valid and try again"
+    return 1
+  fi
+  echo "[INFO] terraform-docs v${TERRAFORM_DOCS_VERSION} installed"
+}
+
+# Install terraform-docs for Mac
+terraform-docs-mac-install () {
+  # Referring to https://github.com/terraform-docs/terraform-docs#installation
+  # Check the latest available version of terraform-docs
+  TERRAFORM_DOCS_VERSION=$(curl -s https://api.github.com/repos/terraform-docs/terraform-docs/releases/latest | grep '"tag_name":' | sed -E 's/.+"v([^"]+)".+/\1/')
+  # Check if the version is set and if not report an error
+  if [[ -z ${TERRAFORM_DOCS_VERSION} ]]; then
+    echo "[ERROR] Unable to determine the latest version of terraform-docs"
+    return 1
+  fi
+  # Check if terraform-docs is already installed and if the current version matches the version to be set
+  if command -v terraform-docs &> /dev/null; then
+    if [[ "$(terraform-docs --version | sed -r 's/v([0-9]\.[0-9]+\.[0-9]+)/\1/')" == "${TERRAFORM_DOCS_VERSION}" ]]; then
+      echo "[INFO] terraform-docs ${TERRAFORM_DOCS_VERSION} is already installed and is the latest version"
+      return 0
+    fi
+  fi
+  echo "[INFO] terraform-docs is not installed or is not the correct version.  Installing terraform-docs v${TERRAFORM_DOCS_VERSION}"
+  # Use Homebrew to install terraform-docs
+  # Check if Homebrew is installed and if not report an error
+  if ! command -v brew &> /dev/null; then
+    echo "[ERROR] Homebrew is not installed.  Please install Homebrew and try again"
+    return 1
+  fi
+  # Check if terraform-docs is already installed, if not install it, if it is then upgrade it
+  if command -v terraform-docs &> /dev/null; then
+    echo "[INFO] Upgrading terraform-docs"
+    brew upgrade terraform-docs
+  else
+    echo "[INFO] Installing terraform-docs"
+    brew install terraform-docs
+  fi
+  # Check if terraform-docs is installed and if not report an error
+  if ! command -v terraform-docs &> /dev/null; then
+    echo "[ERROR] Error installing terraform-docs"
+    echo "[ERROR] Please check the version is valid and try again"
+    return 1
+  fi
+  echo "[INFO] terraform-docs ${TERRAFORM_DOCS_VERSION} installed"
+}
