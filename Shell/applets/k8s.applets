@@ -9,7 +9,7 @@
 # Define additional functions here
 
 # Function to set a specific version of kubectl for the current shell and if it is not already installed download it
-set-kubectl () {
+set_kubectl () {
   # Check if variables are already set and if so unset -f
   if [[ -v KUBECTL_VERSION ]]; then
     KUBECTL_VERSION=""
@@ -20,7 +20,7 @@ set-kubectl () {
   # Use getopts to parse the arguments
   while getopts ":hlsv:" opt; do
     case $opt in
-      h) echo "Usage: set-kubectl [-v version]"
+      h) echo "Usage: set_kubectl [-v version]"
          echo "  -v version  The version of kubectl to use"
          return 0
       ;;
@@ -123,7 +123,7 @@ set-kubectl () {
   return 0
 }
 
-helm-install () {
+helm_install () {
   # Install and update helm
   # Check if the ${OS} variable is set and if not report an error and exit
   if [[ -z "${OS}" ]]; then
@@ -146,16 +146,16 @@ helm-install () {
   fi
   # Check if the OS is Linux or Mac and if so call the relevant function
   if [[ "${OS}" == "Linux" ]]; then
-    helm-linux-install "${HELM_VERSION}"
+    helm_install_linux "${HELM_VERSION}"
   elif [[ "${OS}" == "Mac" ]]; then
-    helm-mac-install "${HELM_VERSION}"
+    helm_install_mac "${HELM_VERSION}"
   else
     echo "[ERROR] Unsupported OS"
     return 1
   fi
 }
 
-helm-linux-install () {
+helm_install_linux () {
   # Install and update helm for Linux referencing: https://helm.sh/docs/intro/install/
   # Using the script mechanism to make this easier to support across distros
   # Accept a passed variable for the HELM_VERSION from the calling function
@@ -202,7 +202,7 @@ helm-linux-install () {
   cd - || return 1
 }
 
-helm-mac-install () {
+helm_install_mac () {
   # Install and update helm for Mac referencing: https://helm.sh/docs/intro/install/
   # Accept a passed variable for the HELM_VERSION from the calling function
   HELM_VERSION="${1}"
