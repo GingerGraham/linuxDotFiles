@@ -65,6 +65,11 @@ tf_install_linux () {
     echo "[ERROR] Unsupported OS"
     return 1
   fi
+  # If the command unzip is not available then return an error - required for the install
+  if ! command -v unzip &> /dev/null; then
+    echo "[ERROR] Unzip is not installed"
+    return 1
+  fi
   # Check if the requested version is available in the directory and if not download it
   if [[ ! -f "${TF_DIR}/terraform" ]]; then
     echo "[INFO] Downloading Terraform-${TF_VERSION}"
@@ -122,6 +127,11 @@ tf_install_mac () {
     TF_URL="https://releases.hashicorp.com/terraform/${TF_VERSION}/terraform_${TF_VERSION}_darwin_amd64.zip"
   else
     echo "[ERROR] Unsupported OS"
+    return 1
+  fi
+  # If the command unzip is not available then return an error - required for the install
+  if ! command -v unzip &> /dev/null; then
+    echo "[ERROR] Unzip is not installed"
     return 1
   fi
   # Check if the requested version is available in the directory and if not download it
@@ -288,9 +298,9 @@ tfsec_install_linux () {
   GO_MINOR_VERSION=$(echo "${GO_VERSION}" | cut -d. -f2)
   # If the combined major and minor version of Go is less than or equal to 1.17 then use the old method of installing tfsec with go get and if it is greater than 1.17 then use the new method of installing tfsec with go install
   if [[ "${GO_MAJOR_VERSION}${GO_MINOR_VERSION}" -le 117 ]]; then
-    go get github.com/aquasecurity/tfsec/cmd/tfsec@latest
+    go get github.com/aquasecurity/tfsec/cmd/tfsec@latest > /dev/null
   else
-    go install github.com/aquasecurity/tfsec/cmd/tfsec@latest
+    go install github.com/aquasecurity/tfsec/cmd/tfsec@latest > /dev/null
   fi
   # Check if the version installed is the correct version and if not report an error
   if [[ "$(tfsec --version | sed -r 's/tfsec version ([0-9]\.[0-9]+\.[0-9]+)/\1/' | grep -E -m 1 '[0-9]\.[0-9]+\.[0-9]+')" != "${TFSEC_VERSION}" ]]; then
@@ -377,9 +387,9 @@ terraform_docs_install_linux () {
   GO_MINOR_VERSION=$(echo "${GO_VERSION}" | cut -d. -f2)
   # If the combined major and minor version of Go is less than or equal to 1.17 then use the old method of installing terraform-docs with go get and if it is greater than 1.17 then use the new method of installing terraform-docs with go install
   if [[ "${GO_MAJOR_VERSION}${GO_MINOR_VERSION}" -le 117 ]]; then
-    go get github.com/terraform-docs/terraform-docs/cmd/terraform-docs@latest
+    go get github.com/terraform-docs/terraform-docs/cmd/terraform-docs@latest > /dev/null
   else
-    go install github.com/terraform-docs/terraform-docs/cmd/terraform-docs@latest
+    go install github.com/terraform-docs/terraform-docs/cmd/terraform-docs@latest > /dev/null
   fi
   # Check if the version installed is the correct version and if not report an error
   if [[ "$(terraform-docs --version | sed -r 's/v([0-9]\.[0-9]+\.[0-9]+)/\1/')" != "${TERRAFORM_DOCS_VERSION}" ]]; then
