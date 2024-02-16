@@ -59,10 +59,10 @@ tf_install_linux () {
     echo "[ERROR] Error installing tfenv"
     return 1
   fi
-  # Add the tfenv bin directory to the PATH by sourcing the .pathVars file if it is not already in the PATH
+  # Add the tfenv bin directory to the PATH if it is not already there
   if ! echo "${PATH}" | grep -q "${HOME}/.tfenv/bin"; then
     echo "[INFO] Adding ${HOME}/.tfenv/bin to PATH"
-    source "${HOME}/.pathVars"
+    echo 'export PATH="$HOME/.tfenv/bin:$PATH"'
   fi
   # If the tfenv command is not available after adding the bin directory to the PATH then report an error and exit
   if ! command -v tfenv &> /dev/null; then
@@ -394,31 +394,6 @@ terraform_docs_install_mac () {
     if [[ "$(terraform-docs --version | sed -r 's/v([0-9]\.[0-9]+\.[0-9]+)/\1/')" == "${TERRAFORM_DOCS_VERSION}" ]]; then
       echo "[INFO] terraform-docs ${TERRAFORM_DOCS_VERSION} is already installed and is the latest version"
       return 0
-    fi
-  fi
-  echo "[INFO] terraform-docs is not installed or is not the correct version.  Installing terraform-docs v${TERRAFORM_DOCS_VERSION}"
-  # Use Homebrew to install terraform-docs
-  # Check if Homebrew is installed and if not report an error
-  if ! command -v brew &> /dev/null; then
-    echo "[ERROR] Homebrew is not installed.  Please install Homebrew and try again"
-    return 1
-  fi
-  # Check if terraform-docs is already installed, if not install it, if it is then upgrade it
-  if command -v terraform-docs &> /dev/null; then
-    echo "[INFO] Upgrading terraform-docs"
-    brew upgrade terraform-docs
-  else
-    echo "[INFO] Installing terraform-docs"
-    brew install terraform-docs
-  fi
-  # Check if terraform-docs is installed and if not report an error
-  if ! command -v terraform-docs &> /dev/null; then
-    echo "[ERROR] Error installing terraform-docs"
-    echo "[ERROR] Please check the version is valid and try again"
-    return 1
-  fi
-  echo "[INFO] terraform-docs ${TERRAFORM_DOCS_VERSION} installed"
-}     return 0
     fi
   fi
   echo "[INFO] terraform-docs is not installed or is not the correct version.  Installing terraform-docs v${TERRAFORM_DOCS_VERSION}"
