@@ -19,7 +19,7 @@ show_ssh_tunnel(){
 }
 
 # Test sudo access
-sudo-test (){
+sudo_test (){
   if [[ ! $(sudo -l -U "${USER}") ]]; then
     echo "[ERROR] User does not have sudo access"
     return 1
@@ -32,15 +32,25 @@ sudo-test (){
 update_tools () {
   echo "== Updating Tools =="
   echo "== Updating AWS CLI =="
-  aws-update
+  aws_update
   echo "== Updating Kubectl =="
-  echo "[INFO] Updating Kubectl to latest version - using set-kubectl -v <version> to set a specific version"
-  set-kubectl -s
+  echo "[INFO] Updating Kubectl to latest version - using set_kubectl -v <version> to set a specific version"
+  set_kubectl -s
   echo "== Installing Helm =="
-  helm-install
+  helm_install
   echo "== Updating Terraform =="
-  terraform-install
+  terraform_install
   echo "== Updating Ansible =="
-  ansible-install
+  ansible_install
   return 0
+}
+
+# Get the version of GO if installed and save it to an envrioment variable
+get_go_version () {
+  if [[ -x "$(command -v go)" ]]; then
+    export GO_VERSION=$(go version | awk '{print $3}'| tr -d 'go')
+  else
+    echo "[ERROR] GO is not installed"
+    return 1
+  fi
 }

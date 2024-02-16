@@ -9,7 +9,7 @@
 # Define additional functions here
 
 # Install ansible using pip3 after confirming that the latest version is not already installed
-ansible-install () {
+ansible_install () {
   # Check the latest available version of Ansible by grepping the "version" field from the JSON output of the PyPi API
   PYPI_ANSIBLE_VERSION=$(curl -s https://pypi.org/pypi/ansible/json | grep -Eo '"version":"[0-9]+\.[0-9]+\.[0-9]+",' | sed -E 's/.+"([0-9]+\.[0-9]+\.[0-9]+)",/\1/')
   # PYPI_ANSIBLE_CORE=$(curl -s https://pypi.org/pypi/ansible/json | grep -Eo '\[\"ansible-core.*\"],' | grep -Eo '[0-9]+\.[0-9]+\.[0-9]+')
