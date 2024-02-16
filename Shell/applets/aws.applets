@@ -37,6 +37,30 @@ aws_update () {
 
 # Update AWS CLI on Linux
 aws_update_linux () {
+  # Check if the command curl is not available then return an error - required for the install
+  if ! command -v curl &> /dev/null; then
+    echo "[ERROR] Curl is not installed - required for AWS CLI install"
+    return 1
+  fi
+  # Check if the AWS CLI is already installed and if so then capture the current version
+  if command -v aws &> /dev/null; then
+    AWS_CURRENT_VERSION=$(aws --version 2>&1 | awk '{print $1}' | awk -F'/' '{print $2}')
+    echo "[INFO] Current AWS CLI version: ${AWS_CURRENT_VERSION}"
+  fi
+  # Check the current latest available from AWS GitHub
+  AWS_LATEST_VERSION=$(curl -s https://raw.githubusercontent.com/aws/aws-cli/v2/CHANGELOG.rst | grep -E '^[0-9]+\.[0-9]+\.[0-9]+' -m 1)
+  # If the check for the latest version fails then return an error otherwise print the latest version
+  if [[ -z ${AWS_LATEST_VERSION} ]]; then
+    echo "[ERROR] Unable to determine latest AWS CLI version"
+    return 1
+  else
+    echo "[INFO] Latest AWS CLI version: ${AWS_LATEST_VERSION}"
+  fi
+  # If the AWS CLI is already installed and the latest version is the same as the current version then return
+  if [[ -n ${AWS_CURRENT_VERSION} ]] && [[ ${AWS_CURRENT_VERSION} == ${AWS_LATEST_VERSION} ]]; then
+    echo "[INFO] AWS CLI is already up to date"
+    return 0
+  fi
   echo "[INFO] Downloading AWS CLI"
   # If the command unzip is not available then return an error - required for the install
   if ! command -v unzip &> /dev/null; then
@@ -71,6 +95,30 @@ aws_update_linux () {
 
 # Update AWS CLI on Mac
 aws_update_mac () {
+  # Check if the command curl is not available then return an error - required for the install
+  if ! command -v curl &> /dev/null; then
+    echo "[ERROR] Curl is not installed - required for AWS CLI install"
+    return 1
+  fi
+  # Check if the AWS CLI is already installed and if so then capture the current version
+  if command -v aws &> /dev/null; then
+    AWS_CURRENT_VERSION=$(aws --version 2>&1 | awk '{print $1}' | awk -F'/' '{print $2}')
+    echo "[INFO] Current AWS CLI version: ${AWS_CURRENT_VERSION}"
+  fi
+  # Check the current latest available from AWS GitHub
+  AWS_LATEST_VERSION=$(curl -s https://raw.githubusercontent.com/aws/aws-cli/v2/CHANGELOG.rst | grep -E '^[0-9]+\.[0-9]+\.[0-9]+' -m 1)
+  # If the check for the latest version fails then return an error otherwise print the latest version
+  if [[ -z ${AWS_LATEST_VERSION} ]]; then
+    echo "[ERROR] Unable to determine latest AWS CLI version"
+    return 1
+  else
+    echo "[INFO] Latest AWS CLI version: ${AWS_LATEST_VERSION}"
+  fi
+  # If the AWS CLI is already installed and the latest version is the same as the current version then return
+  if [[ -n ${AWS_CURRENT_VERSION} ]] && [[ ${AWS_CURRENT_VERSION} == ${AWS_LATEST_VERSION} ]]; then
+    echo "[INFO] AWS CLI is already up to date"
+    return 0
+  fi
   echo "[INFO] Downloading AWS CLI"
   cd /tmp || return
   curl "https://awscli.amazonaws.com/AWSCLIV2.pkg" -o "AWSCLIV2.pkg"
