@@ -10,15 +10,9 @@ if [[ -d "${HOME}/.local/bin" ]] ; then
 fi
 
 # If OS is Mac add Homebrew to PATH
-# If OS is Mac then load the apple keychain for SSH
 if [[ ${OS} == "Mac" ]]; then
 	eval "$(/opt/homebrew/bin/brew shellenv)"
 fi
-
-# # Add Cargo to PATH
-# if command -v cargo &> /dev/null; then
-#   export PATH="$HOME/.cargo/bin:$PATH"
-# fi
 
 # If OS is Mac and pyenv is installed initialise pyenv
 if [[ ${OS} == "Mac" ]] && command -v pyenv 1>/dev/null 2>&1; then
@@ -37,4 +31,24 @@ fi
 # If rust is installed add cargo to PATH
 if [[ -d "${HOME}/.cargo/bin" ]]; then
   export PATH="${PATH}:${HOME}/.cargo/bin"
+fi
+
+# If tfenv is installed (by testing for the tfenv command) add to PATH
+if command -v tfenv 1>/dev/null 2>&1; then
+  export PATH="${HOME}/.tfenv/bin:${PATH}"
+fi
+
+# If pkenv is installed (by testing for the pkenv command) add to PATH
+if command -v pkenv 1>/dev/null 2>&1; then
+  export PATH="${HOME}/.pkenv/bin:${PATH}"
+fi
+
+# If kubectl is installed add to PATH
+if command -v kubectl 1>/dev/null 2>&1; then
+  export PATH="${PATH}:${HOME}/.kube"
+fi
+
+# If helm is installed add to PATH
+if command -v helm 1>/dev/null 2>&1; then
+  export PATH="${PATH}:${HOME}/.helm"
 fi

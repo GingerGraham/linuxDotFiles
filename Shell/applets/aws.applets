@@ -40,7 +40,7 @@ aws_update_linux () {
   echo "[INFO] Downloading AWS CLI"
   # If the command unzip is not available then return an error - required for the install
   if ! command -v unzip &> /dev/null; then
-    echo "[ERROR] Unzip is not installed"
+    echo "[ERROR] Unzip is not installed - required for AWS CLI install"
     return 1
   fi
   cd /tmp || return
