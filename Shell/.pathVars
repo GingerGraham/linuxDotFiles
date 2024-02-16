@@ -5,8 +5,8 @@
 # Use: Add additional paths to PATH by defining them here and they will be sourced by .zshrc
 
 # set PATH so it includes user's private ~/.local/bin if it exists
-if [[ -d "${HOME}/.local/bin" ]] ; then
-    PATH="${HOME}/.local/bin:${PATH}"
+if [[ -d "${HOME}/.local/bin" ]] && [[ ":$PATH:" != *":${HOME}/.local/bin:"* ]]; then
+  PATH="${HOME}/.local/bin:${PATH}"
 fi
 
 # If OS is Mac add Homebrew to PATH
@@ -24,31 +24,31 @@ if [[ ${OS} == "Mac" ]] && which pyenv-virtualenv-init > /dev/null; then
 fi
 
 # If go/golang is installed add to PATH
-if [[ -d "${HOME}/go" ]]; then
+if [[ -d "${HOME}/go" ]] && [[ ":$PATH:" != *":${HOME}/go/bin:"* ]]; then
   export PATH="${PATH}:${HOME}/go/bin"
 fi
 
 # If rust is installed add cargo to PATH
-if [[ -d "${HOME}/.cargo/bin" ]]; then
+if [[ -d "${HOME}/.cargo/bin" ]] && [[ ":$PATH:" != *":${HOME}/.cargo/bin:"* ]]; then
   export PATH="${PATH}:${HOME}/.cargo/bin"
 fi
 
 # If tfenv is installed (by testing for the tfenv command) add to PATH
-if command -v tfenv 1>/dev/null 2>&1; then
+if command -v tfenv 1>/dev/null 2>&1 && [[ ":$PATH:" != *":${HOME}/.tfenv/bin:"* ]]; then
   export PATH="${HOME}/.tfenv/bin:${PATH}"
 fi
 
 # If pkenv is installed (by testing for the pkenv command) add to PATH
-if command -v pkenv 1>/dev/null 2>&1; then
+if command -v pkenv 1>/dev/null 2>&1 && [[ ":$PATH:" != *":${HOME}/.pkenv/bin:"* ]]; then
   export PATH="${HOME}/.pkenv/bin:${PATH}"
 fi
 
 # If kubectl is installed add to PATH
-if command -v kubectl 1>/dev/null 2>&1; then
+if command -v kubectl 1>/dev/null 2>&1 && [[ ":$PATH:" != *":${HOME}/.kube:"* ]]; then
   export PATH="${PATH}:${HOME}/.kube"
 fi
 
 # If helm is installed add to PATH
-if command -v helm 1>/dev/null 2>&1; then
+if command -v helm 1>/dev/null 2>&1 && [[ ":$PATH:" != *":${HOME}/.helm:"* ]]; then
   export PATH="${PATH}:${HOME}/.helm"
 fi
