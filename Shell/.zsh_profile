@@ -6,7 +6,13 @@
 
 # shellcheck source=/dev/null
 
-PATH="${HOME}/.local/bin:${HOME}/bin:${PATH}"
+if [[ ! ":$PATH:" == *":${HOME}/.local/bin:"* ]]; then
+  PATH="${HOME}/.local/bin:${PATH}"
+fi
+
+if [[ ! ":$PATH:" == *":${HOME}/bin:"* ]]; then
+  PATH="${HOME}/bin:${PATH}"
+fi
 
 # Test if we have oh-my-posh, or oh-my-zsh installed and if so load them.  If we have both preference is given to oh-my-posh such that priority order is oh-my-posh, oh-my-zsh, default zsh profile/prompt configuration
 if command -v oh-my-posh &> /dev/null; then

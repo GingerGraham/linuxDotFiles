@@ -60,10 +60,10 @@ tf_install_linux () {
     return 1
   fi
   # If the default tfenv bin directory is not in the PATH then add it to PATH directly
-  if ! echo "${PATH}" | grep -q "${HOME}/.tfenv/bin"; then
+  if [[ ! ":$PATH:" == *":${HOME}/.tfenv/bin:"* ]]; then
     echo "[INFO] Adding ${HOME}/.tfenv/bin to PATH"
-    export PATH="${HOME}/.tfenv/bin:${PATH}"
-  fi  
+    PATH="${HOME}/.tfenv/bin:${PATH}"
+  fi
   # If the tfenv command is not available after adding the bin directory to the PATH then report an error and exit
   if ! command -v tfenv &> /dev/null; then
     echo "[ERROR] tfenv not found"
