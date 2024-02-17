@@ -1,0 +1,29 @@
+#!/usr/bin/env bash
+
+# Path: .applets
+# Purpose: Applets for updating/configuring the shell environment
+# Use: Add applets to this file and they will be sourced by ~/.applets
+
+# This script adds helper functions to the shell
+# It is sourced by .bashrc or .zshrc via ~/.applets
+# Define additional functions here
+
+# Detect package manager
+detect_package_manager() {
+    if command -v apt-get &> /dev/null; then
+        PACKAGE_MANAGER="apt"
+    elif command -v dnf &> /dev/null; then
+        PACKAGE_MANAGER="dnf"
+    elif command -v yum &> /dev/null; then
+        PACKAGE_MANAGER="yum"
+    elif command -v pacman &> /dev/null; then
+        PACKAGE_MANAGER="pacman"
+    elif command -v zypper &> /dev/null; then
+        PACKAGE_MANAGER="zypper"
+    elif command -v apk &> /dev/null; then
+        PACKAGE_MANAGER="apk"
+    else
+        PACKAGE_MANAGER="unknown"
+    fi
+}
+
