@@ -10,7 +10,7 @@ DIR=$(pwd)
 OLD_FILE_DIR=${HOME}/.oldDotFiles
 COPY_FILE="" # File to copy
 DRY_RUN=false
-EXCLUDE_DIRS=("docs" ".git")
+EXCLUDE_DIRS=("docs" "docker" "testing" ".git")
 EXCLUDE_FILES=(".gitignore" "installDotFiles.sh" "README.md")
 
 # Generate an EXCLUDED_DIRS_ARGS string to pass to the find command
