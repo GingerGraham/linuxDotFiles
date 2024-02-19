@@ -1,0 +1,125 @@
+#!/usr/bin/env bash
+
+# Path: Shell/applets/shell-installers.applets
+# Purpose: Install packages for common shells associated with this project, primarily zsh and bash
+# Use: Run this script to install the necessary packages for zsh and bash
+
+detect_package_manager() {
+  # Detect the package manager for the current system
+  if command -v apt &> /dev/null; then
+    PACKAGE_MANAGER="apt"
+  elif command -v dnf &> /dev/null; then
+    PACKAGE_MANAGER="dnf"
+  elif command -v yum &> /dev/null; then
+    PACKAGE_MANAGER="yum"
+  elif command -v zypper &> /dev/null; then
+    PACKAGE_MANAGER="zypper"
+  elif command -v pacman &> /dev/null; then
+    PACKAGE_MANAGER="pacman"
+  elif command -v brew &> /dev/null; then
+    PACKAGE_MANAGER="brew"
+  else
+    echo "[ERROR] No package manager found"
+    exit 1
+  fi
+  echo "[INFO] Detected package manager: ${PACKAGE_MANAGER}"
+  return 0
+}
+
+install_zsh () {
+  # Install zsh with syntax highlighting and autosuggestions
+  detect_package_manager
+  case "${PACKAGE_MANAGER}" in
+    apt)
+      sudo apt install -y zsh zsh-syntax-highlighting zsh-autosuggestions
+      ;;
+    dnf)
+      sudo dnf install -y zsh zsh-syntax-highlighting zsh-autosuggestions
+      ;;
+    yum)
+      sudo yum install -y zsh zsh-syntax-highlighting zsh-autosuggestions
+      ;;
+    zypper)
+      sudo zypper install -y zsh zsh-syntax-highlighting zsh-autosuggestions
+      ;;
+    pacman)
+      sudo pacman -S --noconfirm zsh zsh-syntax-highlighting zsh-autosuggestions
+      ;;
+    brew)
+      brew install zsh zsh-syntax-highlighting zsh-autosuggestions
+      ;;
+    *)
+      echo "[ERROR] No package manager found"
+      exit 1
+      ;;
+  esac
+  # If the install failed, return an error
+  if [[ $? -ne 0 ]]; then
+    echo "[ERROR] zsh install failed"
+    exit 1
+  fi
+}
+
+install_bash () {
+  # Install bash with syntax highlighting
+  detect_package_manager
+  case "${PACKAGE_MANAGER}" in
+    apt)
+      sudo apt install -y bash bash-completion
+      ;;
+    dnf)
+      sudo dnf install -y bash bash-completion
+      ;;
+    yum)
+      sudo yum install -y bash bash-completion
+      ;;
+    zypper)
+      sudo zypper install -y bash bash-completion
+      ;;
+    pacman)
+      sudo pacman -S --noconfirm bash bash-completion
+      ;;
+    brew)
+      brew install bash bash-completion
+      ;;
+    *)
+      echo "[ERROR] No package manager found"
+      exit 1
+      ;;
+  esac
+  # If the install failed, return an error
+  if [[ $? -ne 0 ]]; then
+    echo "[ERROR] bash install failed"
+    exit 1
+  fi
+}
+
+install_oh_my_zsh () {
+  # Install oh-my-zsh
+  if [[ ! -d "${HOME}/.oh-my-zsh" ]]; then
+    echo "[INFO] Installing oh-my-zsh"
+    sh -c "$(curl -fsSL https://raw.github.com/ohmyzsh/ohmyzsh/master/tools/install.sh)"
+  else
+    echo "[INFO] oh-my-zsh already installed"
+  fi
+  # If the install failed, return an error
+  if [[ $? -ne 0 ]]; then
+    echo "[ERROR] oh-my-zsh install failed"
+    exit 1
+  fi
+}
+
+install_oh_my_posh () {
+  # Test if the command oh-my-posh is installed
+  if ! command -v oh-my-posh &> /dev/null; then
+    echo "[INFO] Installing oh-my-posh"
+    curl -s https://ohmyposh.dev/install.sh | bash -s -- -d ~/bin
+  else
+    echo "[INFO] oh-my-posh already installed"
+  fi
+  # If the install failed, return an error
+  if [[ $? -ne 0 ]]; then
+    echo "[ERROR] oh-my-posh install failed"
+    exit 1
+  fi
+}
