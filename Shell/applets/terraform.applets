@@ -245,17 +245,7 @@ tfsec_install_linux () {
     echo "[ERROR] Unable to determine the latest version of tfsec"
     return 1
   fi
-  # Check if tfsec is already installed and if the current version matches the version to be set
-  if command -v tfsec &> /dev/null; then
-    # With changes to tfsec moving to trivy this check doesn't work as expected and will need to be updated
-    # if [[ "$(tfsec --version | sed -r 's/tfsec version ([0-9]\.[0-9]+\.[0-9]+)/\1/' | grep -E -m 1 '[0-9]\.[0-9]+\.[0-9]+')" == "${TFSEC_VERSION}" ]]; then
-    #   echo "[INFO] tfsec ${TFSEC_VERSION} is already installed and is the latest version"
-    #   return 0
-    # fi
-    echo "[INFO] tfsec is already installed"
-    return 0
-  fi
-  echo "[INFO] tfsec is not installed or is not the correct version.  Installing tfsec v${TFSEC_VERSION}"
+  echo "[INFO] Installing or updating to tfsec v${TFSEC_VERSION}"
   # Install tfsec using Go
   echo "[INFO] Installing tfsec using Go"
   # If the environment variable GO_VERSION is not set then call the get_go_version function to set it
@@ -275,13 +265,6 @@ tfsec_install_linux () {
     echo "[INFO] Adding ${HOME}/go/bin to PATH"
     PATH="${HOME}/go/bin:${PATH}"
   fi
-  # Check if the version installed is the correct version and if not report an error
-  # With changes to tfsec moving to trivy this check doesn't work as expected and will need to be updated
-  # if [[ "$(tfsec --version | sed -r 's/tfsec version ([0-9]\.[0-9]+\.[0-9]+)/\1/' | grep -E -m 1 '[0-9]\.[0-9]+\.[0-9]+')" != "${TFSEC_VERSION}" ]]; then
-  #   echo "[ERROR] Error installing tfsec v${TFSEC_VERSION}"
-  #   echo "[ERROR] Please check the version is valid and try again"
-  #   return 1
-  # fi
   echo "[INFO] tfsec v${TFSEC_VERSION} installed"
 }
 
