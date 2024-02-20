@@ -23,22 +23,3 @@ if [[ "${WSL}" = false ]]; then
         git config --global --unset credential.helper
     fi
 fi
-
-# If OS is Mac then load the apple keychain for SSH
-if [[ ${OS} == "Mac" ]]; then
-	ssh-add --apple-load-keychain
-fi
-
-# If WSL is true and keychain is installed then load the keychain
-if [[ "${WSL}" = true ]] && command -v keychain &> /dev/null; then
-	if [[ ! -z "${HOSTNAME}" ]]; then
-		source ${HOME}/.keychain/${HOSTNAME}-sh
-		ssh-add -A
-	elif [[ ! -z "${HOST}" ]]; then
-		source ${HOME}/.keychain/${HOST}-sh
-	elif [[ ! -z "${NAME}" ]]; then
-		source ${HOME}/.keychain/${NAME}-sh
-	else
-		echo "Unable to load keychain"
-	fi
-fi
