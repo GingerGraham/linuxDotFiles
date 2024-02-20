@@ -100,9 +100,9 @@ plugins=(
 	#ufw
 	#vim-interaction
 	#vscode
-	z
-	zsh-autosuggestions
-	zsh-syntax-highlighting
+	# z
+	# zsh-autosuggestions
+	# zsh-syntax-highlighting
 	)
 
 source $ZSH/oh-my-zsh.sh

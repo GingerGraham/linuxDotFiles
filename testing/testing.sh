@@ -75,6 +75,9 @@ set_defaults () {
     if [[ -z ${DISTRO_VERSION} ]]; then
         DISTRO_VERSION="latest"
     fi
+    if [[ -z ${UPDATE_IMAGE} ]]; then
+        UPDATE_IMAGE=false
+    fi
     return 0
 }
 
