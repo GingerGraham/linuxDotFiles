@@ -14,3 +14,7 @@ docker images | grep "dotfiletest" | awk '{print $3}' | xargs -I {} docker rmi -
 if [[ -f "$(dirname "${0}")"/dockerfile ]]; then
     rm "$(dirname "${0}")"/dockerfile
 fi
+# If the dockerfile was created in the dir above the current working directory, remove it
+if [[ -f "$(dirname "$(dirname "${0}")")"/dockerfile ]]; then
+    rm "$(dirname "$(dirname "${0}")")"/dockerfile
+fi

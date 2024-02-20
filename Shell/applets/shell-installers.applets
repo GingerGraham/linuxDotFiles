@@ -26,6 +26,42 @@ detect_package_manager() {
   return 0
 }
 
+source_shrc () {
+    # Get the current user
+    if [ -n "$USER" ]; then
+        local user="$USER"
+    elif [ -n "$USERNAME" ]; then
+        local user="$USERNAME"
+    elif [ -n "$(whoami)" ]; then
+        local user="$(whoami)"
+    else
+        echo "[ERROR] Unable to determine the user"
+        return 1
+    fi
+    echo "[DEBUG] User is ${user}"
+    # If the user is not found, return an error
+    if [ -z "$user" ]; then
+        echo "[ERROR] Unable to determine the user"
+        return 1
+    fi
+    # Get the user's default shell
+    local shell=$(getent passwd "$user" | cut -d: -f7 | sed 's/\/bin\///')
+    shell=${shell##*/}
+    # echo "[DEBUG] Shell is ${shell}"
+    # echo "[INFO] Sourcing ${HOME}/.${shell}rc"
+    # shellcheck source=/dev/null
+    # source "${HOME}/.${shell}rc" # Note; seems to not work but running the same command again on the command line works fine
+    # If the last command failed, return an error
+    # if [ $? -ne 0 ]; then
+    #     echo "[ERROR] Unable to source ${HOME}/.${shell}rc"
+    #     return 1
+    # fi
+    # echo "[INFO] Sourced ${HOME}/.${shell}rc"
+    echo "[INFO] To apply the changes to the current shell, run the following command:"
+    echo "source ${HOME}/.${shell}rc"
+    return 0
+}
+
 install_zsh () {
   # Install zsh with syntax highlighting and autosuggestions
   detect_package_manager
@@ -58,6 +94,19 @@ install_zsh () {
     echo "[ERROR] zsh install failed"
     return 1
   fi
+  # Remind the user that they will need relink the .zshrc file that would have previously been symlinked when they run installDotFiles.sh
+  echo "[INFO] You will need to relink the .zshrc file after installing zsh"
+  echo "[INFO] Run the following command to relink the .zshrc file"
+  echo "[INFO] ./installDotFiles.sh -f .zshrc"
+  # Set the default shell to zsh
+  # If chsh is not available, the user will need to change their shell manually
+  if command -v chsh &> /dev/null; then
+    echo "[INFO] Changing default shell to zsh"
+    chsh -s "$(which zsh)"
+  else
+    echo "[WARN] chsh not available, you will need to change your shell manually"
+  fi
+  return 0
 }
 
 install_bash () {
@@ -92,6 +141,14 @@ install_bash () {
     echo "[ERROR] bash install failed"
     return 1
   fi
+  # Set the default shell to bash
+  # If chsh is not available, the user will need to change their shell manually
+  if command -v chsh &> /dev/null; then
+    echo "[INFO] Changing default shell to bash"
+    chsh -s "$(which bash)"
+  else
+    echo "[WARN] chsh not available, you will need to change your shell manually"
+  fi
 }
 
 install_omz () {
@@ -107,6 +164,9 @@ install_omz () {
     echo "[ERROR] oh-my-zsh install failed"
     return 1
   fi
+  # Source the .zshrc file
+  source "${HOME}/.zshrc"
+  return 0
 }
 
 install_omp () {
@@ -123,4 +183,6 @@ install_omp () {
     echo "[ERROR] oh-my-posh install failed"
     return 1
   fi
+  source_shrc
+  return 0
 }
