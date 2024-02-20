@@ -20,7 +20,7 @@ detect_package_manager() {
     PACKAGE_MANAGER="brew"
   else
     echo "[ERROR] No package manager found"
-    exit 1
+    return 1
   fi
   echo "[INFO] Detected package manager: ${PACKAGE_MANAGER}"
   return 0
@@ -50,13 +50,13 @@ install_zsh () {
       ;;
     *)
       echo "[ERROR] No package manager found"
-      exit 1
+      return 1
       ;;
   esac
   # If the install failed, return an error
   if [[ $? -ne 0 ]]; then
     echo "[ERROR] zsh install failed"
-    exit 1
+    return 1
   fi
 }
 
@@ -84,17 +84,17 @@ install_bash () {
       ;;
     *)
       echo "[ERROR] No package manager found"
-      exit 1
+      return 1
       ;;
   esac
   # If the install failed, return an error
   if [[ $? -ne 0 ]]; then
     echo "[ERROR] bash install failed"
-    exit 1
+    return 1
   fi
 }
 
-install_oh_my_zsh () {
+install_omz () {
   # Install oh-my-zsh
   if [[ ! -d "${HOME}/.oh-my-zsh" ]]; then
     echo "[INFO] Installing oh-my-zsh"
@@ -105,14 +105,15 @@ install_oh_my_zsh () {
   # If the install failed, return an error
   if [[ $? -ne 0 ]]; then
     echo "[ERROR] oh-my-zsh install failed"
-    exit 1
+    return 1
   fi
 }
 
-install_oh_my_posh () {
+install_omp () {
   # Test if the command oh-my-posh is installed
   if ! command -v oh-my-posh &> /dev/null; then
     echo "[INFO] Installing oh-my-posh"
+    mkdir -p ~/bin
     curl -s https://ohmyposh.dev/install.sh | bash -s -- -d ~/bin
   else
     echo "[INFO] oh-my-posh already installed"
@@ -120,6 +121,6 @@ install_oh_my_posh () {
   # If the install failed, return an error
   if [[ $? -ne 0 ]]; then
     echo "[ERROR] oh-my-posh install failed"
-    exit 1
+    return 1
   fi
 }

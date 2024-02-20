@@ -12,6 +12,9 @@ FROM ${DISTRO}:${DISTRO_VERSION}
 
 RUN groupadd -g 1000 test-user && useradd -u 1000 -g test-user -s /bin/bash -m test-user
 
+# Set the working directory
+WORKDIR /home/test-user
+
 # Install dependencies
 RUN apt-get update && apt-get install -y \
     git \
@@ -23,10 +26,12 @@ RUN apt-get update && apt-get install -y \
     python3 \
     python3-pip \
     python3-venv \
-    golang
+    golang \
+    sudo \
+    unzip
 
-# Set the working directory
-WORKDIR /home/test-user
+# Add the user to the sudo group and allow sudo without password
+RUN usermod -aG sudo test-user && echo "test-user ALL=(ALL) NOPASSWD: ALL" >> /etc/sudoers
 
 # Set the user
 USER test-user
