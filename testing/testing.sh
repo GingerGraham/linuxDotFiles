@@ -3,7 +3,7 @@
 # The script will build a Docker image and run a container with mapping the linuxDotFiles directory to the container to allow for testing
 
 VERSION=1.2.1
-OPT_STRING=":d:hv:"
+OPT_STRING=":d:huv:"
 
 DISTRO=""
 DISTRO_VERSION=""
@@ -29,6 +29,9 @@ opts () {
             h)
                 usage
                 exit 0
+                ;;
+            u)
+                UPDATE_IMAGE=true
                 ;;
             v)
                 DISTRO_VERSION="${OPTARG}"
@@ -58,6 +61,7 @@ usage () {
     echo "Options:"
     echo "  -d <distro>         The Linux distribution to use for the Docker image"
     echo "  -h                  Display this help message"
+    echo "  -u                  Update the Docker image"
     echo "  -v <distro_version> The version of the Linux distribution to use for the Docker image (default: latest)"
     echo
 
@@ -70,6 +74,9 @@ set_defaults () {
     fi
     if [[ -z ${DISTRO_VERSION} ]]; then
         DISTRO_VERSION="latest"
+    fi
+    if [[ -z ${UPDATE_IMAGE} ]]; then
+        UPDATE_IMAGE=false
     fi
     return 0
 }
@@ -115,7 +122,7 @@ image_exists () {
 build_image () {
     # If the iamge already exists and the Version is not latest, then return
     image_exists
-    if [[ ${IMAGE_EXISTS} == true ]] && [[ ${DISTRO_VERSION} != "latest" ]]; then
+    if [[ ${IMAGE_EXISTS} == true ]] && [[ ${UPDATE_IMAGE} == false ]] && [[ ${DISTRO_VERSION} != "latest" ]]; then
         echo "[INFO] Image already exists"
         return 0
     fi

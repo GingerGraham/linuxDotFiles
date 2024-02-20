@@ -12,6 +12,9 @@ FROM ${DISTRO}:${DISTRO_VERSION}
 
 RUN groupadd -g 1000 test-user && useradd -u 1000 -g test-user -s /bin/bash -m test-user
 
+# Set the working directory
+WORKDIR /home/test-user
+
 # Install dependencies
 RUN zypper install -y \
     git \
@@ -22,10 +25,12 @@ RUN zypper install -y \
     tmux \
     python3 \
     python3-pip \
-    go
+    go \
+    sudo \
+    unzip
 
-# Set the working directory
-WORKDIR /home/test-user
+# Add the user to the sudo group and allow sudo without password
+RUN usermod -aG sudo test-user && echo "test-user ALL=(ALL) NOPASSWD: ALL" >> /etc/sudoers
 
 # Set the user
 USER test-user

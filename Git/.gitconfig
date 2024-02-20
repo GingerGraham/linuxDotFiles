@@ -83,5 +83,3 @@
 		path = /Users/gwatts/Development/Personal/GitHub/.gitconfig-github
 [includeIf "gitdir:/Users/gwatts/Development/Personal/GitLab/"]
 		path = /Users/gwatts/Development/Personal/GitLab/.gitconfig-gitlab
-[credential]
-	helper = /mnt/c/Program\\ Files/Git/mingw64/bin/git-credential-manager.exe

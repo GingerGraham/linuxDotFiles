@@ -72,7 +72,7 @@ set_omp_theme() {
       # If the theme exists then change to it
       eval "$(oh-my-posh --init --shell "${CURRENT_SHELL}" --config "${OMP_THEME_DIR}/${1}.omp.json")"
     else
-      # If the theme does not exist then print an error message and exit
+      # If the theme does not exist then print an error message and return
       echo "[ERROR] The theme ${1} does not exist"
       echo "[INFO] Please provide the name of a valid theme"
       echo "Usage: set_omp_theme <theme_name>"

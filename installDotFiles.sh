@@ -31,7 +31,7 @@ main () {
     if [[ -z ${TASK} ]]; then
         echo "[ERROR] No task selected" >&2
         usage
-        exit 1
+        return 1
     fi
     for task in "${TASK[@]}"; do
         ${task}
@@ -54,7 +54,7 @@ opts () {
                 ;;
             h)
                 usage
-                exit 0
+                return 0
                 ;;
             l)
                 list_files
@@ -65,12 +65,12 @@ opts () {
             \?)
                 echo "[ERROR] Invalid option: -${OPTARG}" >&2
                 usage
-                exit 1
+                return 1
                 ;;
             :)
                 echo "[ERROR] Option -${OPTARG} requires an argument." >&2
                 usage
-                exit 1
+                return 1
                 ;;
         esac
     done
@@ -90,7 +90,7 @@ usage () {
     echo "  -h  Display this help message"
     echo "  -l  List available files"
     echo "  -o  Use <dir> for existing dot files"
-    exit 0
+    return 0
 }
 
 set_old_file_dir () {
@@ -99,14 +99,15 @@ set_old_file_dir () {
     else
         echo "[WARN] Directory ${1} does not exist, using ${OLD_FILE_DIR} for existing dot files"
     fi
+    return 0
 }
 
 set_copy_file () {
     # Ensure an argument is passed in and set the COPY_FILE variable or return an error
     if [ -z "${1}" ]; then
-        echo "[ERROR] No file name passed in, exiting"
+        echo "[ERROR] No file name passed in, returning"
         echo "[INFO] Use -l to list available files"
-        exit 1
+        return 1
     fi
     COPY_FILE="${1}"
 }
@@ -114,7 +115,43 @@ set_copy_file () {
 list_files () {
     echo "[INFO] Listing available files in ${DIR}"
     find ${DIR} -type f -name ".*" ${EXCLUDED_FILES_ARGS} -exec basename {} \;
-    exit 0
+    return 0
+}
+
+source_shrc () {
+    # Get the current user
+    if [ -n "$USER" ]; then
+        local user="$USER"
+    elif [ -n "$USERNAME" ]; then
+        local user="$USERNAME"
+    elif [ -n "$(whoami)" ]; then
+        local user="$(whoami)"
+    else
+        echo "[ERROR] Unable to determine the user"
+        return 1
+    fi
+    echo "[DEBUG] User is ${user}"
+    # If the user is not found, return an error
+    if [ -z "$user" ]; then
+        echo "[ERROR] Unable to determine the user"
+        return 1
+    fi
+    # Get the user's default shell
+    local shell=$(getent passwd "$user" | cut -d: -f7 | sed 's/\/bin\///')
+    shell=${shell##*/}
+    # echo "[DEBUG] Shell is ${shell}"
+    # echo "[INFO] Sourcing ${HOME}/.${shell}rc"
+    # shellcheck source=/dev/null
+    # source "${HOME}/.${shell}rc" # Note; seems to not work but running the same command again on the command line works fine
+    # If the last command failed, return an error
+    # if [ $? -ne 0 ]; then
+    #     echo "[ERROR] Unable to source ${HOME}/.${shell}rc"
+    #     return 1
+    # fi
+    # echo "[INFO] Sourced ${HOME}/.${shell}rc"
+    echo "[INFO] To apply the changes to the current shell, run the following command:"
+    echo "source ${HOME}/.${shell}rc"
+    return 0
 }
 
 create_old_file_dir () {
@@ -130,8 +167,8 @@ create_old_file_dir () {
 			mkdir -p "${SUBDIR}"
 		fi
 	fi
-	
 	OLD_FILE_DIR="${SUBDIR}"
+    return 0
 }
 
 copy_all_files () {
@@ -172,14 +209,17 @@ copy_all_files () {
             fi
         done
     fi
+    # Source the shell rc file
+    source_shrc
+    return 0
 }
 
 copy_selected_file () {
     # Handle the file name passed in and if not file name is passed return an error
     if [ -z "${COPY_FILE}" ]; then
-        echo "[ERROR] No file name passed in, exiting"
+        echo "[ERROR] No file name passed in, returning"
         echo "[INFO] Use -l to list available files"
-        exit 1
+        return 1
     fi
     echo "[INFO] Ensuring ${OLD_FILE_DIR} exists and creating if it does not"
     create_old_file_dir
@@ -188,7 +228,7 @@ copy_selected_file () {
     FILE=$(find "${DIR}" -type f -name "${COPY_FILE}" ${EXCLUDED_FILES_ARGS} ${EXCLUDED_DIRS_ARGS})
     if [ -z "${FILE}" ]; then
         echo "[ERROR] File ${COPY_FILE} not found"
-        exit 1
+        return 1
     fi
     # If the file is found then move the existing file to the OLD_FILE_DIR and create a symlink to the new file
     FILENAME=$(basename "${FILE}")
@@ -217,6 +257,11 @@ copy_selected_file () {
             ln -sf "${DIR}/Shell/applets" "${HOME}/applets"
         fi
     fi
+    # If the file copied is a shell rc file then source it by calling source_shrc
+    if [[ "${COPY_FILE}" =~ ^\..*rc$ ]]; then
+        source_shrc
+    fi
+    return 0
 }
 
 main "${@}"

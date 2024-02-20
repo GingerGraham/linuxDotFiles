@@ -128,11 +128,11 @@ export EDITOR=vim
 
 # If the current shell is bash then check if oh-my-posh is installed
 
-  # If oh-my-posh is installed then call ~/.omp to configure it
-  if command -v oh-my-posh &> /dev/null; then
-    # echo "$(date +'%Y-%m-%d %H:%M:%S.%3N') [DEBUG] [bash profile] oh-my-posh is installed"
-    source "${HOME}/.omp"
-  fi
+# If oh-my-posh is installed then call ~/.omp to configure it
+if command -v oh-my-posh &> /dev/null; then
+  # echo "$(date +'%Y-%m-%d %H:%M:%S.%3N') [DEBUG] [bash profile] oh-my-posh is installed"
+  source "${HOME}/.omp"
+fi
 
 # Adding node.js / nvm
 if [ -f ~/.nvm/nvm.sh ]; then
