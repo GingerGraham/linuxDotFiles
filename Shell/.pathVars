@@ -4,6 +4,11 @@
 # Purpose: Add additional paths to PATH
 # Use: Add additional paths to PATH by defining them here and they will be sourced by .zshrc
 
+# Set PATH to include users ~/bin directory if it exists
+if [[ -d "${HOME}/bin" ]] && [[ ":$PATH:" != *":${HOME}/bin:"* ]]; then
+  PATH="${HOME}/bin:${PATH}"
+fi
+
 # set PATH so it includes user's private ~/.local/bin if it exists
 if [[ -d "${HOME}/.local/bin" ]] && [[ ":$PATH:" != *":${HOME}/.local/bin:"* ]]; then
   PATH="${HOME}/.local/bin:${PATH}"
