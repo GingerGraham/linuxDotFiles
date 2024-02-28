@@ -45,6 +45,13 @@ elif command -v bat &> /dev/null; then
   alias cat="bat -p"
 fi
 
+# If btop is installed use it instead of top, else use htop if installed
+if command -v btop &> /dev/null; then
+  alias top="btop"
+elif command -v htop &> /dev/null; then
+  alias top="htop"
+fi
+
 # If iTerm2 is installed with the shell integrations set iTerm2 specific aliases
 if command -v it2profile &> /dev/null; then
   # iTerm2 Colour Profiles
@@ -73,6 +80,11 @@ if command -v git &> /dev/null; then
   alias gpl="git pull"
   alias gps="git push"
   alias git-remove-untracked='git fetch --prune && git branch -r | awk "{print \$1}" | egrep -v -f /dev/fd/0 <(git branch -vv | grep origin) | awk "{print \$1}" | xargs git branch -D'
+fi
+
+# If the github cli and copilot extension are installed, set alias for copilot
+if command -v gh &> /dev/null && gh extension list | grep -q "gh copilot"; then
+  alias copilot="gh copilot"
 fi
 
 # If ansible is installed, set ansible specific aliases
