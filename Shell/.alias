@@ -37,6 +37,12 @@ if command -v pip3 &> /dev/null; then
   alias pip="pip3"
 fi
 
+# If acpi command is installed, set aliases for power management
+if command -v acpi &> /dev/null; then
+  alias battery="acpi -bi"
+  alias power="acpi -a"
+fi
+
 # If batcat or bat is installed, use it for cat
 if command -v batcat &> /dev/null; then
   alias cat="batcat -p"
