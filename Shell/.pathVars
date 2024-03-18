@@ -57,3 +57,13 @@ fi
 if command -v helm 1>/dev/null 2>&1 && [[ ":$PATH:" != *":${HOME}/.helm:"* ]]; then
   export PATH="${PATH}:${HOME}/.helm"
 fi
+
+# If dotnet is installed and the ~/.dotnet directory exists add to PATH
+if [[ -d "${HOME}/.dotnet" ]] && [[ ":$PATH:" != *":${HOME}/.dotnet:"* ]]; then
+  export PATH="${PATH}:${HOME}/.dotnet"
+fi
+
+# If dotnet is installed and the ~/.dotnet/tools directory exists add to PATH
+if [[ -d "${HOME}/.dotnet/tools" ]] && [[ ":$PATH:" != *":${HOME}/.dotnet/tools:"* ]]; then
+  export PATH="${PATH}:${HOME}/.dotnet/tools"
+fi
