@@ -170,3 +170,11 @@ if command -v terragrunt &> /dev/null; then
   alias tgva="terragrunt validate"
   alias tgws="terragrunt workspace"
 fi
+
+# If shell is zsh set zsh specific aliases
+if [[ "${SHELL}" = *"/zsh" ]]; then
+  alias zshconfig="vim ~/.zshrc"
+  alias zshsource="source ~/.zshrc"
+  alias zshreload="exec zsh"
+  alias history="history 1"
+fi
