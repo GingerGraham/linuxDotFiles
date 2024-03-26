@@ -6,7 +6,8 @@ VERSION=2.2.1
 OPT_STRING=":adf:hlo:"
 
 TASK="" # Task to perform
-DIR=$(pwd)
+# DIR=$(pwd)
+DIR=$(dirname "${0}")
 OLD_FILE_DIR=${HOME}/.oldDotFiles
 COPY_FILE="" # File to copy
 DRY_RUN=false
@@ -137,19 +138,26 @@ source_shrc () {
         return 1
     fi
     # Get the user's default shell
-    local shell=$(getent passwd "$user" | cut -d: -f7 | sed 's/\/bin\///')
+    local shell
+    shell=$(getent passwd "$user" | cut -d: -f7 | sed 's/\/bin\///' | sed 's/\/usr\///' | sed 's/usr//')
     shell=${shell##*/}
     # echo "[DEBUG] Shell is ${shell}"
     # echo "[INFO] Sourcing ${HOME}/.${shell}rc"
-    # shellcheck source=/dev/null
-    # source "${HOME}/.${shell}rc" # Note; seems to not work but running the same command again on the command line works fine
-    # If the last command failed, return an error
+    # # shellcheck source=/dev/null
+    # if [ "${DRY_RUN}" = true ]; then
+    #     echo "source ${HOME}/.${shell}rc"
+    # else
+    #     echo "[DEBUG] Sourcing ${HOME}/.${shell}rc"
+    #     source "${HOME}/.${shell}rc"
+    #     echo "[DEBUG] Sourced ${HOME}/.${shell}rc"
+    # fi
+    # # If the last command failed, return an error
     # if [ $? -ne 0 ]; then
     #     echo "[ERROR] Unable to source ${HOME}/.${shell}rc"
     #     return 1
     # fi
-    # echo "[INFO] Sourced ${HOME}/.${shell}rc"
-    echo "[INFO] To apply the changes to the current shell, run the following command:"
+    # echo "[INFO] Sourced ${HOME}/.${shell}rc if aliases or applets were added, they are now available in the current shell. If not run the command below manually."
+    echo "[INFO] Run the command below manually to source the ${HOME}/.${shell}rc file"
     echo "source ${HOME}/.${shell}rc"
     return 0
 }
@@ -196,6 +204,16 @@ copy_all_files () {
             ln -sf "${FILE}" "${HOME}/${FILENAME}"
         fi
     done
+    echo "[DEBUG] Copying machine specific config file"
+    # Copy machine_local.template to ${HOME}/.machine_local if it does not exist
+    if [ ! -f "${HOME}/.machine_local" ]; then
+        echo "[INFO] Copying ${DIR}/Shell/machine_local.template to ${HOME}/.machine_local"
+        if [ "${DRY_RUN}" = true ]; then
+            echo "cp ${DIR}/Shell/machine_local.template ${HOME}/.machine_local"
+        else
+            cp "${DIR}/Shell/machine_local.template" "${HOME}/.machine_local"
+        fi
+    fi
     # echo "[DEBUG] Linking directories"
     # If there are one or more subdirectories of ./Shell (relative to the current directory of this script) then create directory links to them in ${HOME}
     if [ -d "${DIR}/Shell" ]; then

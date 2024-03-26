@@ -84,3 +84,8 @@ fi
 if [[ -f ~/.tasks ]]; then
 	source ~/.tasks
 fi
+
+# Adding machine specific configuration
+if [[ -f ~/.machine_local ]]; then
+  source ~/.machine_local
+fi
