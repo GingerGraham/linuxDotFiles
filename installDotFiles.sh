@@ -115,7 +115,7 @@ set_copy_file () {
 
 list_files () {
     echo "[INFO] Listing available files in ${DIR}"
-    find "${DIR}" -type f -name ".*" "${EXCLUDED_FILES_ARGS}" -exec basename {} \;
+    find "${DIR}" -type f -name ".*" ${EXCLUDED_FILES_ARGS} -exec basename {} \;
     return 0
 }
 
@@ -186,7 +186,7 @@ copy_all_files () {
     echo "[INFO] Copying all dot files"
 
     # Find the dot files in any subdirectory
-    find "${DIR}" -type f -name ".*" "${EXCLUDED_FILES_ARGS}" -not -path "*/.git/*" | while IFS= read -r FILE; do
+    find "${DIR}" -type f -name ".*" ${EXCLUDED_FILES_ARGS} -not -path "*/.git/*" | while IFS= read -r FILE; do
         FILENAME=$(basename "${FILE}")
         echo "[INFO] Moving existing ${FILENAME} from ${HOME} to ${OLD_FILE_DIR} if it exists"
         if [ "${DRY_RUN}" = true ]; then
@@ -244,7 +244,7 @@ copy_selected_file () {
     create_old_file_dir
     echo "[INFO] Copying ${COPY_FILE}"
     # Search the parent directory of this script and all subdirectories for the file name passed in
-    FILE=$(find "${DIR}" -type f -name "${COPY_FILE}" "${EXCLUDED_FILES_ARGS}" "${EXCLUDED_DIRS_ARGS}")
+    FILE=$(find "${DIR}" -type f -name "${COPY_FILE}" ${EXCLUDED_FILES_ARGS} "${EXCLUDED_DIRS_ARGS}")
     if [ -z "${FILE}" ]; then
         echo "[ERROR] File ${COPY_FILE} not found"
         return 1
