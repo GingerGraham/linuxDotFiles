@@ -13,9 +13,14 @@ cheat(){
     curl "cheat.sh/$1"
 }
 
+git-remove-untracked() {
+  git fetch --prune && git branch -r | awk "{print \$1}" | grep -E -v -f /dev/fd/0 <(git branch -vv | grep origin) | awk "{print \$1}" | xargs git branch -D
+}
+
 # Show SSH Tunnel
 show_ssh_tunnel(){
-  ps -aux | grep -iE 'ssh\s+(-[fNL]+\s+)*-?[fNL]+'
+  # ps -aux | grep -iE 'ssh\s+(-[fNL]+\s+)*-?[fNL]+'
+  pgrep -f 'ssh\s+(-[fNL]+\s+)*-?[fNL]+'
 }
 
 # Test sudo access
@@ -48,7 +53,8 @@ update_tools () {
 # Get the version of GO if installed and save it to an envrioment variable
 get_go_version () {
   if [[ -x "$(command -v go)" ]]; then
-    export GO_VERSION=$(go version | awk '{print $3}'| tr -d 'go')
+    GO_VERSION=$(go version | awk '{print $3}'| tr -d 'go')
+    export GO_VERSION
   else
     echo "[ERROR] GO is not installed"
     return 1

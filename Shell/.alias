@@ -85,7 +85,6 @@ if command -v git &> /dev/null; then
   alias gst="git status"
   alias gpl="git pull"
   alias gps="git push"
-  alias git-remove-untracked='git fetch --prune && git branch -r | awk "{print \$1}" | egrep -v -f /dev/fd/0 <(git branch -vv | grep origin) | awk "{print \$1}" | xargs git branch -D'
 fi
 
 # If the github cli and copilot extension are installed, set alias for copilot
