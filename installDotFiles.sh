@@ -166,7 +166,7 @@ create_old_file_dir () {
 	CURRENT_DATE=$(date +"%Y-%m-%d")
 	CURRENT_TIME=$(date +"%H-%M-%S")
 	SUBDIR="${OLD_FILE_DIR}/${CURRENT_DATE}/${CURRENT_TIME}"
-	
+
 	if [ ! -d "${SUBDIR}" ]; then
 		echo "[INFO] Creating ${SUBDIR} for existing dot files"
 		if [ "${DRY_RUN}" = true ]; then
@@ -201,7 +201,7 @@ copy_all_files () {
         if [ "${DRY_RUN}" = true ]; then
             echo "ln -sf ${FILE} ${HOME}/${FILENAME}"
         else
-            ln -sf "${FILE}" "${HOME}/${FILENAME}"
+            ln -sf "$(realpath --relative-to="${HOME}" "${FILE}")" "${HOME}/${FILENAME}"
         fi
     done
     echo "[DEBUG] Copying machine specific config file"
@@ -218,12 +218,12 @@ copy_all_files () {
     # If there are one or more subdirectories of ./Shell (relative to the current directory of this script) then create directory links to them in ${HOME}
     if [ -d "${DIR}/Shell" ]; then
         echo "[INFO] Creating directory links to ${DIR}/Shell subdirectories in ${HOME}"
-        find "${DIR}/Shell" -mindepth 1 -maxdepth 1 -type d ${EXCLUDED_DIRS_ARGS} | while IFS= read -r SUBDIR; do
-            echo "[INFO] Creating symlink from ${SUBDIR} to ${HOME}/$(basename ${SUBDIR})"
+        find "${DIR}/Shell" -mindepth 1 -maxdepth 1 -type d "${EXCLUDED_DIRS_ARGS}" | while IFS= read -r SUBDIR; do
+            echo "[INFO] Creating symlink from ${SUBDIR} to ${HOME}/$(basename "${SUBDIR}")"
             if [ "${DRY_RUN}" = true ]; then
-                echo "ln -sf ${SUBDIR} ${HOME}/$(basename ${SUBDIR})"
+                echo "ln -sf $(realpath --relative-to="${HOME}" "${SUBDIR}") ${HOME}/$(basename "${SUBDIR}")"
             else
-                ln -sf "${SUBDIR}" ${HOME}/$(basename ${SUBDIR})
+                ln -sf "$(realpath --relative-to="${HOME}" "${SUBDIR}")" "${HOME}"/"$(basename "${SUBDIR}")"
             fi
         done
     fi
@@ -264,7 +264,7 @@ copy_selected_file () {
     if [ "${DRY_RUN}" = true ]; then
         echo "ln -sf ${FILE} ${HOME}/${FILENAME}"
     else
-        ln -sf "${FILE}" "${HOME}/${FILENAME}"
+        ln -sf "$(realpath --relative-to="${HOME}" "${FILE}")" "${HOME}/${FILENAME}"
     fi
     # If COPY_FILE is .applets then we also need to symlink ${DIR}/Shell/applets to ${HOME}/.applets
     if [ "${COPY_FILE}" = ".applets" ]; then
@@ -272,7 +272,7 @@ copy_selected_file () {
         if [ "${DRY_RUN}" = true ]; then
             echo "ln -sf ${DIR}/Shell/applets ${HOME}/applets"
         else
-            ln -sf "${DIR}/Shell/applets" "${HOME}/applets"
+            ln -sf "$(realpath --relative-to="${HOME}" "${DIR}/Shell/applets")" "${HOME}/applets"
         fi
     fi
     # If the file copied is a shell rc file then source it by calling source_shrc
