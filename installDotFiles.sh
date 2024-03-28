@@ -83,7 +83,7 @@ usage () {
     echo
     echo "Purpose: This script creates symlinks from ${HOME}/ to a dotfiles directory cloned from github"
     echo
-    echo "Usage: $(basename $0) [-a] [-d] [-f <file>] [-h] [-l] [-o <dir>]"
+    echo "Usage: $(basename "$0") [-a] [-d] [-f <file>] [-h] [-l] [-o <dir>]"
     echo
     echo "  -a  Copy all dot files"
     echo "  -d  Dry run"
@@ -115,7 +115,7 @@ set_copy_file () {
 
 list_files () {
     echo "[INFO] Listing available files in ${DIR}"
-    find ${DIR} -type f -name ".*" ${EXCLUDED_FILES_ARGS} -exec basename {} \;
+    find "${DIR}" -type f -name ".*" ${EXCLUDED_FILES_ARGS} -exec basename {} \;
     return 0
 }
 
@@ -126,7 +126,8 @@ source_shrc () {
     elif [ -n "$USERNAME" ]; then
         local user="$USERNAME"
     elif [ -n "$(whoami)" ]; then
-        local user="$(whoami)"
+        local user
+        user="$(whoami)"
     else
         echo "[ERROR] Unable to determine the user"
         return 1
@@ -243,7 +244,7 @@ copy_selected_file () {
     create_old_file_dir
     echo "[INFO] Copying ${COPY_FILE}"
     # Search the parent directory of this script and all subdirectories for the file name passed in
-    FILE=$(find "${DIR}" -type f -name "${COPY_FILE}" ${EXCLUDED_FILES_ARGS} ${EXCLUDED_DIRS_ARGS})
+    FILE=$(find "${DIR}" -type f -name "${COPY_FILE}" ${EXCLUDED_FILES_ARGS} "${EXCLUDED_DIRS_ARGS}")
     if [ -z "${FILE}" ]; then
         echo "[ERROR] File ${COPY_FILE} not found"
         return 1
