@@ -1,0 +1,101 @@
+#!/usr/bin/env bash
+
+# Path: .applets
+# Purpose: General purpose applets for shell commands
+# Use: Add applets to this file and they will be sourced by ~/.applets
+
+# This script adds helper functions to the shell
+# It is sourced by .bashrc or .zshrc via ~/.applets
+# Define additional functions here
+
+# If distro is Fedora complete the steps to upgrade to the specified version
+# Accepts one named argument which is the version to upgrade to
+# Example: fedora_upgrade -v 40
+fedora_upgrade() {
+  local version
+  while (( "$#" )); do
+    case "$1" in
+      -v|--version)
+        version=$2
+        shift 2
+        ;;
+      [0-9]*)
+        version=$1
+        shift
+        ;;
+      *)
+        echo "Error: Invalid argument"
+        return 1
+        ;;
+    esac
+  done
+
+  if [[ -z $version ]]; then
+    echo "[ERROR] No version specified"
+    return 1
+  fi
+
+  # Check if the system already needs a reboot
+  if [[ -f /var/run/reboot-required ]]; then
+    echo "[ERROR] System needs a reboot"
+    return 1
+  fi
+
+  if [[ -f /etc/fedora-release ]]; then
+    echo "[INFO] Updating Fedora to version $version"
+    sudo dnf -y --refresh update
+    sudo dnf -y upgrade
+    # If the system needs a reboot, do not continue, prompt the user to reboot and then run the script again
+    if [[ -f /var/run/reboot-required ]]; then
+      echo "[ERROR] System needs a reboot"
+      echo "[INFO] Reboot the system and run 'fedora_upgrade -v $version' again"
+      return 1
+    fi
+    sudo dnf -y install dnf-plugin-system-upgrade
+    sudo dnf -y system-upgrade download --releasever="$version"
+    sudo dnf -y system-upgrade reboot
+  else
+    echo "[ERROR] Not a Fedora system"
+    return 1
+  fi
+}
+
+# If distro is Ubuntu complete the steps to upgrade to the specified version
+ubuntu_upgrade() {
+  # Check if the system already needs a reboot
+  if [[ -f /var/run/reboot-required ]]; then
+    echo "[ERROR] System needs a reboot"
+    return 1
+  fi
+
+  if [[ -f /etc/lsb-release ]]; then
+    echo "[INFO] Updating Ubuntu"
+    sudo apt update
+    sudo apt upgrade -y
+    sudo apt dist-upgrade -y
+    sudo apt install update-manager-core
+    sudo do-release-upgrade -f DistUpgradeViewNonInteractive -m desktop
+  else
+    echo "[ERROR] Not an Ubuntu system"
+    return 1
+  fi
+}
+
+# If the distro is openSUSE complete the steps to upgrade to the specified version
+opensuse_upgrade() {
+  # Check if the system already needs a reboot
+  if [[ -f /var/run/reboot-required ]]; then
+    echo "[ERROR] System needs a reboot"
+    return 1
+  fi
+
+  if [[ -f /etc/os-release ]]; then
+    echo "[INFO] Updating openSUSE"
+    sudo zypper refresh
+    sudo zypper update
+    sudo zypper dist-upgrade
+  else
+    echo "[ERROR] Not an openSUSE system"
+    return 1
+  fi
+}
