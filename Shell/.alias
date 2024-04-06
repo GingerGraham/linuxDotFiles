@@ -114,8 +114,13 @@ alias sshhosts="grep -E '^Host\s' ~/.ssh/config"
 
 # If OS is Linux and ClamAV is installed, set aliases for ClamAV
 if [[ "${OS}" = "Linux" ]] && command -v clamscan &> /dev/null; then
-  alias clam="sudo nice -n 15 clamscan && sudo clamscan --bell -i -r /home"
-  alias av="sudo nice -n 15 clamscan && sudo clamscan --bell -i -r /home"
+  alias av="sudo clamscan -r"
+  alias clam="sudo clamscan -r"
+  alias scan="sudo clamscan -r"
+  alias clam-home="echo '[INFO] Running clamscan on /home'; sudo nice -n 15 clamscan --bell -i -r /home"
+  alias av-home="echo '[INFO] Running clamscan on /home'; sudo nice -n 15 clamscan --bell -i -r /home"
+  alias clam-update="sudo freshclam"
+  alias av-update="sudo freshclam"
 fi
 
 # If kubectl is installed configure an alias for kube-version
