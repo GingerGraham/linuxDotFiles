@@ -85,6 +85,11 @@ if command -v git &> /dev/null; then
   alias gst="git status"
   alias gpl="git pull"
   alias gps="git push"
+  # If the git_cleanup function is defined, set an alias for it
+  if declare -f git_cleanup &> /dev/null; then
+    alias gitcleanup="git_cleanup"
+    alias git-remove-untracked="git_cleanup"
+  fi
 fi
 
 # If the github cli and copilot extension are installed, set alias for copilot
