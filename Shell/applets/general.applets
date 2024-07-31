@@ -68,3 +68,15 @@ get_go_version () {
     return 1
   fi
 }
+
+# Get and return public IPv4 and IPv6 addresses
+# Use dig if dig is available, otherwise use curl
+get_public_ip () {
+  if [[ -x "$(command -v dig)" ]]; then
+    echo "IPv4: $(dig -4 TXT +short o-o.myaddr.l.google.com @ns1.google.com | awk -F'"' '{ print $2}')"
+    echo "IPv6: $(dig -6 TXT +short o-o.myaddr.l.google.com @ns1.google.com | awk -F'"' '{ print $2}')"
+  else
+    echo "IPv4: $(curl -s https://ipv4.icanhazip.com)"
+    echo "IPv6: $(curl -s https://ipv6.icanhazip.com)"
+  fi
+}

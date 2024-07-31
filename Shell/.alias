@@ -187,3 +187,8 @@ if [[ "${SHELL}" = *"/zsh" ]]; then
   alias zshreload="exec zsh"
   alias history="history 1"
 fi
+
+# If the nautilus file browser is installed, set an alias for it to open the file browser
+if command -v nautilus &> /dev/null; then
+  alias explorer="nautilus --browser &"
+fi
