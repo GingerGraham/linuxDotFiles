@@ -39,12 +39,12 @@ if [[ -d "${HOME}/.cargo/bin" ]] && [[ ":$PATH:" != *":${HOME}/.cargo/bin:"* ]];
 fi
 
 # If tfenv is installed (by testing for the tfenv command) add to PATH
-if command -v tfenv 1>/dev/null 2>&1 && [[ ":$PATH:" != *":${HOME}/.tfenv/bin:"* ]]; then
+if [[ -d ${HOME}/.tfenv/bin ]] && command -v ${HOME}/.tfenv/bin/tfenv 1>/dev/null 2>&1 && [[ ":$PATH:" != *":${HOME}/.tfenv/bin:"* ]]; then
   export PATH="${HOME}/.tfenv/bin:${PATH}"
 fi
 
 # If pkenv is installed (by testing for the pkenv command) add to PATH
-if command -v pkenv 1>/dev/null 2>&1 && [[ ":$PATH:" != *":${HOME}/.pkenv/bin:"* ]]; then
+if [[ -d ${HOME}/.pkenv/bin ]] && command -v ${HOME}/.pkenv/bin/pkenv 1>/dev/null 2>&1 && [[ ":$PATH:" != *":${HOME}/.pkenv/bin:"* ]]; then
   export PATH="${HOME}/.pkenv/bin:${PATH}"
 fi
 
@@ -66,4 +66,9 @@ fi
 # If dotnet is installed and the ~/.dotnet/tools directory exists add to PATH
 if [[ -d "${HOME}/.dotnet/tools" ]] && [[ ":$PATH:" != *":${HOME}/.dotnet/tools:"* ]]; then
   export PATH="${PATH}:${HOME}/.dotnet/tools"
+fi
+
+# If pyenv is installed add to PATH
+if [[ -d "${HOME}/.pyenv" ]] && [[ ":$PATH:" != *":${HOME}/.pyenv/bin:"* ]]; then
+  export PATH="${HOME}/.pyenv/bin:${PATH}"
 fi
