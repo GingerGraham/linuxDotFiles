@@ -9,3 +9,8 @@ log/
 
 # Ignore vscode settings
 .vscode/
+
+# Ignore dockerfile(s) in the testing directory
+testing/**/*.Dockerfile
+testing/**/dockerfile
+**/dockerfile
