@@ -37,10 +37,6 @@ HISTSIZE=1000
 SAVEHIST=1000
 HISTFILE=~/.zsh_history
 
-# Use modern completion system
-autoload -Uz compinit
-compinit
-
 # Setting completion styles
 zstyle ':completion:*' auto-description 'specify: %d'
 zstyle ':completion:*' completer _expand _complete _correct _approximate
@@ -73,7 +69,9 @@ elif [[ -d /usr/share/zsh-autosuggestions ]]; then
   ZSH_AUTOSUGGEST_STRATEGY=(history completion)
 elif [[ -d "${HOME}/.oh-my-zsh/custom/plugins/zsh-autosuggestions" ]]; then
   # Customising ZSH Autosuggestion
+  # shellcheck disable=SC2034
   ZSH_AUTOSUGGEST_HIGHLIGHT_STYLE="fg=#c6c6c6"
+  # shellcheck disable=SC2034
   ZSH_AUTOSUGGEST_STRATEGY=(history completion)
 fi
 
@@ -83,3 +81,7 @@ if [[ -d "${HOME}/.zsh/zsh-syntax-highlighting" ]]; then
 elif [[ -d /usr/share/zsh-syntax-highlighting ]]; then
   source /usr/share/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh
 fi
+
+# Use modern completion system
+autoload -Uz compinit
+compinit

@@ -7,6 +7,8 @@
 # If NVM is installed (https://github.com/nvm-sh/nvm#installing-and-updating) apply configuration to load NVM
 if [[ -d "${HOME}/.nvm" ]]; then
   export NVM_DIR="${HOME}/.nvm"
+  # shellcheck disable=SC1091
   [ -s "${NVM_DIR}/nvm.sh" ] && \. "${NVM_DIR}/nvm.sh"  # This loads nvm
+  # shellcheck disable=SC1091
   [ -s "${NVM_DIR}/bash_completion" ] && \. "${NVM_DIR}/bash_completion"  # This loads nvm bash_completion
 fi

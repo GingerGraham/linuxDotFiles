@@ -51,15 +51,6 @@ if [ "${OS}" = "Mac" ]; then
 	test -e "${HOME}/.iterm2_shell_integration.zsh" && source "${HOME}/.iterm2_shell_integration.zsh"
 fi
 
-# Confirm the user SHELL and if it is zsh then source the .zsh_profile file or if it is bash then source the .bash_profile file
-if [[ "${CURRENT_SHELL}" == "zsh" ]]; then
-    # echo "$(date +'%Y-%m-%d %H:%M:%S.%3N') [DEBUG] Sourcing .zsh_profile"
-    source "${HOME}/.zsh_profile"
-elif [[ "${CURRENT_SHELL}" == "bash" ]]; then
-    # echo "$(date +'%Y-%m-%d %H:%M:%S.%3N') [DEBUG] Sourcing .bash_profile"
-    source "${HOME}/.bash_profile"
-fi
-
 # Adding aliases
 if [[ -f ~/.alias ]]; then
   source ~/.alias
@@ -88,4 +79,27 @@ fi
 # Adding machine specific configuration
 if [[ -f ~/.machine_local ]]; then
   source ~/.machine_local
+fi
+
+if [ -f ~/.asdf/asdf.sh ]; then
+  source ~/.asdf/asdf.sh
+fi
+
+# Confirm the user SHELL and if it is zsh then source the .zsh_profile file or if it is bash then source the .bash_profile file
+if [[ "${CURRENT_SHELL}" == "zsh" ]]; then
+  # Test if asdf is installed and if so load and configure it
+  # if [[ -d "${HOME}/.asdf" ]]; then
+    # if [[ ! "${fpath[*]}" =~ ${ASDF_DIR}/completions ]]; then
+    #   fpath=("${ASDF_DIR}/completions" "${fpath}")
+    # fi
+  # fi
+  # echo "$(date +'%Y-%m-%d %H:%M:%S.%3N') [DEBUG] Sourcing .zsh_profile"
+  source "${HOME}/.zsh_profile"
+elif [[ "${CURRENT_SHELL}" == "bash" ]]; then
+  # Test if asdf is installed and if so load and configure it
+  if [ -f ~/.asdf/asdf.sh ]; then
+    source ~/.asdf/completions/asdf.bash
+  fi
+  # echo "$(date +'%Y-%m-%d %H:%M:%S.%3N') [DEBUG] Sourcing .bash_profile"
+  source "${HOME}/.bash_profile"
 fi

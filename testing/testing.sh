@@ -2,11 +2,13 @@
 # This script is used to provide a testing environment for the shell configuration contained within this repo
 # The script will build a Docker image and run a container with mapping the linuxDotFiles directory to the container to allow for testing
 
-VERSION=1.2.1
+VERSION=1.3.2
 OPT_STRING=":d:huv:"
 
 DISTRO=""
 DISTRO_VERSION=""
+# Set container name to be the name of the repo which would be the directory which is the parent of the directory this script is in
+CONTAINER_NAME=$(basename "$(dirname "$(dirname "$(realpath "$0")")")" | tr '[:upper:]' '[:lower:]')
 
 main () {
     opts "${@}"
@@ -110,7 +112,7 @@ set_image_tag () {
 
 image_exists () {
     # Check if the Docker image exists
-    if [[ -z $(docker images -q dotfiletest:"${IMAGE_TAG}") ]]; then
+    if [[ -z $(docker images -q ${CONTAINER_NAME}:"${IMAGE_TAG}") ]]; then
         IMAGE_EXISTS=false
     else
         IMAGE_EXISTS=true
@@ -159,7 +161,7 @@ build_image () {
             ;;
     esac
 
-    docker build -t dotfiletest:"${IMAGE_TAG}" --file dockerfile "${SCRIPT_DIR}"
+    docker build -t ${CONTAINER_NAME}:"${IMAGE_TAG}" --file dockerfile "${SCRIPT_DIR}"
 
     # Check if the build was successful
     if [[ $? -ne 0 ]]; then
@@ -178,13 +180,13 @@ run_container () {
     # Run the Docker container and map the local directory to a directory in the container
     echo "[INFO] Running Docker container"
     # Check if the container already exists and if it does, remove it
-    if [[ -n $(docker ps -a --filter "name=dotfiletest-${DISTRO}${DISTRO_VERSION}" --format '{{.Names}}') ]]; then
+    if [[ -n $(docker ps -a --filter "name=${CONTAINER_NAME}-${DISTRO}${DISTRO_VERSION}" --format '{{.Names}}') ]]; then
         echo "[WARN] Container exists, removing container"
-        docker rm -f "dotfiletest-${DISTRO}${DISTRO_VERSION}"
+        docker rm -f "${CONTAINER_NAME}-${DISTRO}${DISTRO_VERSION}"
         echo "[INFO] Container removed"
     fi
     echo "[INFO] Starting container"
-    docker run -it -v "$(dirname "$(dirname "$(realpath "$0")")")":/home/test-user/testing:Z -u test-user --name "dotfiletest-${DISTRO}${DISTRO_VERSION}" --hostname "dotfiletest-${DISTRO}${DISTRO_VERSION}" dotfiletest:"${IMAGE_TAG}"
+    docker run -it -v "$(dirname "$(dirname "$(realpath "$0")")")":/home/test-user/testing:Z -u test-user --name "${CONTAINER_NAME}-${DISTRO}${DISTRO_VERSION}" --hostname "${CONTAINER_NAME}-${DISTRO}${DISTRO_VERSION}" ${CONTAINER_NAME}:"${IMAGE_TAG}"
     return 0
 }
 
