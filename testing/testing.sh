@@ -2,20 +2,30 @@
 # This script is used to provide a testing environment for the shell configuration contained within this repo
 # The script will build a Docker image and run a container with mapping the linuxDotFiles directory to the container to allow for testing
 
-VERSION=1.3.2
-OPT_STRING=":d:huv:"
+set -euo pipefail
+
+VERSION=1.4.4
+OPT_STRING=":cd:huv:"
 
 DISTRO=""
 DISTRO_VERSION=""
+CLEANUP=false
 # Set container name to be the name of the repo which would be the directory which is the parent of the directory this script is in
 CONTAINER_NAME=$(basename "$(dirname "$(dirname "$(realpath "$0")")")" | tr '[:upper:]' '[:lower:]')
 
 main () {
     opts "${@}"
     set_defaults
+    echo "[INFO] Running $(basename "$0") version ${VERSION}"
+    script_dir
+    if [[ ${CLEANUP} == true ]]; then
+        echo "[INFO] Cleaning up Docker images and containers"
+        cleanup
+        echo "[INFO] Cleanup complete"
+        exit 0
+    fi
     echo "[INFO] Distribution: ${DISTRO}"
     echo "[INFO] Distribution version: ${DISTRO_VERSION}"
-    script_dir
     test_docker
     set_image_tag
     build_image
@@ -25,6 +35,9 @@ main () {
 opts () {
     while getopts ${OPT_STRING} opt; do
         case $opt in
+            c)
+                CLEANUP=true
+                ;;
             d)
                 DISTRO="${OPTARG}"
                 ;;
@@ -61,24 +74,67 @@ usage () {
     echo "Usage: $(basename $0) [-d <distro>] [-h] [-v <distro_version>]"
     echo
     echo "Options:"
-    echo "  -d <distro>         The Linux distribution to use for the Docker image"
-    echo "  -h                  Display this help message"
+    echo "  -c                  Cleanup the Docker images and containers"
+    echo "  -d <distro>         The Linux distribution to use for the Docker image (default: ubuntu)"
     echo "  -u                  Update the Docker image"
     echo "  -v <distro_version> The version of the Linux distribution to use for the Docker image (default: latest)"
+    echo "  -h                  Display this help message"
     echo
-
+    echo "Examples:"
+    echo "  $(basename $0)  #Default to Ubuntu latest"
+    echo "  $(basename $0) -d ubuntu -v 20.04"
+    echo "  $(basename $0) -d fedora -v 32"
+    echo "  $(basename $0) -d opensuse -v tumbleweed"
+    echo "  $(basename $0) -c"
+    echo
+    echo "Warning: The -c option will remove all Docker images and containers with the name ${CONTAINER_NAME}. When the image is removed if other projects have also used the same image, they will also be removed"
+    return 0
 }
 
 set_defaults () {
     # If values are not provided, set defaults
-    if [[ -z ${DISTRO} ]]; then
+    if [[ -z ${DISTRO:-} ]]; then
         DISTRO="ubuntu"
     fi
-    if [[ -z ${DISTRO_VERSION} ]]; then
+    if [[ -z ${DISTRO_VERSION:-} ]]; then
         DISTRO_VERSION="latest"
     fi
-    if [[ -z ${UPDATE_IMAGE} ]]; then
+    if [[ -z ${UPDATE_IMAGE:-} ]]; then
         UPDATE_IMAGE=false
+    fi
+    return 0
+}
+
+cleanup () {
+    # Remove the Docker image and container created by the testing script and remove the dockerfile
+    echo "[INFO] Cleaning up Docker images and containers"
+    # Remove all dotfiletest containers
+    if docker ps -a | grep "${CONTAINER_NAME}" | awk '{print $1}' | xargs -I {} docker rm -f {}; then
+        echo "[INFO] Containers removed"
+    else
+        echo "[ERROR] Failed to remove containers"
+    fi
+    # Remove all dotfiletest images
+    if docker images | grep "${CONTAINER_NAME}" | awk '{print $3}' | xargs -I {} docker rmi -f {}; then
+        echo "[INFO] Images removed"
+    else
+        echo "[ERROR] Failed to remove images"
+    fi
+    # Remove the dockerfile from the directory that this script is held in regardless of the current working directory
+    if [[ -f "${SCRIPT_DIR}"/dockerfile ]]; then
+        if rm "${SCRIPT_DIR}"/dockerfile; then
+            echo "[INFO] Dockerfile removed"
+        else
+            echo "[ERROR] Failed to remove dockerfile"
+        fi
+    fi
+    # If the dockerfile was created in the dir above the current working directory, remove it
+    if [[ -f "$(dirname "$(dirname "${SCRIPT_DIR}")")"/dockerfile ]]; then
+        if rm "$(dirname "$(dirname "${SCRIPT_DIR}")")"/dockerfile; then
+            echo "[INFO] Dockerfile removed"
+        else
+            echo "[ERROR] Failed to remove dockerfile"
+        fi
     fi
     return 0
 }
@@ -94,6 +150,8 @@ test_docker () {
     # Test if Docker is installed
     if ! [ -x "$(command -v docker)" ]; then
         echo "[ERROR] Docker is not installed" >&2
+        echo "[ERROR] Please install Docker before running this script" >&2
+        echo "[ERROR] If using podman please install podman-docker" >&2
         exit 1
     fi
     echo "[INFO] Docker is installed"
