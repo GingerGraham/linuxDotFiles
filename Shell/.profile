@@ -51,6 +51,11 @@ if [ "${OS}" = "Mac" ]; then
 	test -e "${HOME}/.iterm2_shell_integration.zsh" && source "${HOME}/.iterm2_shell_integration.zsh"
 fi
 
+# If bat is installed set the BAT_THEME to Visual Studio Dark+
+if command -v bat &> /dev/null; then
+  export BAT_THEME="Visual Studio Dark+"
+fi
+
 # Adding aliases
 if [[ -f ~/.alias ]]; then
   source ~/.alias
