@@ -10,7 +10,7 @@ echo "[DEBUG] Building Dockerfile for ${DISTRO}:${DISTRO_VERSION}"
 cat << EOF > dockerfile
 FROM ${DISTRO}:${DISTRO_VERSION}
 
-RUN groupadd -g 1000 test-user && useradd -u 1000 -g test-user -s /bin/bash -m test-user
+RUN groupadd -g 2000 test-user && useradd -u 2000 -g test-user -s /bin/bash -m test-user
 
 # Set the working directory
 WORKDIR /home/test-user

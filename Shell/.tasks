@@ -32,12 +32,15 @@ fi
 # If WSL is true and keychain is installed then load the keychain
 if [[ "${WSL}" = true ]] && command -v keychain &> /dev/null; then
 	if [[ ! -z "${HOSTNAME}" ]]; then
-		source ${HOME}/.keychain/${HOSTNAME}-sh
+		# shellcheck disable=SC1090
+		source "${HOME}"/.keychain/"${HOSTNAME}"-sh
 		ssh-add -A
 	elif [[ ! -z "${HOST}" ]]; then
-		source ${HOME}/.keychain/${HOST}-sh
+		# shellcheck disable=SC1090
+		source "${HOME}"/.keychain/"${HOST}"-sh
 	elif [[ ! -z "${NAME}" ]]; then
-		source ${HOME}/.keychain/${NAME}-sh
+		# shellcheck disable=SC1090
+		source "${HOME}"/.keychain/"${NAME}"-sh
 	else
 		echo "Unable to load keychain"
 	fi
