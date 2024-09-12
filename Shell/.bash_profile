@@ -134,17 +134,6 @@ if command -v oh-my-posh &> /dev/null; then
   source "${HOME}/.omp"
 fi
 
-# Adding node.js / nvm
-if [ -f ~/.nvm/nvm.sh ]; then
-  source ~/.node
-fi
-
-# Adding path variables
-if [ -f ~/.pathVars ]; then
-  source ~/.pathVars
-fi
-
-# Adding applets
-if [ -f ~/.applets ]; then
-  source ~/.applets
+if command -v fzf &> /dev/null; then
+  source <(fzf --bash)
 fi

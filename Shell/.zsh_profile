@@ -14,6 +14,12 @@ if [[ ! ":$PATH:" == *":${HOME}/bin:"* ]]; then
   PATH="${HOME}/bin:${PATH}"
 fi
 
+if command -v fzf &> /dev/null; then
+  # shellcheck source=/dev/null
+  # source "${HOME}/.fzf.zsh"
+  source <(fzf --zsh)
+fi
+
 # Test if we have oh-my-posh, or oh-my-zsh installed and if so load them.  If we have both preference is given to oh-my-posh such that priority order is oh-my-posh, oh-my-zsh, default zsh profile/prompt configuration
 if command -v oh-my-posh &> /dev/null; then
   # echo "$(date +'%Y-%m-%d %H:%M:%S.%3N') [DEBUG] oh-my-posh is installed"
