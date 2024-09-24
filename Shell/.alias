@@ -77,6 +77,7 @@ fi
 if command -v tmux &> /dev/null; then
   alias tmux-new='tmux new-session -s graham'
   alias tmux-attach='tmux attach-session -t graham'
+  alias tmux-reload='tmux source-file ~/.tmux.conf'
 fi
 
 # If git is installed, set git specific aliases

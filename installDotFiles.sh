@@ -17,7 +17,6 @@ EXCLUDE_FILES=(".gitignore" "installDotFiles.sh" "README.md")
 # Generate an EXCLUDED_DIRS_ARGS string to pass to the find command
 EXCLUDED_DIRS_ARGS=""
 for dir in "${EXCLUDE_DIRS[@]}"; do
-    # If dir is .git then exclude it and any subdirectories
     EXCLUDED_DIRS_ARGS+=" -not -name ${dir}"
 done
 
@@ -205,7 +204,7 @@ copy_all_files () {
             ln -sf "$(realpath --relative-to="${HOME}" "${FILE}")" "${HOME}/${FILENAME}"
         fi
     done
-    echo "[DEBUG] Copying machine specific config file"
+    echo "[INFO] Copying machine specific config file"
     # Copy machine_local.template to ${HOME}/.machine_local if it does not exist
     if [ ! -f "${HOME}/.machine_local" ]; then
         echo "[INFO] Copying ${DIR}/Shell/machine_local.template to ${HOME}/.machine_local"
