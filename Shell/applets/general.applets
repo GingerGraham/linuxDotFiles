@@ -80,3 +80,53 @@ get_public_ip () {
     echo "IPv6: $(curl -s https://ipv6.icanhazip.com)"
   fi
 }
+
+ open_workspace () {
+  if ! command -v code &> /dev/null && ! command -v code-insiders &> /dev/null; then
+    echo "[ERROR] Visual Studio Code is not installed"
+    return 1
+  fi
+  # Accept a directory path as an argument or set ${HOME}/Developement/workspaces as the default
+  local workspace_path="${1:-${HOME}/Development/workspaces}"
+  local workspaces_full_path=()
+  # Check if workspace_path is a symlink and if it is get the full path
+  if [[ -L "${workspace_path}" ]]; then
+    workspace_path=$(readlink -f "${workspace_path}")
+  fi
+  # Check if the directory exists and if it does ensure that we have the full valid path
+  if [[ -d "${workspace_path}" ]]; then
+    if command -v mapfile &> /dev/null; then
+      mapfile -t workspaces_full_path < <(find "${workspace_path}" -type f -name "*.code-workspace")
+    else
+      workspaces_full_path=($(find "${workspace_path}" -type f -name "*.code-workspace"))
+    fi
+  fi
+  # Check if we have any workspaces
+  if [[ ${#workspaces_full_path[@]} -eq 0 ]]; then
+    echo "[ERROR] No workspaces found in ${workspace_path}"
+    return 1
+  fi
+  local workspaces=()
+  for workspace in "${workspaces_full_path[@]}"; do
+    workspaces+=("$(basename "${workspace}" .code-workspace)")
+  done
+  echo "Available workspaces:"
+  PS3="Please select the number of a workspace to open: "
+  select workspace in "${workspaces[@]}"; do
+    if [[ -n "${workspace}" ]]; then
+        for wsp in "${workspaces_full_path[@]}"; do
+          if [[ "${workspace}" == "$(basename "${wsp}" .code-workspace)" ]]; then
+            if command -v code-insiders &> /dev/null; then
+              code-insiders "${wsp}"
+            else
+              code "${wsp}"
+            fi
+            break
+          fi
+        done
+      break
+    else
+      echo "[ERROR] Invalid selection, try again"
+    fi
+  done
+ }
