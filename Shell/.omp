@@ -57,12 +57,14 @@ set_omp_theme() {
   if [[ -z "${1}" ]]; then
     echo "[ERROR] No theme name provided"
     echo "[INFO] Please provide the name of the theme to change to"
+    echo "[INFO] The available themes can be found here: https://ohmyposh.dev/docs/themes"
     echo "Usage: set_omp_theme <theme_name>"
     echo "Example: set_omp_theme jonathan"
     return 1
   elif [[ "${#}" -gt 1 ]]; then
     echo "[ERROR] Too many arguments provided"
     echo "[INFO] Please provide the name of the theme to change to"
+    echo "[INFO] The available themes can be found here: https://ohmyposh.dev/docs/themes"
     echo "Usage: set_omp_theme <theme_name>"
     echo "Example: set_omp_theme jonathan"
     return 1
@@ -75,6 +77,7 @@ set_omp_theme() {
       # If the theme does not exist then print an error message and return
       echo "[ERROR] The theme ${1} does not exist"
       echo "[INFO] Please provide the name of a valid theme"
+      echo "[INFO] The available themes can be found here: https://ohmyposh.dev/docs/themes"
       echo "Usage: set_omp_theme <theme_name>"
       echo "Example: set_omp_theme agnoster"
       return 1
@@ -87,12 +90,14 @@ set_omp_theme_permanent() {
   if [[ -z "${1}" ]]; then
     echo "[ERROR] No theme name provided"
     echo "[INFO] Please provide the name of the theme to change to"
+    echo "[INFO] The available themes can be found here: https://ohmyposh.dev/docs/themes"
     echo "Usage: set_omp_theme_permanent <theme_name>"
     echo "Example: set_omp_theme_permanent jonathan"
     return 1
   elif [[ "${#}" -gt 1 ]]; then
     echo "[ERROR] Too many arguments provided"
     echo "[INFO] Please provide the name of the theme to change to"
+    echo "[INFO] The available themes can be found here: https://ohmyposh.dev/docs/themes"
     echo "Usage: set_omp_theme_permanent <theme_name>"
     echo "Example: set_omp_theme_permanent jonathan"
     return 1
@@ -107,6 +112,7 @@ set_omp_theme_permanent() {
       # If the theme does not exist then print an error message and exit
       echo "[ERROR] The theme ${1} does not exist"
       echo "[INFO] Please provide the name of a valid theme"
+      echo "[INFO] The available themes can be found here: https://ohmyposh.dev/docs/themes"
       echo "Usage: set_omp_theme_permanent <theme_name>"
       echo "Example: set_omp_theme_permanent agnoster"
       return 1

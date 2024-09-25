@@ -36,12 +36,20 @@ else
 fi
 
 # Setup history
-setopt histignorealldups sharehistory
-
-# Keep 1000 lines of history within the shell and save it to ~/.zsh_history:
-HISTSIZE=1000
-SAVEHIST=1000
+# Keep 10000 lines of history within the shell and save it to ~/.zsh_history:
+HISTSIZE=10000
+SAVEHIST=${HISTSIZE}
 HISTFILE=~/.zsh_history
+HISTDUP=erase
+# HISTTIMEFORMAT="%Y-%m-%d %H:%M:%S "
+setopt appendhistory
+setopt sharehistory
+setopt hist_ignore_space
+setopt hist_ignore_all_dups
+setopt hist_save_no_dups
+setopt hist_ignore_dups
+setopt hist_find_no_dups
+setopt hist_verify
 
 # Setting completion styles
 zstyle ':completion:*' auto-description 'specify: %d'
