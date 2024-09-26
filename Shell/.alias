@@ -193,3 +193,8 @@ fi
 if command -v nautilus &> /dev/null; then
   alias explorer="nautilus --browser &"
 fi
+
+if command -v nordvpn &> /dev/null; then
+  alias nordc="nordvpn connect"
+  alias nordd="nordvpn disconnect"
+fi
