@@ -18,7 +18,7 @@ if [[ "${OS}" = "Linux" ]] && command -v apt &> /dev/null; then
 fi
 # If system is RedHat based and uses dnf, set dnf aliases
 if [[ "${OS}" = "Linux" ]] && command -v dnf &> /dev/null; then
-  alias dnf-update='sudo dnf check-update --refresh && sudo dnf update -y && sudo dnf autoremove -y'
+  alias dnf-update='sudo dnf check-update --refresh -y || true && sudo dnf update -y || true && sudo dnf autoremove -y'
 fi
 # If system is RedHat based and uses yum, set yum aliases
 if [[ "${OS}" = "Linux" ]] && command -v yum &> /dev/null; then
@@ -197,4 +197,8 @@ fi
 if command -v nordvpn &> /dev/null; then
   alias nordc="nordvpn connect"
   alias nordd="nordvpn disconnect"
+fi
+
+if command -v cmatrix &> /dev/null; then
+  alias matrix="cmatrix -abs"
 fi
