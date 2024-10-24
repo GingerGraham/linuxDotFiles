@@ -73,3 +73,8 @@ fi
 if [[ -d "${HOME}/.pyenv" ]] && [[ ":$PATH:" != *":${HOME}/.pyenv/bin:"* ]]; then
   export PATH="${HOME}/.pyenv/bin:${PATH}"
 fi
+
+# If rbenv is installed evaluate the rbenv init script
+if [[ -d "${HOME}/.rbenv" ]] && ! command -v rbenv 1>/dev/null 2>&1; then
+  eval "$("${HOME}"/.rbenv/bin/rbenv init -)"
+fi
