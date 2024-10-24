@@ -4,6 +4,9 @@
 	editor = code --wait
 	#editor = code-insiders --wait
 
+[push]
+	autoSetupRemote = true
+
 [helper]
 	credential = store
 
