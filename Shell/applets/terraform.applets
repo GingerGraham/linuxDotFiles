@@ -48,7 +48,8 @@ tf_install_linux () {
   fi
   # Test if the tfenv command is available and if it is exit as no further work needed
   if command -v tfenv &> /dev/null; then
-    echo "[INFO] tfenv is already installed"
+    echo "[INFO] tfenv is already installed, updating..."
+    git --git-dir=~/.tfenv/.git pull
     return 0
   fi
   # If the tfenv command is not available then install it using the manual installation method
@@ -100,6 +101,9 @@ tf_install_mac () {
   if ! command -v tfenv &> /dev/null; then
     echo "[INFO] tfenv is not installed.  Installing tfenv"
     brew install tfenv
+  else
+    echo "[INFO] tfenv is already installed, updating..."
+    brew upgrade tfenv
   fi
   # If the tfenv command is not available after installing it then report an error and exit
   if ! command -v tfenv &> /dev/null; then
