@@ -130,3 +130,77 @@ get_public_ip () {
     fi
   done
  }
+
+ # Function to reregister LUKS key with tpm2 using systemd-crpytenroll
+ # Requires the tpm2-tools and dracut tools to be installed
+ register_tpm () {
+    # Use lsblk with JSON output for easier parsing
+    local IFS=$'\n'
+    local luks_devices=()
+    local partition_device=""
+    local enrolled_count=0
+
+    # Check if the required tools are installed
+    if ! command -v lsblk &> /dev/null; then
+        echo "[ERROR] Required tools are not installed. Please install lsblk" >&2
+        return 1
+    fi
+    if ! command -v tpm2 &> /dev/null || ! command -v dracut &> /dev/null; then
+        echo "[ERROR] Required tools are not installed. Please install tpm2-tools and dracut" >&2
+        return 1
+    fi
+    if ! command -v cryptsetup &> /dev/null || ! command -v systemd-cryptenroll &> /dev/null; then
+        echo "[ERROR] Required tools are not installed. Please install cryptsetup and systemd-cryptenroll" >&2
+        return 1
+    fi
+
+    # Check if user has sudo access
+    if ! sudo_test; then
+        return 1
+    fi
+
+    # Process lsblk output to find LUKS partitions
+    while read -r line; do
+        # Skip header line
+        if [[ $line =~ ^NAME ]]; then
+            continue
+        fi
+
+        # Check if this is a partition line that's followed by a LUKS device
+        if [[ $line =~ p[0-9]+[[:space:]] && ! $line =~ crypt ]]; then
+            # Extract the partition name, handling the tree structure
+            partition_device=$(echo "$line" | awk '{print $1}' | tr -d '└─├─')
+            
+            # Look at the next line to see if it's a LUKS device
+            read -r next_line
+            
+            if [[ $next_line =~ crypt ]]; then
+                device_path="/dev/$partition_device"
+                
+                if sudo cryptsetup isLuks "$device_path"; then
+                    echo "[INFO] Found LUKS encrypted partition: $device_path"
+                    luks_devices+=("$device_path")
+                fi
+            fi
+        fi
+    done < <(lsblk)
+
+    # Process all found LUKS devices
+    for device_path in "${luks_devices[@]}"; do
+        echo "[INFO] Enrolling TPM2 for $device_path..."
+        if sudo systemd-cryptenroll \
+            --wipe-slot=tpm2 \
+            --tpm2-device=auto \
+            --tpm2-pcrs="0+2+4+5+7" \
+            "$device_path"; then
+            echo "[INFO] Successfully enrolled TPM2 for $device_path"
+            ((enrolled_count++))
+        else
+            echo "[ERROR] Failed to enroll TPM2 for $device_path" >&2
+        fi
+    done
+
+    echo "[INFO] TPM2 enrollment completed. Successfully enrolled $enrolled_count devices."
+    luks_devices=()
+    return 0
+ }
