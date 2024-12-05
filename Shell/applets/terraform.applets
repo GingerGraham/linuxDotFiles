@@ -8,7 +8,7 @@
 # It is sourced by .bashrc or .zshrc via ~/.applets
 # Define additional functions here
 
-# Update/Intstall Terraform for both Linux and mac
+# Update/Install Terraform for both Linux and mac
 terraform_install () {
   if [[ -z ${OS} ]]; then
     echo "[WARN] OS variable is not set"
@@ -25,13 +25,13 @@ terraform_install () {
     is_git_installed
     tf_install_linux "${TF_VERSION}"
     tflint_install_linux
-    # tfsec_install_linux
+    trivy_install_linux
     # terraform_docs_install_linux
   fi
   if [[ ${OS} == "Mac" ]]; then
     tf_install_mac "${TF_VERSION}"
-    # tflint_install_mac
-    # tfsec_install_mac
+    tflint_install_mac
+    trivy_install_mac
     # terraform_docs_install_mac
   fi
   # If OS is not set or is not Linux or Darwin then report an error
@@ -323,85 +323,144 @@ tflint_install_mac () {
   echo "[INFO] TFLint v${TFLINT_VERSION} installed"
 }
 
-# Install tfsec for Linux
-tfsec_install_linux () {
-  # Referring to https://aquasecurity.github.io/tfsec/v1.28.1/guides/installation/
-  # Options for Linux are more limited than for macOS and either require homebrew for Linux or to use Go package management
-  # Test if go/golang is not installed; if not then exit and refer user to the tfsec installation page
-  if ! command -v go &> /dev/null; then
-    echo "[ERROR] Automated installation of tfsec is not available for Linux.  Please install tfsec manually"
-    echo "[ERROR] For more information please refer to https://aquasecurity.github.io/tfsec/v1.28.1/guides/installation/"
+trivy_repo_rpm () {
+  # Referring to https://trivy.dev/latest/getting-started/installation/#rhelcentos-official
+  # Test if trivy repo is already configured
+  if [[ -f /etc/yum.repos.d/trivy.repo ]]; then
+    echo "[INFO] Trivy repository is already configured"
+    return 0
+  fi
+  # Configure the trivy repository
+  echo "[INFO] Configuring Trivy repository"
+  cat << EOF | sudo tee -a /etc/yum.repos.d/trivy.repo
+[trivy]
+name=Trivy repository
+baseurl=https://aquasecurity.github.io/trivy-repo/rpm/releases/\$basearch/
+gpgcheck=1
+enabled=1
+gpgkey=https://aquasecurity.github.io/trivy-repo/rpm/public.key
+EOF
+  # Test if the trivy repository is configured
+  if [[ ! -f /etc/yum.repos.d/trivy.repo ]]; then
+    echo "[ERROR] Error configuring Trivy repository"
     return 1
   fi
-  # Check the latest available version of tfsec
-  TFSEC_VERSION=$(curl -s https://api.github.com/repos/aquasecurity/tfsec/releases/latest | grep '"tag_name":' | sed -E 's/.+"v([^"]+)".+/\1/')
-  # Check if the version is set and if not report an error
-  if [[ -z ${TFSEC_VERSION} ]]; then
-    echo "[ERROR] Unable to determine the latest version of tfsec"
-    return 1
-  fi
-  echo "[INFO] Installing or updating to tfsec v${TFSEC_VERSION}"
-  # Install tfsec using Go
-  echo "[INFO] Installing tfsec using Go"
-  # If the environment variable GO_VERSION is not set then call the get_go_version function to set it
-  if [[ -z ${GO_VERSION} ]]; then
-    get_go_version
-  fi
-  GO_MAJOR_VERSION=$(echo "${GO_VERSION}" | cut -d. -f1)
-  GO_MINOR_VERSION=$(echo "${GO_VERSION}" | cut -d. -f2)
-  # If the combined major and minor version of Go is less than or equal to 1.17 then use the old method of installing tfsec with go get and if it is greater than 1.17 then use the new method of installing tfsec with go install
-  if [[ "${GO_MAJOR_VERSION}${GO_MINOR_VERSION}" -le 117 ]]; then
-    go get github.com/aquasecurity/tfsec/cmd/tfsec@latest > /dev/null
+  echo "[INFO] Trivy repository configured... Updating package list"
+  # Update the package list
+  # Test if we have dnf or yum
+  if command -v dnf &> /dev/null; then
+    sudo dnf check-update --refresh -y
+  elif command -v yum &> /dev/null; then
+    sudo yum check-update -y
   else
-    go install github.com/aquasecurity/tfsec/cmd/tfsec@latest > /dev/null
+    echo "[ERROR] No package manager found"
+    return 1
   fi
-  # If ${HOME}/go/bin is not in the PATH then add it
-  if [[ ! ":$PATH:" == *":${HOME}/go/bin:"* ]]; then
-    echo "[INFO] Adding ${HOME}/go/bin to PATH"
-    PATH="${HOME}/go/bin:${PATH}"
-  fi
-  echo "[INFO] tfsec v${TFSEC_VERSION} installed"
+  echo "[INFO] Package list updated, trivy can now be installed"
 }
 
-# Install tfsec for Mac
-tfsec_install_mac () {
-  # Referring to https://aquasecurity.github.io/tfsec/v1.28.1/guides/installation/
-  # Check the latest available version of tfsec
-  TFSEC_VERSION=$(curl -s https://api.github.com/repos/aquasecurity/tfsec/releases/latest | grep '"tag_name":' | sed -E 's/.+"v([^"]+)".+/\1/')
-  # Check if the version is set and if not report an error
-  if [[ -z ${TFSEC_VERSION} ]]; then
-    echo "[ERROR] Unable to determine the latest version of tfsec"
+trivy_repo_deb () {
+  # Referring to https://trivy.dev/latest/getting-started/installation/#debianubuntu-official
+  # Test if trivy repo is already configured
+  if [[ -f /etc/apt/sources.list.d/trivy.list ]]; then
+    echo "[INFO] Trivy repository is already configured"
+    return 0
+  fi
+  # Configure the trivy repository
+  echo "[INFO] Configuring Trivy repository"
+  sudo apt-get install wget gnupg
+  wget -qO - https://aquasecurity.github.io/trivy-repo/deb/public.key | gpg --dearmor | sudo tee /usr/share/keyrings/trivy.gpg > /dev/null
+  echo "deb [signed-by=/usr/share/keyrings/trivy.gpg] https://aquasecurity.github.io/trivy-repo/deb generic main" | sudo tee -a /etc/apt/sources.list.d/trivy.list
+  # Test if the trivy repository is configured
+  if [[ ! -f /etc/apt/sources.list.d/trivy.list ]]; then
+    echo "[ERROR] Error configuring Trivy repository"
     return 1
   fi
-  # Check if tfsec is already installed and if the current version matches the version to be set
-  if command -v tfsec &> /dev/null; then
-    if [[ "$(tfsec --version | sed -r 's/v([0-9]\.[0-9]+\.[0-9]+)/\1/')" == "${TFSEC_VERSION}" ]]; then
-      echo "tfsec ${TFSEC_VERSION} is already installed and is the latest version"
+  echo "[INFO] Trivy repository configured... Updating package list"
+  # Update the package list
+  sudo apt-get update
+  echo "[INFO] Package list updated, trivy can now be installed"
+}
+
+# Install Trivy for Linux
+trivy_install_linux () {
+  # Referring to https://trivy.dev/latest/getting-started/installation/#linux
+  # Check the latest available version of Trivy
+  TRIVY_VERSION=$(curl -s https://api.github.com/repos/aquasecurity/trivy/releases/latest | grep '"tag_name":' | sed -E 's/.+"v([^"]+)".+/\1/')
+  # Check if the version is set and if not report an error
+  if [[ -z ${TRIVY_VERSION} ]]; then
+    echo "[ERROR] Unable to determine the latest version of Trivy"
+    return 1
+  fi
+  # Check if Trivy is already installed and if the current version matches the version to be set
+  if command -v trivy &> /dev/null; then
+    if [[ "$(trivy version | grep -E -m 1 '[0-9]+\.[0-9]+\.[0-9]+' | sed 's/Version: //' | head -n 1)" == "${TRIVY_VERSION}" ]]; then
+      echo "[INFO] Trivy ${TRIVY_VERSION} is already installed and is the latest version"
       return 0
     fi
   fi
-  echo "[INFO] tfsec is not installed or is not the correct version.  Installing tfsec v${TFSEC_VERSION}"
-  # Use Homebrew to install tfsec
+  echo "[INFO] Trivy is not installed or is not the correct version.  Installing Trivy v${TRIVY_VERSION}"
+  # Test if we have dnf or yum
+  if command -v dnf &> /dev/null; then
+    trivy_repo_rpm
+    sudo dnf install trivy -y
+  elif command -v yum &> /dev/null; then
+    trivy_repo_rpm
+    sudo yum install trivy -y
+  elif command -v apt-get &> /dev/null; then
+    trivy_repo_deb
+    sudo apt-get install trivy -y
+  else
+    echo "[ERROR] No package manager found"
+    return 1
+  fi
+  # Check if the version installed is the correct version and if not report an error
+  if [[ "$(trivy version | grep -E -m 1 '[0-9]+\.[0-9]+\.[0-9]+' | sed 's/Version: //' | head -n 1)" != "${TRIVY_VERSION}" ]]; then
+    echo "[ERROR] Error installing Trivy v${TRIVY_VERSION}"
+    echo "[ERROR] Please check the version is valid and try again"
+    return 1
+  fi
+  echo "[INFO] Trivy v${TRIVY_VERSION} installed"
+}
+
+# Install Trivy for macOS using Homebrew
+# Referring to https://trivy.dev/latest/getting-started/installation/#homebrew-official
+trivy_install_mac () {
+  # Check the latest available version of Trivy
+  TRIVY_VERSION=$(curl -s https://api.github.com/repos/aquasecurity/trivy/releases/latest | grep '"tag_name":' | sed -E 's/.+"v([^"]+)".+/\1/')
+  # Check if the version is set and if not report an error
+  if [[ -z ${TRIVY_VERSION} ]]; then
+    echo "[ERROR] Unable to determine the latest version of Trivy"
+    return 1
+  fi
+  # Check if Trivy is already installed and if the current version matches the version to be set
+  if command -v trivy &> /dev/null; then
+    if [[ "$(trivy version | grep -E -m 1 '[0-9]+\.[0-9]+\.[0-9]+' | sed 's/Version: //' | head -n 1)" == "${TRIVY_VERSION}" ]]; then
+      echo "[INFO] Trivy ${TRIVY_VERSION} is already installed and is the latest version"
+      return 0
+    fi
+  fi
+  echo "[INFO] Trivy is not installed or is not the correct version.  Installing Trivy v${TRIVY_VERSION}"
   # Check if Homebrew is installed and if not report an error
   if ! command -v brew &> /dev/null; then
     echo "[ERROR] Homebrew is not installed.  Please install Homebrew and try again"
     return 1
   fi
-  # Check if tfsec is already installed, if not install it, if it is then upgrade it
-  if command -v tfsec &> /dev/null; then
-    echo "[INFO] Upgrading tfsec"
-    brew upgrade tfsec
+  # Check if Trivy is already installed, if not install it, if it is then upgrade it
+  if command -v trivy &> /dev/null; then
+    echo "[INFO] Upgrading Trivy to v${TRIVY_VERSION}"
+    brew upgrade trivy
   else
-    echo "[INFO] Installing tfsec"
-    brew install tfsec
+    echo "[INFO] Installing Trivy v${TRIVY_VERSION}"
+    brew install trivy
   fi
-  # Check if tfsec is installed and if not report an error
-  if ! command -v tfsec &> /dev/null; then
-    echo "[ERROR] Error installing tfsec"
+  # Check if the version installed is the correct version and if not report an error
+  if [[ "$(trivy version | grep -E -m 1 '[0-9]+\.[0-9]+\.[0-9]+' | sed 's/Version: //' | head -n 1)" != "${TRIVY_VERSION}" ]]; then
+    echo "[ERROR] Error installing Trivy v${TRIVY_VERSION}"
     echo "[ERROR] Please check the version is valid and try again"
     return 1
   fi
-  echo "[INFO] tfsec ${TFSEC_VERSION} installed"
+  echo "[INFO] Trivy v${TRIVY_VERSION} installed"
 }
 
 # Install terraform-docs for Linux
