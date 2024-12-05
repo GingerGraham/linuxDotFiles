@@ -71,8 +71,11 @@ get_go_version () {
 
 get_python_versions () {
   echo "[INFO] Python versions found:"
-  for version in $(ls /usr/bin/python3*); do
-    # echo "$version: $($version --version 2>&1)"
+  for version in /usr/bin/python3*; do
+    # Ignore -config directories
+    if [[ $version == *-config ]]; then
+      continue
+    fi
     # Print the base version of python3 such as 3.8, 3.9 etc. and then the full version
     echo "$(basename $version): $($version --version 2>&1)"
   done
