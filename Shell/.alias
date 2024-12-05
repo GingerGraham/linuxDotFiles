@@ -86,6 +86,8 @@ if command -v git &> /dev/null; then
   alias gst="git status"
   alias gpl="git pull"
   alias gps="git push"
+  alias gpsh="git push"
+  alias gf="git fetch"
   # If the git_cleanup function is defined, set an alias for it
   if declare -f git_cleanup &> /dev/null; then
     alias gitcleanup="git_cleanup"
@@ -187,6 +189,13 @@ if [[ "${SHELL}" = *"/zsh" ]]; then
   alias zshsource="source ~/.zshrc"
   alias zshreload="exec zsh"
   alias history="history 1"
+fi
+
+# If shell is bash set bash specific aliases
+if [[ "${SHELL}" = *"/bash" ]]; then
+  alias bashconfig="vim ~/.bashrc"
+  alias bashsource="source ~/.bashrc"
+  alias bashreload="exec bash"
 fi
 
 # If the nautilus file browser is installed, set an alias for it to open the file browser
