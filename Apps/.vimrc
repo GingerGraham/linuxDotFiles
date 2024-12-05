@@ -1,6 +1,6 @@
 " Plugin Config
 " =============
-filetype off		" Helps force plugins to load correctly when it is turned back on below
+filetype on		" Helps force plugins to load correctly when it is turned back on below
 filetype plugin indent on " For plugins to load correctly
 
 " Encoding & Language Config
