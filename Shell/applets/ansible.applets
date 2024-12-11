@@ -8,8 +8,65 @@
 # It is sourced by .bashrc or .zshrc via ~/.applets
 # Define additional functions here
 
+ansible_install_dnf () {
+  # Check if the command dnf is available and use it if so
+  if command -v dnf &> /dev/null; then
+    echo "[INFO] Installing Ansible using dnf"
+    sudo dnf install -y ansible
+  else
+    echo "[ERROR] dnf is not installed - required for Ansible install"
+    return 1
+  fi
+
+  # If the install fails then exit
+  if [[ $? -ne 0 ]]; then
+    echo "[ERROR] Ansible install failed"
+    return 1
+  fi
+  echo "[INFO] Installed Ansible"
+  return 0
+}
+
+ansible_install_yum () {
+  # Check if the command yum is available and use it if so
+  if command -v yum &> /dev/null; then
+    echo "[INFO] Installing Ansible using yum"
+    sudo yum install -y ansible
+  else
+    echo "[ERROR] yum is not installed - required for Ansible install"
+    return 1
+  fi
+
+  # If the install fails then exit
+  if [[ $? -ne 0 ]]; then
+    echo "[ERROR] Ansible install failed"
+    return 1
+  fi
+  echo "[INFO] Installed Ansible"
+  return 0
+}
+
+ansible_install_zypper () {
+  # Check if the command zypper is available and use it if so
+  if command -v zypper &> /dev/null; then
+    echo "[INFO] Installing Ansible using zypper"
+    sudo zypper install -y ansible
+  else
+    echo "[ERROR] zypper is not installed - required for Ansible install"
+    return 1
+  fi
+
+  # If the install fails then exit
+  if [[ $? -ne 0 ]]; then
+    echo "[ERROR] Ansible install failed"
+    return 1
+  fi
+  echo "[INFO] Installed Ansible"
+  return 0
+}
+
 # Install ansible using pip3 after confirming that the latest version is not already installed
-ansible_install () {
+ansible_install_python () {
   # Check the latest available version of Ansible by grepping the "version" field from the JSON output of the PyPi API
   PYPI_ANSIBLE_VERSION=$(curl -s https://pypi.org/pypi/ansible/json | grep -Eo '"version":"[0-9]+\.[0-9]+\.[0-9]+",' | sed -E 's/.+"([0-9]+\.[0-9]+\.[0-9]+)",/\1/')
   # PYPI_ANSIBLE_CORE=$(curl -s https://pypi.org/pypi/ansible/json | grep -Eo '\[\"ansible-core.*\"],' | grep -Eo '[0-9]+\.[0-9]+\.[0-9]+')

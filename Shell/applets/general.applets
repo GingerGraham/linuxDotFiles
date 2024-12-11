@@ -10,7 +10,7 @@
 
 # adding use of website cheat.sh for command lookup
 cheat(){
-    curl "cheat.sh/$1"
+    curl "https://cheat.sh/$1"
 }
 
 # Cleanup removed branches in git
@@ -39,6 +39,44 @@ sudo_test (){
   else
     return 0
   fi
+}
+
+detect_package_manager() {
+  # Detect the package manager for the current system
+  if command -v apt &> /dev/null; then
+    PACKAGE_MANAGER="apt"
+  elif command -v dnf &> /dev/null; then
+    PACKAGE_MANAGER="dnf"
+  elif command -v yum &> /dev/null; then
+    PACKAGE_MANAGER="yum"
+  elif command -v zypper &> /dev/null; then
+    PACKAGE_MANAGER="zypper"
+  elif command -v pacman &> /dev/null; then
+    PACKAGE_MANAGER="pacman"
+  elif command -v brew &> /dev/null; then
+    PACKAGE_MANAGER="brew"
+  else
+    echo "[ERROR] No package manager found"
+    return 1
+  fi
+  echo "[INFO] Detected package manager: ${PACKAGE_MANAGER}"
+  return 0
+}
+
+detect_distro () {
+  # Detect the Linux distribution
+  if [[ -f /etc/os-release ]]; then
+    source /etc/os-release
+    if [[ -n ${NAME} ]]; then
+      OS="${NAME}"
+    fi
+  fi
+  if [[ -z ${OS} ]]; then
+    echo "[ERROR] Unable to detect OS"
+    return 1
+  fi
+  echo "[INFO] Detected OS: ${OS}"
+  return 0
 }
 
 # Single command to update all tools including in this script
@@ -110,6 +148,7 @@ get_public_ip () {
     if command -v mapfile &> /dev/null; then
       mapfile -t workspaces_full_path < <(find "${workspace_path}" -type f -name "*.code-workspace")
     else
+      # shellcheck disable=SC2207
       workspaces_full_path=($(find "${workspace_path}" -type f -name "*.code-workspace"))
     fi
   fi
