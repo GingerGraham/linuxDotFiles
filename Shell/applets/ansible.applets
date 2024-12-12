@@ -19,6 +19,7 @@ ansible_install_dnf () {
   fi
 
   # If the install fails then exit
+  # shellcheck disable=SC2181
   if [[ $? -ne 0 ]]; then
     echo "[ERROR] Ansible install failed"
     return 1
@@ -38,6 +39,7 @@ ansible_install_yum () {
   fi
 
   # If the install fails then exit
+  # shellcheck disable=SC2181
   if [[ $? -ne 0 ]]; then
     echo "[ERROR] Ansible install failed"
     return 1
@@ -57,11 +59,58 @@ ansible_install_zypper () {
   fi
 
   # If the install fails then exit
+  # shellcheck disable=SC2181
   if [[ $? -ne 0 ]]; then
     echo "[ERROR] Ansible install failed"
     return 1
   fi
   echo "[INFO] Installed Ansible"
+  return 0
+}
+
+ansible_install_pacman () {
+  # Check if the command pacman is available and use it if so
+  if command -v pacman &> /dev/null; then
+    echo "[INFO] Installing Ansible using pacman"
+    sudo pacman -S --noconfirm ansible
+  else
+    echo "[ERROR] pacman is not installed - required for Ansible install"
+    return 1
+  fi
+
+  # If the install fails then exit
+  if [[ $? -ne 0 ]]; then
+    echo "[ERROR] Ansible install failed"
+    return 1
+  fi
+  echo "[INFO] Installed Ansible"
+  return 0
+}
+
+ansible_add_ppa () {
+  # Check if the command apt-add-repository is available and use it if so
+  if command -v apt-add-repository &> /dev/null; then
+    echo "[INFO] Adding Ansible PPA"
+    sudo apt update
+    if ! dpkg -l | grep -q software-properties-common; then
+      echo "[INFO] Installing software-properties-common"
+      sudo apt install -y software-properties-common
+    else
+      echo "[INFO] software-properties-common is already installed"
+    fi
+    sudo apt-add-repository -y ppa:ansible/ansible
+  else
+    echo "[ERROR] apt-add-repository is not installed - required for Ansible PPA add"
+    return 1
+  fi
+
+  # If the add fails then exit
+  # shellcheck disable=SC2181
+  if [[ $? -ne 0 ]]; then
+    echo "[ERROR] Ansible PPA add failed"
+    return 1
+  fi
+  echo "[INFO] Added Ansible PPA"
   return 0
 }
 
@@ -180,12 +229,12 @@ avd () {
   fi
 
   if [[ ! -z "${VAULT_PASS}" ]]; then
-    echo "[INFO] Decrypting ${FILES[@]} with password file: ${VAULT_PASS}"
+    echo "[INFO] Decrypting ${FILES[*]} with password file: ${VAULT_PASS}"
     for file in "${FILES[@]}"; do
       ansible-vault decrypt --vault-password-file "${VAULT_PASS}" "${file}"
     done
   else
-    echo "[INFO] Prompting for password to decrypt ${FILES[@]}"
+    echo "[INFO] Prompting for password to decrypt ${FILES[*]}"
     for file in "${FILES[@]}"; do
       ansible-vault decrypt "${file}"
     done
@@ -225,7 +274,7 @@ ave () {
 
   # Process arguments excluding arguments passed as options
   shift $((OPTIND -1))
-  echo "[INFO] Processing ${@}"
+  echo "[INFO] Processing ${*}"
   # If argument in $@ is not a switch or existing variable add it to an array of file names
   for arg in "${@}"; do
     if [[ ! $arg =~ ^-.* ]] || [[ ! -v $arg ]]; then
@@ -263,12 +312,12 @@ ave () {
   fi
 
   if [[ ! -z "${VAULT_PASS}" ]]; then
-    echo "Encrypting ${FILES[@]} with password file: ${VAULT_PASS}"
+    echo "Encrypting ${FILES[*]} with password file: ${VAULT_PASS}"
     for file in "${FILES[@]}"; do
       ansible-vault encrypt --vault-password-file "${VAULT_PASS}" "${file}"
     done
   else
-    echo "[INFO] Prompting for password to encrypt ${FILES[@]}"
+    echo "[INFO] Prompting for password to encrypt ${FILES[*]}"
     for file in "${FILES[@]}"; do
       ansible-vault encrypt "${file}"
     done
