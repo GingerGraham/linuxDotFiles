@@ -77,7 +77,7 @@ fi
 if command -v tmux &> /dev/null; then
   alias tmux-new='tmux new-session -s graham'
   alias tmux-attach='tmux attach-session -t graham'
-  alias tmux-reload='tmux source-file ~/.tmux.conf'
+  alias tmux-reload='tmux source-file "${HOME}/.tmux.conf"'
 fi
 
 # If git is installed, set git specific aliases
@@ -112,13 +112,13 @@ if command -v virtualbox &> /dev/null && command -v vagrant &> /dev/null; then
 fi
 
 # SSH aliases
-alias sshhosts="grep -E '^Host\s' ~/.ssh/config"
+alias sshhosts='grep -E "^Host\s" "${HOME}/.ssh/config"'
 
 # Now defunct aliases as no longer with Vocera/Stryker (interesting to keep for review)
-# alias esshhosts="grep -E '^Host\s' ~/.ssh/Edge/config"
-# alias vsshhosts="grep -E '^Host\s' ~/.ssh/Vocera/config"
-# alias essh="ssh -F ~/.ssh/Edge/config"
-# alias vssh="ssh -F ~/.ssh/Vocera/config"
+# alias esshhosts="grep -E '^Host\s' ${HOME}/.ssh/Edge/config"
+# alias vsshhosts="grep -E '^Host\s' ${HOME}/.ssh/Vocera/config"
+# alias essh="ssh -F ${HOME}/.ssh/Edge/config"
+# alias vssh="ssh -F ${HOME}/.ssh/Vocera/config"
 
 # If OS is Linux and ClamAV is installed, set aliases for ClamAV
 if [[ "${OS}" = "Linux" ]] && command -v clamscan &> /dev/null; then
@@ -184,17 +184,17 @@ if command -v terragrunt &> /dev/null; then
 fi
 
 # If shell is zsh set zsh specific aliases
-if [[ "${SHELL}" = *"/zsh" ]]; then
-  alias zshconfig="vim ~/.zshrc"
-  alias zshsource="source ~/.zshrc"
+if [[ -n ${ZSH_VERSION} ]]; then
+  alias zshconfig='vim ${HOME}/.zshrc"'
+  alias zshsource='source "${HOME}/.zshrc"'
   alias zshreload="exec zsh"
   alias history="history 1"
 fi
 
 # If shell is bash set bash specific aliases
-if [[ "${SHELL}" = *"/bash" ]]; then
-  alias bashconfig="vim ~/.bashrc"
-  alias bashsource="source ~/.bashrc"
+if [[ -n ${BASH_VERSION} ]]; then
+  alias bashconfig='vim "${HOME}/.bashrc"'
+  alias bashsource='source "${HOME}/.bashrc"'
   alias bashreload="exec bash"
 fi
 
@@ -210,4 +210,8 @@ fi
 
 if command -v cmatrix &> /dev/null; then
   alias matrix="cmatrix -abs"
+fi
+
+if command -v get_my_functions &> /dev/null; then
+  alias aliases="get_my_functions"
 fi

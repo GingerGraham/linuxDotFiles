@@ -255,3 +255,24 @@ get_public_ip () {
     luks_devices=()
     return 0
  }
+
+ get_my_functions () {
+  echo
+  echo "[INFO] Loaded functions:"
+  if [[ -n ${BASH_VERSION} ]]; then
+    for func in $(declare -F | awk '{print $3}'); do
+      if grep -q "^${func}[[:space:]]*()[[:space:]]*{" "${HOME}/Development/Personal/GitHub/linuxDotFiles/Shell/applets/"*.applets 2>/dev/null; then
+        echo "${func}"
+      fi
+    done | sort | column
+  elif [[ -n ${ZSH_VERSION} ]]; then
+    grep -Eo '^[a-zA-Z_-][a-zA-Z0-9_-]*\s?\(\)' "${HOME}/applets/"/**/*.applets | sed 's/()//' | awk -F: '{print $NF}' | sort | column
+  fi
+  echo
+  echo "[INFO] Loaded aliases:"
+  if [[ -n ${BASH_VERSION} ]]; then
+    alias | sed 's/alias //g' | awk -F= '{print $1}' | sort | column
+  elif [[ -n ${ZSH_VERSION} ]]; then
+    alias -L | sed 's/alias //g' | awk -F= '{print $1}' | sort | column
+  fi
+ }

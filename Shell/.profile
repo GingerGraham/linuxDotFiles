@@ -51,11 +51,6 @@ if [ "${OS}" = "Mac" ]; then
 	test -e "${HOME}/.iterm2_shell_integration.zsh" && source "${HOME}/.iterm2_shell_integration.zsh"
 fi
 
-# Adding aliases
-if [[ -f ~/.alias ]]; then
-  source ~/.alias
-fi
-
 # Adding node.js / nvm
 if [[ -f ~/.nvm/nvm.sh ]]; then
   source ~/.node
@@ -102,6 +97,11 @@ elif [[ "${CURRENT_SHELL}" == "bash" ]]; then
   fi
   # echo "$(date +'%Y-%m-%d %H:%M:%S.%3N') [DEBUG] Sourcing .bash_profile"
   source "${HOME}/.bash_profile"
+fi
+
+# Adding aliases
+if [[ -f ~/.alias ]]; then
+  source ~/.alias
 fi
 
 # If bat is installed set the BAT_THEME to Visual Studio Dark+ if it's not already set.
