@@ -17,3 +17,6 @@ testing/**/dockerfile
 
 # Ignore local vs code settings
 .vscode/
+
+# Ignoring SonarQube scannerwork directory
+.scannerwork/

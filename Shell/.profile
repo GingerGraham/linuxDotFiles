@@ -51,11 +51,6 @@ if [ "${OS}" = "Mac" ]; then
 	test -e "${HOME}/.iterm2_shell_integration.zsh" && source "${HOME}/.iterm2_shell_integration.zsh"
 fi
 
-# Adding aliases
-if [[ -f ~/.alias ]]; then
-  source ~/.alias
-fi
-
 # Adding node.js / nvm
 if [[ -f ~/.nvm/nvm.sh ]]; then
   source ~/.node
@@ -104,9 +99,19 @@ elif [[ "${CURRENT_SHELL}" == "bash" ]]; then
   source "${HOME}/.bash_profile"
 fi
 
+# Adding aliases
+if [[ -f ~/.alias ]]; then
+  source ~/.alias
+fi
+
 # If bat is installed set the BAT_THEME to Visual Studio Dark+ if it's not already set.
 if command -v bat &> /dev/null; then
   if [[ -z $BAT_THEME ]]; then
     export BAT_THEME="Visual Studio Dark+"
   fi
 fi
+
+if [[ -e /home/gwatts/.nix-profile/etc/profile.d/nix.sh ]]; then
+  . /home/gwatts/.nix-profile/etc/profile.d/nix.sh; 
+fi
+
