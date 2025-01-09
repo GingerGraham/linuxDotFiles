@@ -89,3 +89,9 @@
 		path = /Users/gwatts/Development/Personal/GitHub/.gitconfig-github
 [includeIf "gitdir:/Users/gwatts/Development/Personal/GitLab/"]
 		path = /Users/gwatts/Development/Personal/GitLab/.gitconfig-gitlab
+[credential "https://github.com"]
+	helper = 
+	helper = !/usr/bin/gh auth git-credential
+[credential "https://gist.github.com"]
+	helper = 
+	helper = !/usr/bin/gh auth git-credential

@@ -79,6 +79,6 @@ if [[ -d "${HOME}/.rbenv" ]] && ! command -v rbenv 1>/dev/null 2>&1; then
   eval "$("${HOME}"/.rbenv/bin/rbenv init -)"
 fi
 
-if [[ -d "${HOME}/.local/opt/sonar-scanner" ]]; then
+if [[ -d ${HOME}/.local/opt/sonar-scanner/bin ]]; then
   export PATH="${HOME}/.local/opt/sonar-scanner/bin:${PATH}"
 fi
