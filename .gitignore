@@ -14,3 +14,6 @@ log/
 testing/**/*.Dockerfile
 testing/**/dockerfile
 **/dockerfile
+
+# Ignore local vs code settings
+.vscode/
