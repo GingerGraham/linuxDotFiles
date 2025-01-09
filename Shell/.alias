@@ -212,6 +212,10 @@ if command -v cmatrix &> /dev/null; then
   alias matrix="cmatrix -abs"
 fi
 
+if command -v sonar-scanner &> /dev/null; then
+  alias sq="sonar-scanner -Dsonar.token=$(secret-tool lookup sq_tkn local-scan)"
+fi
+
 if command -v get_my_functions &> /dev/null; then
   alias aliases="get_my_functions"
 fi

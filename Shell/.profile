@@ -110,3 +110,8 @@ if command -v bat &> /dev/null; then
     export BAT_THEME="Visual Studio Dark+"
   fi
 fi
+
+if [[ -e /home/gwatts/.nix-profile/etc/profile.d/nix.sh ]]; then
+  . /home/gwatts/.nix-profile/etc/profile.d/nix.sh; 
+fi
+
