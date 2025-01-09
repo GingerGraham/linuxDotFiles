@@ -111,7 +111,12 @@ if command -v bat &> /dev/null; then
   fi
 fi
 
-if [[ -e /home/gwatts/.nix-profile/etc/profile.d/nix.sh ]]; then
-  . /home/gwatts/.nix-profile/etc/profile.d/nix.sh; 
+if [[ -e ${HOME}/.nix-profile/etc/profile.d/nix.sh ]]; then
+  . "${HOME}"/.nix-profile/etc/profile.d/nix.sh; 
 fi
 
+# As a last step, if the aliases aliased command is available run it, to show the aliases when a new shell is opened
+if command -v aliases &> /dev/null; then
+  clear
+  aliases
+fi
