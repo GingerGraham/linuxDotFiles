@@ -276,3 +276,24 @@ get_public_ip () {
     alias -L | sed 's/alias //g' | awk -F= '{print $1}' | sort | column
   fi
  }
+
+list_ssh_hosts() {
+  local config_dir="${HOME}/.ssh/config.d"
+  local main_config="${HOME}/.ssh/config"
+  
+  # Process main config file
+  echo "=== Main Config ==="
+  grep -E "^Host\s" "${main_config}" | sed 's/Host //'
+  echo
+
+  # Process each file in config.d
+  if [[ -d "$config_dir" ]]; then
+      for config_file in "${config_dir}"/*; do
+          if [ -f "$config_file" ]; then
+              echo "=== $(basename "$config_file") ==="
+              grep -E "^Host\s" "$config_file" | sed 's/Host //'
+              echo
+          fi
+      done
+  fi
+}
