@@ -112,7 +112,11 @@ if command -v virtualbox &> /dev/null && command -v vagrant &> /dev/null; then
 fi
 
 # SSH aliases
-alias sshhosts='grep -E "^Host\s" "${HOME}/.ssh/config"'
+if command -v list_ssh_hosts &> /dev/null; then
+  alias sshhosts="list_ssh_hosts"
+else
+  alias sshhosts='grep -E "^Host\s" "${HOME}/.ssh/config"'
+fi
 
 # Now defunct aliases as no longer with Vocera/Stryker (interesting to keep for review)
 # alias esshhosts="grep -E '^Host\s' ${HOME}/.ssh/Edge/config"
