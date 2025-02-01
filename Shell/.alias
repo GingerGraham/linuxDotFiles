@@ -223,3 +223,8 @@ fi
 if command -v get_my_functions &> /dev/null; then
   alias aliases="get_my_functions"
 fi
+
+if command -v wl-copy &> /dev/null; then
+  alias copy="wl-copy"
+  alias clip="wl-copy"
+fi

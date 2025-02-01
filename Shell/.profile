@@ -28,22 +28,27 @@ else
     export WSL=false
 fi
 
-# Test which editor(s) are available and set a variable $PREFFERED_EDITOR based on the preference order vim, vi, nano
+# Test which editor(s) are available and set a variable $PREFERRED_EDITOR based on the preference order vim, vi, nano
 if command -v vim &> /dev/null; then
-	PREFFERED_EDITOR="vim"
+	PREFERRED_EDITOR="vim"
 elif command -v vi &> /dev/null; then
-	PREFFERED_EDITOR="vi"
+	PREFERRED_EDITOR="vi"
 elif command -v nano &> /dev/null; then
-	PREFFERED_EDITOR="nano"
+	PREFERRED_EDITOR="nano"
 else
-	PREFFERED_EDITOR="vim"
+	PREFERRED_EDITOR="vim"
 fi
 
 # Preferred editor for local and remote sessions
 if [[ -n $SSH_CONNECTION ]]; then
-  export EDITOR=${PREFFERED_EDITOR}
+  export EDITOR=${PREFERRED_EDITOR}
 else
-  export EDITOR=${PREFFERED_EDITOR}
+  export EDITOR=${PREFERRED_EDITOR}
+fi
+
+# If the Bitwarden SSH agent is enabled, load the agent
+if [[ -f ~/.bitwarden-ssh-agent.sock ]]; then
+  export SSH_AUTH_SOCK=${HOME}/.bitwarden-ssh-agent.sock
 fi
 
 # If OS is Mac test if iTerm2 is installed and if so, load the shell integration
@@ -117,6 +122,6 @@ fi
 
 # As a last step, if the aliases aliased command is available run it, to show the aliases when a new shell is opened
 if command -v aliases &> /dev/null; then
-  clear
+  # clear
   aliases
 fi
