@@ -88,6 +88,7 @@ if command -v git &> /dev/null; then
   alias gps="git push"
   alias gpsh="git push"
   alias gf="git fetch"
+  alias gitkeep="find . -type d -empty -exec touch {}/.gitkeep \;"
   # If the git_cleanup function is defined, set an alias for it
   if declare -f git_cleanup &> /dev/null; then
     alias gitcleanup="git_cleanup"
