@@ -8,6 +8,10 @@
 # It is sourced by .bashrc or .zshrc via ~/.applets
 # Define additional functions here
 
+# Set the log format for the script
+set_log_level INFO
+set_log_format "[%l] %m"
+
 # If distro is Fedora complete the steps to upgrade to the specified version
 # Accepts one named argument which is the version to upgrade to
 # Example: fedora_upgrade -v 40
@@ -24,38 +28,38 @@ fedora_upgrade() {
         shift
         ;;
       *)
-        echo "Error: Invalid argument"
+        log_error "Invalid argument"
         return 1
         ;;
     esac
   done
 
   if [[ -z $version ]]; then
-    echo "[ERROR] No version specified"
+    log_error "No version specified"
     return 1
   fi
 
   # Check if the system already needs a reboot
   if [[ -f /var/run/reboot-required ]]; then
-    echo "[ERROR] System needs a reboot"
+    log_error "System needs a reboot"
     return 1
   fi
 
   if [[ -f /etc/fedora-release ]]; then
-    echo "[INFO] Updating Fedora to version $version"
+    log_info "Updating Fedora to version $version"
     sudo dnf -y --refresh update
     sudo dnf -y upgrade
     # If the system needs a reboot, do not continue, prompt the user to reboot and then run the script again
     if [[ -f /var/run/reboot-required ]]; then
-      echo "[ERROR] System needs a reboot"
-      echo "[INFO] Reboot the system and run 'fedora_upgrade -v $version' again"
+      log_error "System needs a reboot"
+      log_info "Reboot the system and run 'fedora_upgrade -v $version' again"
       return 1
     fi
     sudo dnf -y install dnf-plugin-system-upgrade
     sudo dnf -y system-upgrade download --releasever="$version"
     sudo dnf -y system-upgrade reboot
   else
-    echo "[ERROR] Not a Fedora system"
+    log_error "Not a Fedora system"
     return 1
   fi
 }
@@ -64,19 +68,19 @@ fedora_upgrade() {
 ubuntu_upgrade() {
   # Check if the system already needs a reboot
   if [[ -f /var/run/reboot-required ]]; then
-    echo "[ERROR] System needs a reboot"
+    log_error "System needs a reboot"
     return 1
   fi
 
   if [[ -f /etc/lsb-release ]]; then
-    echo "[INFO] Updating Ubuntu"
+    log_info "Updating Ubuntu"
     sudo apt update
     sudo apt upgrade -y
     sudo apt dist-upgrade -y
     sudo apt install update-manager-core
     sudo do-release-upgrade -f DistUpgradeViewNonInteractive -m desktop
   else
-    echo "[ERROR] Not an Ubuntu system"
+    log_error "Not an Ubuntu system"
     return 1
   fi
 }
@@ -85,17 +89,19 @@ ubuntu_upgrade() {
 opensuse_upgrade() {
   # Check if the system already needs a reboot
   if [[ -f /var/run/reboot-required ]]; then
-    echo "[ERROR] System needs a reboot"
+    log_error "System needs a reboot"
     return 1
   fi
 
   if [[ -f /etc/os-release ]]; then
-    echo "[INFO] Updating openSUSE"
+    log_info "Updating openSUSE"
     sudo zypper refresh
     sudo zypper update
     sudo zypper dist-upgrade
   else
-    echo "[ERROR] Not an openSUSE system"
+    log_error "Not an openSUSE system"
     return 1
   fi
 }
+
+set_log_format "%d [%l] [%s] %m"

@@ -4,6 +4,8 @@
 # Purpose: Install packages for common shells associated with this project, primarily zsh and bash
 # Use: Run this script to install the necessary packages for zsh and bash
 
+# Set the log format for the script
+set_log_level INFO
 set_log_format "[%l] %m"
 
 source_shrc () {
@@ -166,3 +168,5 @@ install_omp () {
   source_shrc
   return 0
 }
+
+set_log_format "%d [%l] [%s] %m"

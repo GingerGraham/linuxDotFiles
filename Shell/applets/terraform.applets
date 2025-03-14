@@ -11,14 +11,14 @@
 # Update/Install Terraform for both Linux and mac
 terraform_install () {
   if [[ -z ${OS} ]]; then
-    echo "[WARN] OS variable is not set"
+    log_warn "OS variable is not set"
     return 1
   fi
   # Check the latest available version of Terraform
   TF_VERSION=$(get_latest_terraform_version)
   # Check if the version is set and if not report an error
   if [[ -z ${TF_VERSION} ]]; then
-    echo "[ERROR] Unable to determine the latest version of Terraform"
+    log_error "Unable to determine the latest version of Terraform"
     return 1
   fi
   if [[ ${OS} == "Linux" ]]; then
@@ -36,7 +36,7 @@ terraform_install () {
   fi
   # If OS is not set or is not Linux or Darwin then report an error
   if [[ ${OS} != "Linux" ]] && [[ ${OS} != "Mac" ]]; then
-    echo "[ERROR] OS variable is not set to Linux or Darwin"
+    log_error "OS variable is not set to Linux or Darwin"
     return 1
   fi
 }
@@ -49,7 +49,7 @@ get_latest_terraform_version () {
 # Is git installed
 is_git_installed () {
   if ! command -v git &> /dev/null; then
-    echo "[ERROR] Git is not installed.  Please install Git and try again"
+    log_error "Git is not installed.  Please install Git and try again"
     return 1
   fi
 }
@@ -57,7 +57,7 @@ is_git_installed () {
 # Is brew installed
 is_brew_installed () {
   if ! command -v brew &> /dev/null; then
-    echo "[ERROR] Homebrew is not installed.  Please install Homebrew and try again"
+    log_error "Homebrew is not installed.  Please install Homebrew and try again"
     return 1
   fi
 }
@@ -68,10 +68,10 @@ tf_install_linux () {
   TF_VERSION=$1
   # If the TF_VERSION variable is not set then report an error and set the TF_VERSION variable to the latest version of Terraform
   if [[ -z ${TF_VERSION} ]]; then
-    echo "[ERROR] Terraform version not set.  Installing latest version"
+    log_error "Terraform version not set.  Installing latest version"
     TF_VERSION=$(get_latest_terraform_version)
     if [[ -z ${TF_VERSION} ]]; then
-      echo "[ERROR] Unable to determine the latest version of Terraform"
+      log_error "Unable to determine the latest version of Terraform"
       return 1
     fi
   fi
@@ -81,65 +81,65 @@ tf_install_linux () {
   fi
   # If the current version of Terraform is the same as the version to be installed then report the version and exit
   if [[ "${CURRENT_TF_VERSION}" == "${TF_VERSION}" ]]; then
-    echo "[INFO] Terraform ${TF_VERSION} is already installed"
+    log_info "Terraform ${TF_VERSION} is already installed"
     return 0
   fi
   # Test if the tfenv command is available and if it is exit as no further work needed
   if command -v tfenv &> /dev/null; then
-    echo "[INFO] tfenv is already installed, updating..."
+    log_info "tfenv is already installed, updating..."
     if git --git-dir="${HOME}"/.tfenv/.git pull; then
-      echo "[INFO] tfenv updated"
+      log_info "tfenv updated"
     else
-      echo "[ERROR] Error updating tfenv"
+      log_error "Error updating tfenv"
       return 1
     fi
     if tfenv install "${TF_VERSION}"; then
-      echo "[INFO] Terraform ${TF_VERSION} installed"
+      log_info "Terraform ${TF_VERSION} installed"
       tfenv use "${TF_VERSION}"
     else
-      echo "[ERROR] Error installing Terraform ${TF_VERSION}"
+      log_error "Error installing Terraform ${TF_VERSION}"
       return 1
     fi
     return 0
   fi
   # If the tfenv command is not available then install it using the manual installation method
-  echo "[INFO] tfenv is not installed.  Installing tfenv"
+  log_info "tfenv is not installed.  Installing tfenv"
   if git clone --depth=1 https://github.com/tfutils/tfenv.git ~/.tfenv; then
-    echo "[INFO] tfenv installed"
+    log_info "tfenv installed"
   else
-    echo "[ERROR] Error installing tfenv"
+    log_error "Error installing tfenv"
     return 1
   fi
   # If the default tfenv bin directory is not in the PATH then add it to PATH directly
   if [[ ! ":$PATH:" == *":${HOME}/.tfenv/bin:"* ]]; then
-    echo "[INFO] Adding ${HOME}/.tfenv/bin to PATH for this session"
+    log_info "Adding ${HOME}/.tfenv/bin to PATH for this session"
     PATH="${HOME}/.tfenv/bin:${PATH}"
-    echo "[INFO] To add this to your PATH permanently add the following line to your .bashrc or .zshrc file:"
+    log_info "To add this to your PATH permanently add the following line to your .bashrc or .zshrc file:"
     echo "export PATH=\"${HOME}/.tfenv/bin:\$PATH\""
   fi
   # If the tfenv command is not available after adding the bin directory to the PATH then report an error and exit
   if ! command -v tfenv &> /dev/null; then
-    echo "[ERROR] tfenv not found"
+    log_error "tfenv not found"
     return 1
   fi
   # If the tfenv command is available then install the latest version of Terraform
-  echo "[INFO] Installing latest version of Terraform"
+  log_info "Installing latest version of Terraform"
   tfenv install latest
   # If the tfenv install command fails then report an error and exit
   if [[ $? -ne 0 ]]; then
-    echo "[ERROR] Error installing Terraform"
+    log_error "Error installing Terraform"
     return 1
   fi
   # If the tfenv install command is successful then set the latest version of Terraform as the global version
-  echo "[INFO] Setting Terraform v$(tfenv list-remote | grep -E -m 1 '[0-9]+\.[0-9]+\.[0-9]+' | tail -n 1) as the global version"
+  log_info "Setting Terraform v$(tfenv list-remote | grep -E -m 1 '[0-9]+\.[0-9]+\.[0-9]+' | tail -n 1) as the global version"
   tfenv use latest
   # If the tfenv use command fails then report an error and exit
   if [[ $? -ne 0 ]]; then
-    echo "[ERROR] Error setting Terraform as the global version"
+    log_error "Error setting Terraform as the global version"
     return 1
   fi
   # If the tfenv use command is successful then report the version of Terraform installed
-  echo "[INFO] Terraform $(terraform version | sed -r 's/Terraform v([0-9]\.[0-9]+\.[0-9]+)/\1/' | grep -E '[0-9]\.[0-9]+\.[0-9]+') installed"
+  log_info "Terraform $(terraform version | sed -r 's/Terraform v([0-9]\.[0-9]+\.[0-9]+)/\1/' | grep -E '[0-9]\.[0-9]+\.[0-9]+') installed"
   return 0
 }
 
@@ -149,10 +149,10 @@ tf_install_mac () {
   TF_VERSION=$1
   # If the TF_VERSION variable is not set then report an error and set the TF_VERSION variable to the latest version of Terraform
   if [[ -z ${TF_VERSION} ]]; then
-    echo "[ERROR] Terraform version not set.  Installing latest version"
+    log_error "Terraform version not set.  Installing latest version"
     TF_VERSION=$(get_latest_terraform_version)
     if [[ -z ${TF_VERSION} ]]; then
-      echo "[ERROR] Unable to determine the latest version of Terraform"
+      log_error "Unable to determine the latest version of Terraform"
       return 1
     fi
   fi
@@ -162,7 +162,7 @@ tf_install_mac () {
   fi
   # If the current version of Terraform is the same as the version to be installed then report the version and exit
   if [[ "${CURRENT_TF_VERSION}" == "${TF_VERSION}" ]]; then
-    echo "[INFO] Terraform ${TF_VERSION} is already installed"
+    log_info "Terraform ${TF_VERSION} is already installed"
     return 0
   fi
   # Test if brew, or git, are installed and if one of them is, with a preference for brew, then set the installation method to brew and if neither are installed then report and error and exit
@@ -171,19 +171,19 @@ tf_install_mac () {
   elif command -v git &> /dev/null; then
     INSTALL_METHOD="git"
   else
-    echo "[ERROR] Neither Homebrew nor Git are installed.  Please install one of them and try again"
+    log_error "Neither Homebrew nor Git are installed.  Please install one of them and try again"
     return 1
   fi
   # If the tfenv command is not available then install it using Homebrew
   if ! command -v tfenv &> /dev/null; then
-    echo "[INFO] tfenv is not installed.  Installing tfenv"
+    log_info "tfenv is not installed.  Installing tfenv"
     if [[ ${INSTALL_METHOD} == "brew" ]]; then
       brew install tfenv
     elif [[ ${INSTALL_METHOD} == "git" ]]; then
       git clone
     fi
   else
-    echo "[INFO] tfenv is already installed, updating..."
+    log_info "tfenv is already installed, updating..."
     if [[ ${INSTALL_METHOD} == "brew" ]]; then
       brew upgrade tfenv
     elif [[ ${INSTALL_METHOD} == "git" ]]; then
@@ -192,34 +192,34 @@ tf_install_mac () {
   fi
   # If the default tfenv bin directory is not in the PATH then add it to PATH directly
   if [[ ! ":$PATH:" == *":${HOME}/.tfenv/bin:"* ]]; then
-    echo "[INFO] Adding ${HOME}/.tfenv/bin to PATH for this session"
+    log_info "Adding ${HOME}/.tfenv/bin to PATH for this session"
     PATH="${HOME}/.tfenv/bin:${PATH}"
-    echo "[INFO] To add this to your PATH permanently add the following line to your .bashrc or .zshrc file:"
+    log_info "To add this to your PATH permanently add the following line to your .bashrc or .zshrc file:"
     echo "export PATH=\"${HOME}/.tfenv/bin:\$PATH\""
   fi
   # If the tfenv command is not available after installing it then report an error and exit
   if ! command -v tfenv &> /dev/null; then
-    echo "[ERROR] Error installing tfenv"
+    log_error "Error installing tfenv"
     return 1
   fi
   # If the tfenv command is available then install the latest version of Terraform
-  echo "[INFO] Installing latest version of Terraform"
+  log_info "Installing latest version of Terraform"
   tfenv install latest
   # If the tfenv install command fails then report an error and exit
   if [[ $? -ne 0 ]]; then
-    echo "[ERROR] Error installing Terraform"
+    log_error "Error installing Terraform"
     return 1
   fi
   # If the tfenv install command is successful then set the latest version of Terraform as the global version
-  echo "[INFO] Setting Terraform v$(tfenv list-remote | grep -E -m 1 '[0-9]+\.[0-9]+\.[0-9]+' | tail -n 1) as the global version"
+  log_info "Setting Terraform v$(tfenv list-remote | grep -E -m 1 '[0-9]+\.[0-9]+\.[0-9]+' | tail -n 1) as the global version"
   tfenv use latest
   # If the tfenv use command fails then report an error and exit
   if [[ $? -ne 0 ]]; then
-    echo "[ERROR] Error setting Terraform as the global version"
+    log_error "Error setting Terraform as the global version"
     return 1
   fi
   # If the tfenv use command is successful then report the version of Terraform installed
-  echo "[INFO] Terraform $(terraform version | sed -r 's/Terraform v([0-9]\.[0-9]+\.[0-9]+)/\1/' | grep -E '[0-9]\.[0-9]+\.[0-9]+') installed"
+  log_info "Terraform $(terraform version | sed -r 's/Terraform v([0-9]\.[0-9]+\.[0-9]+)/\1/' | grep -E '[0-9]\.[0-9]+\.[0-9]+') installed"
   return 0
 }
 
@@ -230,20 +230,20 @@ tflint_install_linux () {
   TFLINT_VERSION=$(curl -s https://api.github.com/repos/terraform-linters/tflint/releases/latest | grep '"tag_name":' | sed -E 's/.+"v([^"]+)".+/\1/')
   # Check if the version is set and if not report an error
   if [[ -z ${TFLINT_VERSION} ]]; then
-    echo "[ERROR] Unable to determine the latest version of TFLint"
+    log_error "Unable to determine the latest version of TFLint"
     return 1
   fi
   # Check if TFLint is already installed and if the current version matches the version to be set
   if command -v tflint &> /dev/null; then
     if [[ "$(tflint --version | sed -r 's/TFLint version ([0-9]\.[0-9]+\.[0-9]+)/\1/' | grep -E -m 1 '[0-9]\.[0-9]+\.[0-9]+')" == "${TFLINT_VERSION}" ]]; then
-      echo "[INFO] TFLint ${TFLINT_VERSION} is already installed and is the latest version"
+      log_info "TFLint ${TFLINT_VERSION} is already installed and is the latest version"
       return 0
     fi
   fi
-  echo "[INFO] TFLint is not installed or is not the correct version.  Installing TFLint v${TFLINT_VERSION}"
+  log_info "TFLint is not installed or is not the correct version.  Installing TFLint v${TFLINT_VERSION}"
   # If the command unzip is not available then return an error - required for the install
   if ! command -v unzip &> /dev/null; then
-    echo "[ERROR] Unzip is not installed - required for TFLint install"
+    log_error "Unzip is not installed - required for TFLint install"
     return 1
   fi
   # Setting the directory to download TFLint to
@@ -254,31 +254,31 @@ tflint_install_linux () {
     mkdir -p "${TFLINT_INSTALL_PATH}"
   fi
   # Follow the installation instructions for Linux from the TFLint GitHub page
-  echo "[INFO] Downloading TFLint-${TFLINT_VERSION}"
+  log_info "Downloading TFLint-${TFLINT_VERSION}"
   curl -s https://raw.githubusercontent.com/terraform-linters/tflint/master/install_linux.sh | bash
   # Check that the version downloaded is available executable and if it report and error and exit
   if [[ ! -x "${TFLINT_INSTALL_PATH}/tflint" ]]; then
-    echo "[ERROR] Error downloading TFLint v${TFLINT_VERSION}"
-    echo "[ERROR] Please check the version is valid and try again"
+    log_error "Error downloading TFLint v${TFLINT_VERSION}"
+    log_error "Please check the version is valid and try again"
     return 1
   fi
-  echo "[INFO] TFLint v${TFLINT_VERSION} downloaded to ${TFLINT_INSTALL_PATH}"
+  log_info "TFLint v${TFLINT_VERSION} downloaded to ${TFLINT_INSTALL_PATH}"
   # Check if the current version of TFLint is a symlink and if so remove it
   if [[ -L "$(command -v tflint)" ]]; then
-    echo "[INFO] Removing symlink to TFLint"
+    log_info "Removing symlink to TFLint"
     rm "$(command -v tflint)"
   fi
   # If current version of TFLint is not a symlink then rename it to TFLint.old
   if command -v tflint &> /dev/null; then
-    echo "[WARN] Renaming current version of TFLint (located at $(command -v tflint)) to TFLint.old"
+    log_warn "Renaming current version of TFLint (located at $(command -v tflint)) to TFLint.old"
     mv "$(command -v tflint)" "$(command -v tflint).old"
-    echo "[WARN] If a permission error is reported then run the following command with sudo"
+    log_warn "If a permission error is reported then run the following command with sudo"
     echo "sudo mv $(command -v tflint) $(command -v tflint).old"
-    echo "[WARN] If you wish to revert to the previous version of TFLint then run the following command:"
+    log_warn "If you wish to revert to the previous version of TFLint then run the following command:"
     echo "mv $(command -v tflint).old $(command -v tflint)"
   fi
   # Create a symlink to the requested version of TFLint
-  echo "Creating symlink to ${TFLINT_VERSION} located at ${TFLINT_INSTALL_PATH}/tflint"
+  log_info "Creating symlink to ${TFLINT_VERSION} located at ${TFLINT_INSTALL_PATH}/tflint"
   ln -s "${TFLINT_INSTALL_PATH}/tflint" "${HOME}/.local/bin/tflint"
 }
 
@@ -289,49 +289,49 @@ tflint_install_mac () {
   TFLINT_VERSION=$(curl -s https://api.github.com/repos/terraform-linters/tflint/releases/latest | grep '"tag_name":' | sed -E 's/.+"v([^"]+)".+/\1/')
   # Check if the version is set and if not report an error
   if [[ -z ${TFLINT_VERSION} ]]; then
-    echo "[ERROR] Unable to determine the latest version of TFLint"
+    log_error "Unable to determine the latest version of TFLint"
     return 1
   fi
   # Check if TFLint is already installed and if the current version matches the version to be set
   if command -v tflint &> /dev/null; then
     if [[ "$(tflint --version | sed -r 's/TFLint version ([0-9]\.[0-9]+\.[0-9]+)/\1/' | grep -E -m 1 '[0-9]\.[0-9]+\.[0-9]+')" == "${TFLINT_VERSION}" ]]; then
-      echo "[INFO] TFLint ${TFLINT_VERSION} is already installed and is the latest version"
+      log_info "TFLint ${TFLINT_VERSION} is already installed and is the latest version"
       return 0
     fi
   fi
-  echo "[INFO] TFLint is not installed or is not the correct version.  Installing TFLint v${TFLINT_VERSION}"
+  log_info "TFLint is not installed or is not the correct version.  Installing TFLint v${TFLINT_VERSION}"
   # Per https://github.com/terraform-linters/tflint/blob/master/README.md use Homebrew to install TFLint
   # Check if Homebrew is installed and if not report an error
   if ! command -v brew &> /dev/null; then
-    echo "[ERROR] Homebrew is not installed.  Please install Homebrew and try again"
+    log_error "Homebrew is not installed.  Please install Homebrew and try again"
     return 1
   fi
   # Check if TFLint is already installed, if not install it, if it is then upgrade it
   if command -v tflint &> /dev/null; then
-    echo "[INFO] Upgrading TFLint to v${TFLINT_VERSION}"
+    log_info "Upgrading TFLint to v${TFLINT_VERSION}"
     brew upgrade tflint
   else
-    echo "[INFO] Installing TFLint v${TFLINT_VERSION}"
+    log_info "Installing TFLint v${TFLINT_VERSION}"
     brew install tflint
   fi
   # Check if the version installed is the correct version and if not report an error
   if [[ "$(tflint --version | sed -r 's/TFLint version ([0-9]\.[0-9]+\.[0-9]+)/\1/' | grep -E -m 1 '[0-9]\.[0-9]+\.[0-9]+')" != "${TFLINT_VERSION}" ]]; then
-    echo "[ERROR] Error installing TFLint v${TFLINT_VERSION}"
-    echo "[ERROR] Please check the version is valid and try again"
+    log_error "Error installing TFLint v${TFLINT_VERSION}"
+    log_error "Please check the version is valid and try again"
     return 1
   fi
-  echo "[INFO] TFLint v${TFLINT_VERSION} installed"
+  log_info "TFLint v${TFLINT_VERSION} installed"
 }
 
 trivy_repo_rpm () {
   # Referring to https://trivy.dev/latest/getting-started/installation/#rhelcentos-official
   # Test if trivy repo is already configured
   if [[ -f /etc/yum.repos.d/trivy.repo ]]; then
-    echo "[INFO] Trivy repository is already configured"
+    log_info "Trivy repository is already configured"
     return 0
   fi
   # Configure the trivy repository
-  echo "[INFO] Configuring Trivy repository"
+  log_info "Configuring Trivy repository"
   cat << EOF | sudo tee -a /etc/yum.repos.d/trivy.repo
 [trivy]
 name=Trivy repository
@@ -342,10 +342,10 @@ gpgkey=https://aquasecurity.github.io/trivy-repo/rpm/public.key
 EOF
   # Test if the trivy repository is configured
   if [[ ! -f /etc/yum.repos.d/trivy.repo ]]; then
-    echo "[ERROR] Error configuring Trivy repository"
+    log_error "Error configuring Trivy repository"
     return 1
   fi
-  echo "[INFO] Trivy repository configured... Updating package list"
+  log_info "Trivy repository configured... Updating package list"
   # Update the package list
   # Test if we have dnf or yum
   if command -v dnf &> /dev/null; then
@@ -353,33 +353,33 @@ EOF
   elif command -v yum &> /dev/null; then
     sudo yum check-update -y
   else
-    echo "[ERROR] No package manager found"
+    log_error "No package manager found"
     return 1
   fi
-  echo "[INFO] Package list updated, trivy can now be installed"
+  log_info "Package list updated, trivy can now be installed"
 }
 
 trivy_repo_deb () {
   # Referring to https://trivy.dev/latest/getting-started/installation/#debianubuntu-official
   # Test if trivy repo is already configured
   if [[ -f /etc/apt/sources.list.d/trivy.list ]]; then
-    echo "[INFO] Trivy repository is already configured"
+    log_info "Trivy repository is already configured"
     return 0
   fi
   # Configure the trivy repository
-  echo "[INFO] Configuring Trivy repository"
+  log_info "Configuring Trivy repository"
   sudo apt-get install wget gnupg
   wget -qO - https://aquasecurity.github.io/trivy-repo/deb/public.key | gpg --dearmor | sudo tee /usr/share/keyrings/trivy.gpg > /dev/null
   echo "deb [signed-by=/usr/share/keyrings/trivy.gpg] https://aquasecurity.github.io/trivy-repo/deb generic main" | sudo tee -a /etc/apt/sources.list.d/trivy.list
   # Test if the trivy repository is configured
   if [[ ! -f /etc/apt/sources.list.d/trivy.list ]]; then
-    echo "[ERROR] Error configuring Trivy repository"
+    log_error "Error configuring Trivy repository"
     return 1
   fi
-  echo "[INFO] Trivy repository configured... Updating package list"
+  log_info "Trivy repository configured... Updating package list"
   # Update the package list
   sudo apt-get update
-  echo "[INFO] Package list updated, trivy can now be installed"
+  log_info "Package list updated, trivy can now be installed"
 }
 
 # Install Trivy for Linux
@@ -389,17 +389,17 @@ trivy_install_linux () {
   TRIVY_VERSION=$(curl -s https://api.github.com/repos/aquasecurity/trivy/releases/latest | grep '"tag_name":' | sed -E 's/.+"v([^"]+)".+/\1/')
   # Check if the version is set and if not report an error
   if [[ -z ${TRIVY_VERSION} ]]; then
-    echo "[ERROR] Unable to determine the latest version of Trivy"
+    log_error "Unable to determine the latest version of Trivy"
     return 1
   fi
   # Check if Trivy is already installed and if the current version matches the version to be set
   if command -v trivy &> /dev/null; then
     if [[ "$(trivy version | grep -E -m 1 '[0-9]+\.[0-9]+\.[0-9]+' | sed 's/Version: //' | head -n 1)" == "${TRIVY_VERSION}" ]]; then
-      echo "[INFO] Trivy ${TRIVY_VERSION} is already installed and is the latest version"
+      log_info "Trivy ${TRIVY_VERSION} is already installed and is the latest version"
       return 0
     fi
   fi
-  echo "[INFO] Trivy is not installed or is not the correct version.  Installing Trivy v${TRIVY_VERSION}"
+  log_info "Trivy is not installed or is not the correct version.  Installing Trivy v${TRIVY_VERSION}"
   # Test if we have dnf or yum
   if command -v dnf &> /dev/null; then
     trivy_repo_rpm
@@ -411,16 +411,16 @@ trivy_install_linux () {
     trivy_repo_deb
     sudo apt-get install trivy -y
   else
-    echo "[ERROR] No package manager found"
+    log_error "No package manager found"
     return 1
   fi
   # Check if the version installed is the correct version and if not report an error
   if [[ "$(trivy version | grep -E -m 1 '[0-9]+\.[0-9]+\.[0-9]+' | sed 's/Version: //' | head -n 1)" != "${TRIVY_VERSION}" ]]; then
-    echo "[ERROR] Error installing Trivy v${TRIVY_VERSION}"
-    echo "[ERROR] Please check the version is valid and try again"
+    log_error "Error installing Trivy v${TRIVY_VERSION}"
+    log_error "Please check the version is valid and try again"
     return 1
   fi
-  echo "[INFO] Trivy v${TRIVY_VERSION} installed"
+  log_info "Trivy v${TRIVY_VERSION} installed"
 }
 
 # Install Trivy for macOS using Homebrew
@@ -430,70 +430,70 @@ trivy_install_mac () {
   TRIVY_VERSION=$(curl -s https://api.github.com/repos/aquasecurity/trivy/releases/latest | grep '"tag_name":' | sed -E 's/.+"v([^"]+)".+/\1/')
   # Check if the version is set and if not report an error
   if [[ -z ${TRIVY_VERSION} ]]; then
-    echo "[ERROR] Unable to determine the latest version of Trivy"
+    log_error "Unable to determine the latest version of Trivy"
     return 1
   fi
   # Check if Trivy is already installed and if the current version matches the version to be set
   if command -v trivy &> /dev/null; then
     if [[ "$(trivy version | grep -E -m 1 '[0-9]+\.[0-9]+\.[0-9]+' | sed 's/Version: //' | head -n 1)" == "${TRIVY_VERSION}" ]]; then
-      echo "[INFO] Trivy ${TRIVY_VERSION} is already installed and is the latest version"
+      log_info "Trivy ${TRIVY_VERSION} is already installed and is the latest version"
       return 0
     fi
   fi
-  echo "[INFO] Trivy is not installed or is not the correct version.  Installing Trivy v${TRIVY_VERSION}"
+  log_info "Trivy is not installed or is not the correct version.  Installing Trivy v${TRIVY_VERSION}"
   # Check if Homebrew is installed and if not report an error
   if ! command -v brew &> /dev/null; then
-    echo "[ERROR] Homebrew is not installed.  Please install Homebrew and try again"
+    log_error "Homebrew is not installed.  Please install Homebrew and try again"
     return 1
   fi
   # Check if Trivy is already installed, if not install it, if it is then upgrade it
   if command -v trivy &> /dev/null; then
-    echo "[INFO] Upgrading Trivy to v${TRIVY_VERSION}"
+    log_info "Upgrading Trivy to v${TRIVY_VERSION}"
     brew upgrade trivy
   else
-    echo "[INFO] Installing Trivy v${TRIVY_VERSION}"
+    log_info "Installing Trivy v${TRIVY_VERSION}"
     brew install trivy
   fi
   # Check if the version installed is the correct version and if not report an error
   if [[ "$(trivy version | grep -E -m 1 '[0-9]+\.[0-9]+\.[0-9]+' | sed 's/Version: //' | head -n 1)" != "${TRIVY_VERSION}" ]]; then
-    echo "[ERROR] Error installing Trivy v${TRIVY_VERSION}"
-    echo "[ERROR] Please check the version is valid and try again"
+    log_error "Error installing Trivy v${TRIVY_VERSION}"
+    log_error "Please check the version is valid and try again"
     return 1
   fi
-  echo "[INFO] Trivy v${TRIVY_VERSION} installed"
+  log_info "Trivy v${TRIVY_VERSION} installed"
 }
 
 # Install terraform-docs for Linux
 terraform_docs_install_linux () {
   # Issue or bug with v0.17.0 of terraform-docs, the go install doesn't produce the expected binary. For now marking this module as not working for Linux and exiting
-  echo "[ERROR] Automated installation of terraform-docs is not available for Linux.  Please install terraform-docs manually"
-  echo "[ERROR] For more information please refer to https://github.com/terraform-docs/terraform-docs#installation"
+  log_error "Automated installation of terraform-docs is not available for Linux.  Please install terraform-docs manually"
+  log_error "For more information please refer to https://github.com/terraform-docs/terraform-docs#installation"
   return 1
   # Referring to https://github.com/terraform-docs/terraform-docs#installation
   # Options for Linux are more limited than for macOS and either require homebrew for Linux or to use Go package management
   # Test if go/golang is not installed; if not then exit and refer user to the terraform-docs installation page
   if ! command -v go &> /dev/null; then
-    echo "[ERROR] Automated installation of terraform-docs is not available for Linux.  Please install terraform-docs manually"
-    echo "[ERROR] For more information please refer to https://github.com/terraform-docs/terraform-docs#installation"
+    log_error "Automated installation of terraform-docs is not available for Linux.  Please install terraform-docs manually"
+    log_error "For more information please refer to https://github.com/terraform-docs/terraform-docs#installation"
     return 1
   fi
   # Check the latest available version of terraform-docs
   TERRAFORM_DOCS_VERSION=$(curl -s https://api.github.com/repos/terraform-docs/terraform-docs/releases/latest | grep '"tag_name":' | sed -E 's/.+"v([^"]+)".+/\1/')
   # Check if the version is set and if not report an error
   if [[ -z ${TERRAFORM_DOCS_VERSION} ]]; then
-    echo "[ERROR] Unable to determine the latest version of terraform-docs"
+    log_error "Unable to determine the latest version of terraform-docs"
     return 1
   fi
   # Check if terraform-docs is already installed and if the current version matches the version to be set
   if command -v terraform-docs &> /dev/null; then
     if [[ "$(terraform-docs --version | sed -r 's/v([0-9]\.[0-9]+\.[0-9]+)/\1/')" == "${TERRAFORM_DOCS_VERSION}" ]]; then
-      echo "[INFO] terraform-docs ${TERRAFORM_DOCS_VERSION} is already installed and is the latest version"
+      log_info "terraform-docs ${TERRAFORM_DOCS_VERSION} is already installed and is the latest version"
       return 0
     fi
   fi
-  echo "[INFO] terraform-docs is not installed or is not the correct version.  Installing terraform-docs v${TERRAFORM_DOCS_VERSION}"
+  log_info "terraform-docs is not installed or is not the correct version.  Installing terraform-docs v${TERRAFORM_DOCS_VERSION}"
   # Install terraform-docs using Go
-  echo "[INFO] Installing terraform-docs using Go"
+  log_info "Installing terraform-docs using Go"
   # If the environment variable GO_VERSION is not set then call the get_go_version function to set it
   if [[ -z ${GO_VERSION} ]]; then
     get_go_version
@@ -508,16 +508,16 @@ terraform_docs_install_linux () {
   fi
   # If ${HOME}/go/bin is not in the PATH then add it by sourcing the .pathVars file
   if ! echo "${PATH}" | grep -q "${HOME}/go/bin"; then
-    echo "[INFO] Adding ${HOME}/go/bin to PATH"
+    log_info "Adding ${HOME}/go/bin to PATH"
     source "${HOME}/.pathVars"
   fi
   # Check if the version installed is the correct version and if not report an error
   if [[ "$(terraform-docs --version | sed -r 's/v([0-9]\.[0-9]+\.[0-9]+)/\1/')" != "${TERRAFORM_DOCS_VERSION}" ]]; then
-    echo "[ERROR] Error installing terraform-docs v${TERRAFORM_DOCS_VERSION}"
-    echo "[ERROR] Please check the version is valid and try again"
+    log_error "Error installing terraform-docs v${TERRAFORM_DOCS_VERSION}"
+    log_error "Please check the version is valid and try again"
     return 1
   fi
-  echo "[INFO] terraform-docs v${TERRAFORM_DOCS_VERSION} installed"
+  log_info "terraform-docs v${TERRAFORM_DOCS_VERSION} installed"
 }
 
 # Install terraform-docs for Mac
@@ -527,36 +527,36 @@ terraform_docs_install_mac () {
   TERRAFORM_DOCS_VERSION=$(curl -s https://api.github.com/repos/terraform-docs/terraform-docs/releases/latest | grep '"tag_name":' | sed -E 's/.+"v([^"]+)".+/\1/')
   # Check if the version is set and if not report an error
   if [[ -z ${TERRAFORM_DOCS_VERSION} ]]; then
-    echo "[ERROR] Unable to determine the latest version of terraform-docs"
+    log_error "Unable to determine the latest version of terraform-docs"
     return 1
   fi
   # Check if terraform-docs is already installed and if the current version matches the version to be set
   if command -v terraform-docs &> /dev/null; then
     if [[ "$(terraform-docs --version | sed -r 's/v([0-9]\.[0-9]+\.[0-9]+)/\1/')" == "${TERRAFORM_DOCS_VERSION}" ]]; then
-      echo "[INFO] terraform-docs ${TERRAFORM_DOCS_VERSION} is already installed and is the latest version"
+      log_info "terraform-docs ${TERRAFORM_DOCS_VERSION} is already installed and is the latest version"
       return 0
     fi
   fi
-  echo "[INFO] terraform-docs is not installed or is not the correct version.  Installing terraform-docs v${TERRAFORM_DOCS_VERSION}"
+  log_info "terraform-docs is not installed or is not the correct version.  Installing terraform-docs v${TERRAFORM_DOCS_VERSION}"
   # Use Homebrew to install terraform-docs
   # Check if Homebrew is installed and if not report an error
   if ! command -v brew &> /dev/null; then
-    echo "[ERROR] Homebrew is not installed.  Please install Homebrew and try again"
+    log_error "Homebrew is not installed.  Please install Homebrew and try again"
     return 1
   fi
   # Check if terraform-docs is already installed, if not install it, if it is then upgrade it
   if command -v terraform-docs &> /dev/null; then
-    echo "[INFO] Upgrading terraform-docs"
+    log_info "Upgrading terraform-docs"
     brew upgrade terraform-docs
   else
-    echo "[INFO] Installing terraform-docs"
+    log_info "Installing terraform-docs"
     brew install terraform-docs
   fi
   # Check if terraform-docs is installed and if not report an error
   if ! command -v terraform-docs &> /dev/null; then
-    echo "[ERROR] Error installing terraform-docs"
-    echo "[ERROR] Please check the version is valid and try again"
+    log_error "Error installing terraform-docs"
+    log_error "Please check the version is valid and try again"
     return 1
   fi
-  echo "[INFO] terraform-docs ${TERRAFORM_DOCS_VERSION} installed"
+  log_info "terraform-docs ${TERRAFORM_DOCS_VERSION} installed"
 }
