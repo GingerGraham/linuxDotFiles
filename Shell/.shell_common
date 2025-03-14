@@ -1,17 +1,13 @@
 #!/usr/bin/env bash
 
-# Path: .profile
+# Path: .shell_common
 # Purpose: Configure the shell environment - intended to be agnostic of bash or zsh, not designed to work with shells other than bash or zsh
 # Use: Sourced by .bashrc or .zshrc
 
 # shellcheck source=/dev/null
 
-# # Sourcing standard logging library
-# REPO_ROOT="$(git rev-parse --show-toplevel)"
-# source "${REPO_ROOT}/utils/logging.sh"
-
-# # Initial logging
-# init_logger --journal --tag "shell" --color --verbose
+# Set the log level
+set_log_level DEBUG
 
 CURRENT_SHELL="$(ps -p $$ | tail -1 | awk '{print $NF}')"
 log_debug "Current shell is: ${CURRENT_SHELL}"
@@ -126,27 +122,6 @@ elif [[ -d "${HOME}/.oh-my-zsh" ]] && [[ "${CURRENT_SHELL}" == "zsh" ]]; then
 else
   log_warn "oh-my-posh and oh-my-zsh are not installed"
 fi
-
-# Confirm the user SHELL and if it is zsh then source the .zsh_profile file or if it is bash then source the .bash_profile file
-# if [[ "${CURRENT_SHELL}" == "zsh" ]]; then
-#   log_debug "Sourcing .zsh_profile"
-#   # Test if asdf is installed and if so load and configure it
-#   # if [[ -d "${HOME}/.asdf" ]]; then
-#     # if [[ ! "${fpath[*]}" =~ ${ASDF_DIR}/completions ]]; then
-#     #   fpath=("${ASDF_DIR}/completions" "${fpath}")
-#     # fi
-#   # fi
-#   # echo "$(date +'%Y-%m-%d %H:%M:%S.%3N') [DEBUG] Sourcing .zsh_profile"
-#   source "${HOME}/.zsh_profile"
-# elif [[ "${CURRENT_SHELL}" == "bash" ]]; then
-#   log_debug "Sourcing .bash_profile"
-#   # Test if asdf is installed and if so load and configure it
-#   if [ -f ~/.asdf/asdf.sh ]; then
-#     source ~/.asdf/completions/asdf.bash
-#   fi
-#   # echo "$(date +'%Y-%m-%d %H:%M:%S.%3N') [DEBUG] Sourcing .bash_profile"
-#   source "${HOME}/.bash_profile"
-# fi
 
 # Adding aliases
 if [[ -f ${HOME}/.alias ]]; then

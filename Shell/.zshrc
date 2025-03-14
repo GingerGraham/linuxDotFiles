@@ -8,9 +8,9 @@ REPO_ROOT="$(git rev-parse --show-toplevel)"
 source "${REPO_ROOT}/utils/logging.sh"
 
 # Initial logging
-init_logger --journal --tag "shell" --color --verbose
+init_logger --journal --tag "shell" --color
 
-log_debug "Running .zshrc"
+log_info "Running .zshrc"
 
 if [[ -f ${HOME}/.shell_common ]]; then
 	log_debug "Sourcing .shell_common"

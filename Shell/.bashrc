@@ -8,9 +8,9 @@ REPO_ROOT="$(git rev-parse --show-toplevel)"
 source "${REPO_ROOT}/utils/logging.sh"
 
 # Initial logging
-init_logger --journal --tag "shell" --color --verbose
+init_logger --journal --tag "shell" --color
 
-log_debug "Running .bashrc"
+log_info "Running .bashrc"
 
 # If not running interactively, don't do anything
 case $- in
