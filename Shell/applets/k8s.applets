@@ -8,10 +8,6 @@
 # It is sourced by .bashrc or .zshrc via ~/.applets
 # Define additional functions here
 
-# Set the log format for the script
-set_log_level INFO
-set_log_format "[%l] %m"
-
 # Function to set a specific version of kubectl for the current shell and if it is not already installed download it
 set_kubectl () {
   # Check if variables are already set and if so unset -f
@@ -230,5 +226,3 @@ helm_install_mac () {
   fi
   log_info "helm v${HELM_VERSION} installed"
 }
-
-set_log_format "%d [%l] [%s] %m"

@@ -4,10 +4,6 @@
 # Purpose: Aliases for shell commands
 # Use: Add aliases to this file and they will be sourced by .zshrc
 
-# Set the log format for the script
-set_log_level INFO
-set_log_format "[%l] %m"
-
 # General shell aliases
 alias lsa="ls -Alhi" # Show all hidden files
 alias lsr="ls -Alhitr" # Similar to above but reverse listed by date
@@ -233,5 +229,3 @@ if command -v wl-copy &> /dev/null; then
   alias copy="wl-copy"
   alias clip="wl-copy"
 fi
-
-set_log_format "%d [%l] [%s] %m"

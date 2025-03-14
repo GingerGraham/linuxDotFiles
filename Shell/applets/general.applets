@@ -8,10 +8,6 @@
 # It is sourced by .bashrc or .zshrc via ~/.applets
 # Define additional functions here
 
-# Set the log format for the script
-set_log_level INFO
-set_log_format "%d [%l] [%s] %m"
-
 # adding use of website cheat.sh for command lookup
 cheat(){
     curl "https://cheat.sh/$1"

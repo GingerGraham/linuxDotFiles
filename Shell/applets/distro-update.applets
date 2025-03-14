@@ -8,10 +8,6 @@
 # It is sourced by .bashrc or .zshrc via ~/.applets
 # Define additional functions here
 
-# Set the log format for the script
-set_log_level INFO
-set_log_format "[%l] %m"
-
 # If distro is Fedora complete the steps to upgrade to the specified version
 # Accepts one named argument which is the version to upgrade to
 # Example: fedora_upgrade -v 40
@@ -103,5 +99,3 @@ opensuse_upgrade() {
     return 1
   fi
 }
-
-set_log_format "%d [%l] [%s] %m"

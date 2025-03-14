@@ -8,10 +8,6 @@
 # It is sourced by .bashrc or .zshrc via ~/.applets
 # Define additional functions here
 
-# Set the log format for the script
-set_log_level INFO
-set_log_format "[%l] %m"
-
 # Update AWS CLI
 aws_update () {
   # Check if user has sudo access using provided function and exit if not
@@ -177,5 +173,3 @@ aws_update_mac () {
   log_info "Completed"
   return 0
 }
-
-set_log_format "%d [%l] [%s] %m"

@@ -8,8 +8,6 @@
 # It is sourced by .bashrc or .zshrc via ~/.applets
 # Define additional functions here
 
-set_log_level INFO
-set_log_format "[%l] %m"
 
 ansible_install_dnf () {
   # Check if the command dnf is available and use it if so
@@ -328,5 +326,3 @@ ave () {
   FILES=()
   VAULT_PASS=""
 }
-
-set_log_format "%d [%l] [%s] %m"
