@@ -1,0 +1,184 @@
+#!/usr/bin/env bash
+
+# Path: .profile
+# Purpose: Configure the shell environment - intended to be agnostic of bash or zsh, not designed to work with shells other than bash or zsh
+# Use: Sourced by .bashrc or .zshrc
+
+# shellcheck source=/dev/null
+
+# # Sourcing standard logging library
+# REPO_ROOT="$(git rev-parse --show-toplevel)"
+# source "${REPO_ROOT}/utils/logging.sh"
+
+# # Initial logging
+# init_logger --journal --tag "shell" --color --verbose
+
+CURRENT_SHELL="$(ps -p $$ | tail -1 | awk '{print $NF}')"
+log_debug "Current shell is: ${CURRENT_SHELL}"
+
+# Checking what OS we're running on and setting a variable accordingly
+unameOut="$(uname -s)"
+case "${unameOut}" in
+    Linux*)     OS=Linux;;
+    Darwin*)    OS=Mac;;
+    CYGWIN*)    OS=Cygwin;;
+    MINGW*)     OS=MinGw;;
+    *)          OS="UNKNOWN:${unameOut}"
+esac
+log_debug "OS is: ${OS}"
+
+# Detect if the OS is running in WSL
+if grep -qEi "(Microsoft|WSL)" /proc/version &> /dev/null ; then
+    # WSL
+    export WSL=true
+else
+    # Not WSL
+    export WSL=false
+fi
+log_debug "WSL is: ${WSL}"
+
+# Test which editor(s) are available and set a variable $PREFERRED_EDITOR based on the preference order vim, vi, nano
+if command -v vim &> /dev/null; then
+	PREFERRED_EDITOR="vim"
+elif command -v vi &> /dev/null; then
+	PREFERRED_EDITOR="vi"
+elif command -v nano &> /dev/null; then
+	PREFERRED_EDITOR="nano"
+else
+	PREFERRED_EDITOR="vim"
+fi
+log_debug "Preferred editor is: ${PREFERRED_EDITOR}"
+
+# Preferred editor for local and remote sessions
+if [[ -n $SSH_CONNECTION ]]; then
+  export EDITOR=${PREFERRED_EDITOR}
+else
+  export EDITOR=${PREFERRED_EDITOR}
+fi
+log_debug "Editor is: ${EDITOR}"
+
+# If the Bitwarden SSH agent is enabled, load the agent
+if [[ -f ${HOME}/.bitwarden-ssh-agent.sock ]]; then
+  export SSH_AUTH_SOCK=${HOME}/.bitwarden-ssh-agent.sock
+  log_debug "Bitwarden SSH agent is enabled"
+fi
+
+# If OS is Mac test if iTerm2 is installed and if so, load the shell integration
+if [ "${OS}" = "Mac" ]; then
+	test -e "${HOME}/.iterm2_shell_integration.zsh" && source "${HOME}/.iterm2_shell_integration.zsh"
+  log_debug "iTerm2 shell integration loaded"
+fi
+
+if [[ ! ":$PATH:" == *":${HOME}/.local/bin:"* ]]; then
+  log_debug "Adding ${HOME}/.local/bin to PATH"
+  PATH="${HOME}/.local/bin:${PATH}"
+fi
+
+if [[ ! ":$PATH:" == *":${HOME}/bin:"* ]]; then
+  log_debug "Adding ${HOME}/bin to PATH"
+  PATH="${HOME}/bin:${PATH}"
+fi
+
+# Adding node.js / nvm
+if [[ -f ${HOME}/.nvm/nvm.sh ]]; then
+  log_debug "Sourcing nodeJS configuration"
+  source ${HOME}/.node
+fi
+
+# Adding path variables
+if [[ -f ${HOME}/.pathVars ]]; then
+  log_debug "Sourcing path variables"
+  source ${HOME}/.pathVars
+fi
+
+# Adding applets
+if [[ -f ${HOME}/.applets ]]; then
+  log_debug "Sourcing applets"
+  source ${HOME}/.applets
+fi
+
+# Adding tasks
+if [[ -f ${HOME}/.tasks ]]; then
+  log_debug "Sourcing tasks"
+	source ${HOME}/.tasks
+fi
+
+# Adding machine specific configuration
+if [[ -f ${HOME}/.machine_local ]]; then
+  log_debug "Sourcing machine specific configuration"
+  source ${HOME}/.machine_local
+fi
+
+if [ -f ${HOME}/.asdf/asdf.sh ]; then
+  log_debug "Sourcing asdf"
+  source ${HOME}/.asdf/asdf.sh
+fi
+
+# Test if we have oh-my-posh, or oh-my-zsh installed and if so load them.  If we have both preference is given to oh-my-posh such that priority order is oh-my-posh, oh-my-zsh, default zsh profile/prompt configuration
+if command -v oh-my-posh &> /dev/null; then
+  log_debug "oh-my-posh is installed"
+  # Source the .omp file to configure oh-my-posh
+  source "${HOME}/.omp"  
+elif [[ -d "${HOME}/.oh-my-zsh" ]] && [[ "${CURRENT_SHELL}" == "zsh" ]]; then
+  log_debug "oh-my-zsh is installed and using zsh shell"
+  # Source the .omz file to configure oh-my-zsh
+  source "${HOME}/.omz"
+else
+  log_warn "oh-my-posh and oh-my-zsh are not installed"
+fi
+
+# Confirm the user SHELL and if it is zsh then source the .zsh_profile file or if it is bash then source the .bash_profile file
+# if [[ "${CURRENT_SHELL}" == "zsh" ]]; then
+#   log_debug "Sourcing .zsh_profile"
+#   # Test if asdf is installed and if so load and configure it
+#   # if [[ -d "${HOME}/.asdf" ]]; then
+#     # if [[ ! "${fpath[*]}" =~ ${ASDF_DIR}/completions ]]; then
+#     #   fpath=("${ASDF_DIR}/completions" "${fpath}")
+#     # fi
+#   # fi
+#   # echo "$(date +'%Y-%m-%d %H:%M:%S.%3N') [DEBUG] Sourcing .zsh_profile"
+#   source "${HOME}/.zsh_profile"
+# elif [[ "${CURRENT_SHELL}" == "bash" ]]; then
+#   log_debug "Sourcing .bash_profile"
+#   # Test if asdf is installed and if so load and configure it
+#   if [ -f ~/.asdf/asdf.sh ]; then
+#     source ~/.asdf/completions/asdf.bash
+#   fi
+#   # echo "$(date +'%Y-%m-%d %H:%M:%S.%3N') [DEBUG] Sourcing .bash_profile"
+#   source "${HOME}/.bash_profile"
+# fi
+
+# Adding aliases
+if [[ -f ${HOME}/.alias ]]; then
+  log_debug "Sourcing aliases"
+  source ${HOME}/.alias
+fi
+
+# If bat is installed set the BAT_THEME to Visual Studio Dark+ if it's not already set.
+if command -v bat &> /dev/null; then
+  if [[ -z $BAT_THEME ]]; then
+    log_debug "Setting BAT_THEME to Visual Studio Dark+"
+    export BAT_THEME="Visual Studio Dark+"
+  fi
+fi
+
+if [[ -e ${HOME}/.nix-profile/etc/profile.d/nix.sh ]]; then
+  log_debug "Sourcing Nix"
+  source "${HOME}"/.nix-profile/etc/profile.d/nix.sh; 
+fi
+
+# FZF configuration
+if command -v fzf &> /dev/null; then
+  log_debug "Configuring fzf"
+  # export FZF_DEFAULT_OPTS='--height 40% --layout=reverse --border'
+  # export FZF_CTRL_T_COMMAND="$HOME/.fzf/bin/fzf-tmux --height 40% --layout=reverse --border --preview 'bat --color=always --style=header,grid --line-range :500 {}'"
+  # export FZF_ALT_C_COMMAND="fd --type d --hidden --follow --exclude .git"
+  # export FZF_DEFAULT_COMMAND="fd --type f --hidden --follow --exclude .git"
+fi
+
+# As a last step, if the aliases aliased command is available run it, to show the aliases when a new shell is opened
+if command -v aliases &> /dev/null; then
+  log_debug "Printing aliases"
+  # clear
+  aliases
+fi
