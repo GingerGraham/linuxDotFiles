@@ -4,6 +4,8 @@
 # Purpose: Install packages for common shells associated with this project, primarily zsh and bash
 # Use: Run this script to install the necessary packages for zsh and bash
 
+set_log_format "[%l] %m"
+
 source_shrc () {
     # Get the current user
     if [ -n "$USER" ]; then
