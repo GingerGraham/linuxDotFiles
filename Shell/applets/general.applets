@@ -20,7 +20,7 @@ function git_cleanup() {
 
     # Remove local branches that have been deleted on the remote
     for branch in $(git branch -vv | grep ': gone]' | awk '{print $1}'); do
-        echo "Deleting branch $branch"
+        log_info "Deleting branch $branch"
         git branch -D "$branch"
     done
 }
@@ -34,7 +34,7 @@ show_ssh_tunnel(){
 # Test sudo access
 sudo_test (){
   if [[ ! $(sudo -l -U "${USER}") ]]; then
-    echo "[ERROR] User does not have sudo access"
+    log_error "User does not have sudo access"
     return 1
   else
     return 0
@@ -56,10 +56,10 @@ detect_package_manager() {
   elif command -v brew &> /dev/null; then
     PACKAGE_MANAGER="brew"
   else
-    echo "[ERROR] No package manager found"
+    log_error "No package manager found"
     return 1
   fi
-  echo "[INFO] Detected package manager: ${PACKAGE_MANAGER}"
+  log_info "Using package manager: ${PACKAGE_MANAGER}"
   return 0
 }
 
@@ -72,10 +72,10 @@ detect_distro () {
     fi
   fi
   if [[ -z ${OS} ]]; then
-    echo "[ERROR] Unable to detect OS"
+    log_error "Unable to detect OS"
     return 1
   fi
-  echo "[INFO] Detected OS: ${OS}"
+  log_info "Detected OS: ${OS}"
   return 0
 }
 
@@ -85,7 +85,7 @@ update_tools () {
   echo "== Updating AWS CLI =="
   aws_update
   echo "== Updating Kubectl =="
-  echo "[INFO] Updating Kubectl to latest version - using set_kubectl -v <version> to set a specific version"
+  log_info " Updating Kubectl to latest version - using set_kubectl -v <version> to set a specific version"
   set_kubectl -s
   echo "== Installing Helm =="
   helm_install
@@ -102,7 +102,7 @@ get_go_version () {
     GO_VERSION=$(go version | awk '{print $3}'| tr -d 'go')
     export GO_VERSION
   else
-    echo "[ERROR] GO is not installed"
+    log_error "GO is not installed"
     return 1
   fi
 }
@@ -133,7 +133,7 @@ get_public_ip () {
 
  open_workspace () {
   if ! command -v code &> /dev/null && ! command -v code-insiders &> /dev/null; then
-    echo "[ERROR] Visual Studio Code is not installed"
+    log_error "Visual Studio Code is not installed"
     return 1
   fi
   # Accept a directory path as an argument or set ${HOME}/Developement/workspaces as the default
@@ -154,7 +154,7 @@ get_public_ip () {
   fi
   # Check if we have any workspaces
   if [[ ${#workspaces_full_path[@]} -eq 0 ]]; then
-    echo "[ERROR] No workspaces found in ${workspace_path}"
+    log_error "No workspaces found in ${workspace_path}"
     return 1
   fi
   local workspaces=()
@@ -177,7 +177,7 @@ get_public_ip () {
         done
       break
     else
-      echo "[ERROR] Invalid selection, try again"
+      log_error "Invalid selection, try again"
     fi
   done
  }
@@ -193,15 +193,15 @@ get_public_ip () {
 
     # Check if the required tools are installed
     if ! command -v lsblk &> /dev/null; then
-        echo "[ERROR] Required tools are not installed. Please install lsblk" >&2
+        log_error "Required tools are not installed. Please install lsblk" >&2
         return 1
     fi
     if ! command -v tpm2 &> /dev/null || ! command -v dracut &> /dev/null; then
-        echo "[ERROR] Required tools are not installed. Please install tpm2-tools and dracut" >&2
+        log_error "Required tools are not installed. Please install tpm2-tools and dracut" >&2
         return 1
     fi
     if ! command -v cryptsetup &> /dev/null || ! command -v systemd-cryptenroll &> /dev/null; then
-        echo "[ERROR] Required tools are not installed. Please install cryptsetup and systemd-cryptenroll" >&2
+        log_error "Required tools are not installed. Please install cryptsetup and systemd-cryptenroll" >&2
         return 1
     fi
 
@@ -244,14 +244,14 @@ get_public_ip () {
             --tpm2-device=auto \
             --tpm2-pcrs="0+2+4+5+7" \
             "$device_path"; then
-            echo "[INFO] Successfully enrolled TPM2 for $device_path"
+            log_info "Successfully enrolled TPM2 for $device_path"
             ((enrolled_count++))
         else
-            echo "[ERROR] Failed to enroll TPM2 for $device_path" >&2
+            log_error "Failed to enroll TPM2 for $device_path" >&2
         fi
     done
 
-    echo "[INFO] TPM2 enrollment completed. Successfully enrolled $enrolled_count devices."
+    log_info "TPM2 enrollment completed. Successfully enrolled $enrolled_count devices."
     luks_devices=()
     return 0
  }

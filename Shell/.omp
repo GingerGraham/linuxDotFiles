@@ -39,9 +39,9 @@ if command -v oh-my-posh &> /dev/null; then
   fi
   # Check that the OMP_THEME_DIR variable is set and is a valid directory
   if [[ -z "${OMP_THEME_DIR}" ]] || [[ ! -d "${OMP_THEME_DIR}" ]]; then
-    echo "[ERROR] The oh-my-posh themes directory is not set or is not a valid directory"
-    echo "[INFO] Please set the OMP_THEME_DIR variable to a valid directory manually"
-    echo "[INFO] OMP_THEME_DIR is currently set to: ${OMP_THEME_DIR}"
+    log_error "The oh-my-posh themes directory is not set or is not a valid directory"
+    log_info "Please set the OMP_THEME_DIR variable to a valid directory manually"
+    log_info "OMP_THEME_DIR is currently set to: ${OMP_THEME_DIR}"
   fi
   # If the OMP_THEME_DIR variable is set and is a valid directory eval oh-my-posh and set the theme
   if [[ -n "${OMP_THEME_DIR}" ]] && [[ -d "${OMP_THEME_DIR}" ]]; then
@@ -55,16 +55,16 @@ fi
 # Function to update the current prompt to another theme
 set_omp_theme() {
   if [[ -z "${1}" ]]; then
-    echo "[ERROR] No theme name provided"
-    echo "[INFO] Please provide the name of the theme to change to"
-    echo "[INFO] The available themes can be found here: https://ohmyposh.dev/docs/themes"
+    log_error "No theme name provided"
+    log_info "Please provide the name of the theme to change to"
+    log_info "The available themes can be found here: https://ohmyposh.dev/docs/themes"
     echo "Usage: set_omp_theme <theme_name>"
     echo "Example: set_omp_theme jonathan"
     return 1
   elif [[ "${#}" -gt 1 ]]; then
-    echo "[ERROR] Too many arguments provided"
-    echo "[INFO] Please provide the name of the theme to change to"
-    echo "[INFO] The available themes can be found here: https://ohmyposh.dev/docs/themes"
+    log_error "Too many arguments provided"
+    log_info "Please provide the name of the theme to change to"
+    log_info "The available themes can be found here: https://ohmyposh.dev/docs/themes"
     echo "Usage: set_omp_theme <theme_name>"
     echo "Example: set_omp_theme jonathan"
     return 1
@@ -75,9 +75,9 @@ set_omp_theme() {
       eval "$(oh-my-posh init "${CURRENT_SHELL}" --config "${OMP_THEME_DIR}/${1}.omp.json")"
     else
       # If the theme does not exist then print an error message and return
-      echo "[ERROR] The theme ${1} does not exist"
-      echo "[INFO] Please provide the name of a valid theme"
-      echo "[INFO] The available themes can be found here: https://ohmyposh.dev/docs/themes"
+      log_error "The theme ${1} does not exist"
+      log_info "Please provide the name of a valid theme"
+      log_info "The available themes can be found here: https://ohmyposh.dev/docs/themes"
       echo "Usage: set_omp_theme <theme_name>"
       echo "Example: set_omp_theme agnoster"
       return 1
@@ -88,16 +88,16 @@ set_omp_theme() {
 # Function to update the current theme and update the OMP_THEME variable is this file permanently to the new theme
 set_omp_theme_permanent() {
   if [[ -z "${1}" ]]; then
-    echo "[ERROR] No theme name provided"
-    echo "[INFO] Please provide the name of the theme to change to"
-    echo "[INFO] The available themes can be found here: https://ohmyposh.dev/docs/themes"
+    log_error "No theme name provided"
+    log_info "Please provide the name of the theme to change to"
+    log_info "The available themes can be found here: https://ohmyposh.dev/docs/themes"
     echo "Usage: set_omp_theme_permanent <theme_name>"
     echo "Example: set_omp_theme_permanent jonathan"
     return 1
   elif [[ "${#}" -gt 1 ]]; then
-    echo "[ERROR] Too many arguments provided"
-    echo "[INFO] Please provide the name of the theme to change to"
-    echo "[INFO] The available themes can be found here: https://ohmyposh.dev/docs/themes"
+    log_error "Too many arguments provided"
+    log_info "Please provide the name of the theme to change to"
+    log_info "The available themes can be found here: https://ohmyposh.dev/docs/themes"
     echo "Usage: set_omp_theme_permanent <theme_name>"
     echo "Example: set_omp_theme_permanent jonathan"
     return 1
@@ -110,9 +110,9 @@ set_omp_theme_permanent() {
       sed -i "s/OMP_THEME=\".*\"/OMP_THEME=\"${1}\"/g" "${HOME}/.omp"
     else
       # If the theme does not exist then print an error message and exit
-      echo "[ERROR] The theme ${1} does not exist"
-      echo "[INFO] Please provide the name of a valid theme"
-      echo "[INFO] The available themes can be found here: https://ohmyposh.dev/docs/themes"
+      log_error "The theme ${1} does not exist"
+      log_info "Please provide the name of a valid theme"
+      log_info "The available themes can be found here: https://ohmyposh.dev/docs/themes"
       echo "Usage: set_omp_theme_permanent <theme_name>"
       echo "Example: set_omp_theme_permanent agnoster"
       return 1
@@ -122,11 +122,9 @@ set_omp_theme_permanent() {
 
 # Function to update Oh-My-Posh based on https://ohmyposh.dev/docs/installation/linux using the manual installation method
 update_omp() {
-  echo "[INFO] Updating oh-my-posh"
+  log_info "Updating oh-my-posh"
   # Split the OMP_LOCATION variable into the directory and the file name
   OMP_DIR="$(dirname "${OMP_LOCATION}")"
   curl -s https://ohmyposh.dev/install.sh | bash -s -- -d "${OMP_DIR}"
-  echo "[INFO] oh-my-posh updated"
+  log_info "oh-my-posh updated"
 }
-
-# echo "$(date +'%Y-%m-%d %H:%M:%S.%3N') [DEBUG] oh-my-posh configured"

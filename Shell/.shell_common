@@ -6,9 +6,6 @@
 
 # shellcheck source=/dev/null
 
-# Set the log level
-set_log_level DEBUG
-
 CURRENT_SHELL="$(ps -p $$ | tail -1 | awk '{print $NF}')"
 log_debug "Current shell is: ${CURRENT_SHELL}"
 

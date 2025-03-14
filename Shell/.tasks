@@ -42,6 +42,6 @@ if [[ "${WSL}" = true ]] && command -v keychain &> /dev/null; then
 		# shellcheck disable=SC1090
 		source "${HOME}"/.keychain/"${NAME}"-sh
 	else
-		echo "Unable to load keychain"
+		log_error "Unable to load keychain"
 	fi
 fi
