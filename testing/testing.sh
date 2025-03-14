@@ -4,7 +4,14 @@
 
 set -euo pipefail
 
-VERSION=1.4.4
+# Sourcing standard logging library
+REPO_ROOT="$(git rev-parse --show-toplevel)"
+source "${REPO_ROOT}/utils/logging.sh"
+
+# Initial logging
+init_logger --journal --tag "DotFileTest" --color
+
+VERSION=1.5.0
 OPT_STRING=":cd:huv:"
 
 DISTRO=""
@@ -16,16 +23,16 @@ CONTAINER_NAME=$(basename "$(dirname "$(dirname "$(realpath "$0")")")" | tr '[:u
 main () {
     opts "${@}"
     set_defaults
-    echo "[INFO] Running $(basename "$0") version ${VERSION}"
+    log_info "Running $(basename "$0") version ${VERSION}"
     script_dir
     if [[ ${CLEANUP} == true ]]; then
-        echo "[INFO] Cleaning up Docker images and containers"
+        log_info "Cleaning up Docker images and containers"
         cleanup
-        echo "[INFO] Cleanup complete"
+        log_info "Cleanup complete"
         exit 0
     fi
-    echo "[INFO] Distribution: ${DISTRO}"
-    echo "[INFO] Distribution version: ${DISTRO_VERSION}"
+    log_info "Distribution: ${DISTRO}"
+    log_info "Distribution version: ${DISTRO_VERSION}"
     test_docker
     set_image_tag
     build_image
@@ -52,12 +59,12 @@ opts () {
                 DISTRO_VERSION="${OPTARG}"
                 ;;
             \?)
-                echo "[ERROR] Invalid option: -${OPTARG}" >&2
+                log_error "Invalid option: -${OPTARG}" >&2
                 usage
                 exit 1
                 ;;
             :)
-                echo "[ERROR] Option -${OPTARG} requires an argument." >&2
+                log_error "Option -${OPTARG} requires an argument." >&2
                 usage
                 exit 1
                 ;;
@@ -107,33 +114,33 @@ set_defaults () {
 
 cleanup () {
     # Remove the Docker image and container created by the testing script and remove the dockerfile
-    echo "[INFO] Cleaning up Docker images and containers"
+    log_info "Cleaning up Docker images and containers"
     # Remove all dotfiletest containers
     if docker ps -a | grep "${CONTAINER_NAME}" | awk '{print $1}' | xargs -I {} docker rm -f {}; then
-        echo "[INFO] Containers removed"
+        log_info "Containers removed"
     else
-        echo "[ERROR] Failed to remove containers"
+        log_error "Failed to remove containers"
     fi
     # Remove all dotfiletest images
     if docker images | grep "${CONTAINER_NAME}" | awk '{print $3}' | xargs -I {} docker rmi -f {}; then
-        echo "[INFO] Images removed"
+        log_info "Images removed"
     else
-        echo "[ERROR] Failed to remove images"
+        log_error "Failed to remove images"
     fi
     # Remove the dockerfile from the directory that this script is held in regardless of the current working directory
     if [[ -f "${SCRIPT_DIR}"/dockerfile ]]; then
         if rm "${SCRIPT_DIR}"/dockerfile; then
-            echo "[INFO] Dockerfile removed"
+            log_info "Dockerfile removed"
         else
-            echo "[ERROR] Failed to remove dockerfile"
+            log_error "Failed to remove dockerfile"
         fi
     fi
     # If the dockerfile was created in the dir above the current working directory, remove it
     if [[ -f "$(dirname "$(dirname "${SCRIPT_DIR}")")"/dockerfile ]]; then
         if rm "$(dirname "$(dirname "${SCRIPT_DIR}")")"/dockerfile; then
-            echo "[INFO] Dockerfile removed"
+            log_info "Dockerfile removed"
         else
-            echo "[ERROR] Failed to remove dockerfile"
+            log_error "Failed to remove dockerfile"
         fi
     fi
     return 0
@@ -142,19 +149,19 @@ cleanup () {
 script_dir () {
     # Get the directory of the script and save it to a variable
     SCRIPT_DIR=$(dirname "$(realpath "$0")")
-    echo "[INFO] Script directory: ${SCRIPT_DIR}"
+    log_info "Script directory: ${SCRIPT_DIR}"
     return 0
 }
 
 test_docker () {
     # Test if Docker is installed
     if ! [ -x "$(command -v docker)" ]; then
-        echo "[ERROR] Docker is not installed" >&2
-        echo "[ERROR] Please install Docker before running this script" >&2
-        echo "[ERROR] If using podman please install podman-docker" >&2
+        log_error "Docker is not installed" >&2
+        log_error "Please install Docker before running this script" >&2
+        log_error "If using podman please install podman-docker" >&2
         exit 1
     fi
-    echo "[INFO] Docker is installed"
+    log_info "Docker is installed"
     return 0
 }
 
@@ -164,7 +171,7 @@ set_image_tag () {
     # Do not change the DISTRO variable outside of this function
     local DISTRO="${DISTRO//\//-}"
     IMAGE_TAG="${DISTRO}-${DISTRO_VERSION}"
-    echo "[INFO] Image tag: ${IMAGE_TAG}"
+    log_info "Image tag: ${IMAGE_TAG}"
     return 0
 }
 
@@ -175,7 +182,7 @@ image_exists () {
     else
         IMAGE_EXISTS=true
     fi
-    echo "[INFO] Image exists: ${IMAGE_EXISTS}"
+    log_info "Image exists: ${IMAGE_EXISTS}"
     return 0
 }
 
@@ -183,7 +190,7 @@ build_image () {
     # If the iamge already exists and the Version is not latest, then return
     image_exists
     if [[ ${IMAGE_EXISTS} == true ]] && [[ ${UPDATE_IMAGE} == false ]] && [[ ${DISTRO_VERSION} != "latest" ]]; then
-        echo "[INFO] Image already exists"
+        log_info "Image already exists"
         return 0
     fi
 
@@ -191,30 +198,30 @@ build_image () {
 
     case ${DISTRO} in
         "ubuntu")
-            echo "[INFO] Building Ubuntu Docker image"
+            log_info "Building Ubuntu Docker image"
             "${SCRIPT_DIR}"/build_ubuntu.sh "${DISTRO}" "${DISTRO_VERSION}"
             ;;
         "fedora")
-            echo "[INFO] Building Fedora Docker image"
+            log_info "Building Fedora Docker image"
             "${SCRIPT_DIR}"/build_fedora.sh "${DISTRO}" "${DISTRO_VERSION}"
             ;;
         "opensuse"| "suse")
             # For these default to Tumbleweed by updating the DISTRO to opensuse/tumbleweed and log a WARN message
             DISTRO="opensuse/tumbleweed"
-            echo "[WARN] openSUSE/SUSE not available, defaulting to openSUSE Tumbleweed"
-            echo "[INFO] Building SUSE Docker image"
+            log_warn "openSUSE/SUSE not available, defaulting to openSUSE Tumbleweed"
+            log_info "Building SUSE Docker image"
             "${SCRIPT_DIR}"/build_suse.sh "${DISTRO}" "${DISTRO_VERSION}"
             ;;
         "opensuse/leap")
-            echo "[INFO] Building openSUSE Leap Docker image"
+            log_info "Building openSUSE Leap Docker image"
             "${SCRIPT_DIR}"/build_suse.sh "${DISTRO}" "${DISTRO_VERSION}"
             ;;
         "opensuse/tumbleweed")
-            echo "[INFO] Building openSUSE Tumbleweed Docker image"
+            log_info "Building openSUSE Tumbleweed Docker image"
             "${SCRIPT_DIR}"/build_suse.sh "${DISTRO}" "${DISTRO_VERSION}"
             ;;
         *)
-            echo "[INFO] Building generic Docker image"
+            log_info "Building generic Docker image"
             "${SCRIPT_DIR}"/build_generic.sh
             ;;
     esac
@@ -223,10 +230,10 @@ build_image () {
 
     # Check if the build was successful
     if [[ $? -ne 0 ]]; then
-        echo "[ERROR] Docker image build failed"
+        log_error "Docker image build failed"
         exit 1
     fi
-    echo "[INFO] Docker image built"
+    log_info "Docker image built"
     # If a dockerfile exists, remove it
     if [[ -f "${SCRIPT_DIR}"/dockerfile ]]; then
         rm "${SCRIPT_DIR}"/dockerfile
@@ -236,14 +243,14 @@ build_image () {
 
 run_container () {
     # Run the Docker container and map the local directory to a directory in the container
-    echo "[INFO] Running Docker container"
+    log_info "Running Docker container"
     # Check if the container already exists and if it does, remove it
     if [[ -n $(docker ps -a --filter "name=${CONTAINER_NAME}-${DISTRO}${DISTRO_VERSION}" --format '{{.Names}}') ]]; then
-        echo "[WARN] Container exists, removing container"
+        log_warn "Container exists, removing container"
         docker rm -f "${CONTAINER_NAME}-${DISTRO}${DISTRO_VERSION}"
-        echo "[INFO] Container removed"
+        log_info "Container removed"
     fi
-    echo "[INFO] Starting container"
+    log_info "Starting container"
     docker run -it -v "$(dirname "$(dirname "$(realpath "$0")")")":/home/test-user/testing:Z -u test-user --name "${CONTAINER_NAME}-${DISTRO}${DISTRO_VERSION}" --hostname "${CONTAINER_NAME}-${DISTRO}${DISTRO_VERSION}" ${CONTAINER_NAME}:"${IMAGE_TAG}"
     return 0
 }

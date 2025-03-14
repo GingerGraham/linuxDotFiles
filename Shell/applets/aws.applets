@@ -12,12 +12,12 @@
 aws_update () {
   # Check if user has sudo access using provided function and exit if not
   if ! sudo_test; then
-    echo "[ERROR] Cannot update AWS CLI - user does not have sudo access"
+    log_error "Cannot update AWS CLI - user does not have sudo access"
     return 1
   fi
   # Check if the OS variable is set - should be set in .zshrc
   if [[ -z ${OS} ]]; then
-    echo "[WARN] OS variable is not set"
+    log_warn "OS variable is not set"
     return 1
   fi
   # If the OS is Linux then run the Linux function
@@ -31,70 +31,70 @@ aws_update () {
     return 0
   fi
   # If the OS is not Linux or Mac then report an error - will only get here if OS is not set
-  echo "[ERROR] OS not supported: OS is not Linux or Mac"
+  log_error "OS not supported: OS is not Linux or Mac"
   return 1
 }
 
 aws_cli_install_rpm () {
   # Check if the command dnf is available and use it if so
   if command -v dnf &> /dev/null; then
-    echo "[INFO] Installing AWS CLI using dnf"
+    log_info "Installing AWS CLI using dnf"
     sudo dnf install -y aws-cli
   elif command -v yum &> /dev/null; then
-    echo "[INFO] Installing AWS CLI using yum"
+    log_info "Installing AWS CLI using yum"
     sudo yum install -y aws-cli
   else
-    echo "[ERROR] Neither dnf nor yum is installed - required for AWS CLI install"
+    log_error "Neither dnf nor yum is installed - required for AWS CLI install"
     return 1
   fi
 
   # If the install fails then exit
   if [[ $? -ne 0 ]]; then
-    echo "[ERROR] AWS CLI install failed"
+    log_error "AWS CLI install failed"
     return 1
   fi
-  echo "[INFO] Installed AWS CLI"
-  echo "[INFO] Completed"
+  log_info "Installed AWS CLI"
+  log_info "Completed"
   return 0
 }
 
 aws_cli_install_curl () {
   # Check if the command curl is not available then return an error - required for the install
   if ! command -v curl &> /dev/null; then
-    echo "[ERROR] Curl is not installed - required for AWS CLI install"
+    log_error "Curl is not installed - required for AWS CLI install"
     return 1
   fi
 
   # If the command unzip is not available then return an error - required for the install
   if ! command -v unzip &> /dev/null; then
-    echo "[ERROR] Unzip is not installed - required for AWS CLI install"
+    log_error "Unzip is not installed - required for AWS CLI install"
     return 1
   fi
 
-  echo "[INFO] Downloading AWS CLI"
+  log_info "Downloading AWS CLI"
   cd /tmp || return
   curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
-  echo "[INFO] AWS CLI downloaded"
-  echo "[INFO] Unzipping AWS CLI"
+  log_info "AWS CLI downloaded"
+  log_info "Unzipping AWS CLI"
   unzip -qo awscliv2.zip
   # Verify the unzip was successful
   if [[ $? -ne 0 ]]; then
-    echo "[ERROR] Unzipping AWS CLI failed"
+    log_error "Unzipping AWS CLI failed"
     return 1
   fi
-  echo "[INFO] Unzipped AWS CLI"
-  echo "[INFO] Installing AWS CLI"
+  log_info "Unzipped AWS CLI"
+  log_info "Installing AWS CLI"
   sudo ./aws/install --bin-dir /usr/local/bin --install-dir /usr/local/aws-cli --update
   # If the install fails then exit
   if [[ $? -ne 0 ]]; then
-    echo "[ERROR] AWS CLI install failed"
+    log_error "AWS CLI install failed"
     return 1
   fi
-  echo "[INFO] Installed AWS CLI"
-  echo "[INFO] Cleaning up"
+  log_info "Installed AWS CLI"
+  log_info "Cleaning up"
   rm -rf ./awscliv2.zip ./aws
   cd - || return
-  echo "[INFO] Completed"
+  log_info "Completed"
   return 0
 }
 
@@ -103,20 +103,20 @@ aws_update_linux () {
   # Check if the AWS CLI is already installed and if so then capture the current version
   if command -v aws &> /dev/null; then
     AWS_CURRENT_VERSION=$(aws --version 2>&1 | awk '{print $1}' | awk -F'/' '{print $2}')
-    echo "[INFO] Current AWS CLI version: ${AWS_CURRENT_VERSION}"
+    log_info "Current AWS CLI version: ${AWS_CURRENT_VERSION}"
   fi
   # Check the current latest available from AWS GitHub
   AWS_LATEST_VERSION=$(curl -s https://raw.githubusercontent.com/aws/aws-cli/v2/CHANGELOG.rst | grep -E '^[0-9]+\.[0-9]+\.[0-9]+' -m 1)
   # If the check for the latest version fails then return an error otherwise print the latest version
   if [[ -z ${AWS_LATEST_VERSION} ]]; then
-    echo "[ERROR] Unable to determine latest AWS CLI version"
+    log_error "Unable to determine latest AWS CLI version"
     return 1
   else
-    echo "[INFO] Latest AWS CLI version: ${AWS_LATEST_VERSION}"
+    log_info "Latest AWS CLI version: ${AWS_LATEST_VERSION}"
   fi
   # If the AWS CLI is already installed and the latest version is the same as the current version then return
   if [[ -n ${AWS_CURRENT_VERSION} ]] && [[ ${AWS_CURRENT_VERSION} == ${AWS_LATEST_VERSION} ]]; then
-    echo "[INFO] AWS CLI is already up to date"
+    log_info "AWS CLI is already up to date"
     return 0
   fi
   # Check if the command dnf or yum is available and use it if so
@@ -133,43 +133,43 @@ aws_update_linux () {
 aws_update_mac () {
   # Check if the command curl is not available then return an error - required for the install
   if ! command -v curl &> /dev/null; then
-    echo "[ERROR] Curl is not installed - required for AWS CLI install"
+    log_error "Curl is not installed - required for AWS CLI install"
     return 1
   fi
   # Check if the AWS CLI is already installed and if so then capture the current version
   if command -v aws &> /dev/null; then
     AWS_CURRENT_VERSION=$(aws --version 2>&1 | awk '{print $1}' | awk -F'/' '{print $2}')
-    echo "[INFO] Current AWS CLI version: ${AWS_CURRENT_VERSION}"
+    log_info "Current AWS CLI version: ${AWS_CURRENT_VERSION}"
   fi
   # Check the current latest available from AWS GitHub
   AWS_LATEST_VERSION=$(curl -s https://raw.githubusercontent.com/aws/aws-cli/v2/CHANGELOG.rst | grep -E '^[0-9]+\.[0-9]+\.[0-9]+' -m 1)
   # If the check for the latest version fails then return an error otherwise print the latest version
   if [[ -z ${AWS_LATEST_VERSION} ]]; then
-    echo "[ERROR] Unable to determine latest AWS CLI version"
+    log_error "Unable to determine latest AWS CLI version"
     return 1
   else
-    echo "[INFO] Latest AWS CLI version: ${AWS_LATEST_VERSION}"
+    log_info "Latest AWS CLI version: ${AWS_LATEST_VERSION}"
   fi
   # If the AWS CLI is already installed and the latest version is the same as the current version then return
   if [[ -n ${AWS_CURRENT_VERSION} ]] && [[ ${AWS_CURRENT_VERSION} == ${AWS_LATEST_VERSION} ]]; then
-    echo "[INFO] AWS CLI is already up to date"
+    log_info "AWS CLI is already up to date"
     return 0
   fi
-  echo "[INFO] Downloading AWS CLI"
+  log_info "Downloading AWS CLI"
   cd /tmp || return
   curl "https://awscli.amazonaws.com/AWSCLIV2.pkg" -o "AWSCLIV2.pkg"
-  echo "[INFO] AWS CLI downloaded"
-  echo "[INFO] Installing AWS CLI"
+  log_info "AWS CLI downloaded"
+  log_info "Installing AWS CLI"
   sudo installer -pkg ./AWSCLIV2.pkg -target /
   # If the install fails then exit
   if [[ $? -ne 0 ]]; then
-    echo "[ERROR] AWS CLI install failed"
+    log_error "AWS CLI install failed"
     return 1
   fi
-  echo "[INFO] Installed AWS CLI"
-  echo "[INFO] Cleaning up"
+  log_info "Installed AWS CLI"
+  log_info "Cleaning up"
   rm -rf ./AWSCLIV2.pkg
   cd - || return
-  echo "[INFO] Completed"
+  log_info "Completed"
   return 0
 }

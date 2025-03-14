@@ -1,5 +1,5 @@
-#!/usr/bin/env bash
-# ~/.bash_profile - executed for login shells
+#!/usr/bin/env zsh
+# ~/.zprofile - executed for zsh login shells
 
 # Set essential environment variables
 export EDITOR=vim
@@ -13,7 +13,7 @@ if [[ ! ":$PATH:" == *":${HOME}/bin:"* ]]; then
   PATH="${HOME}/bin:${PATH}"
 fi
 
-# Source bashrc for login shells to ensure consistent environment
-if [ -f ~/.bashrc ]; then
-  source ~/.bashrc
+# Source zshrc for login shells to ensure consistent environment
+if [ -f ~/.zshrc ]; then
+  source ~/.zshrc
 fi

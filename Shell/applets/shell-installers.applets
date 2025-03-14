@@ -13,29 +13,29 @@ source_shrc () {
     elif [ -n "$(whoami)" ]; then
         local user="$(whoami)"
     else
-        echo "[ERROR] Unable to determine the user"
+        log_error "Unable to determine the user"
         return 1
     fi
-    echo "[DEBUG] User is ${user}"
+    log_debug "User is ${user}"
     # If the user is not found, return an error
     if [ -z "$user" ]; then
-        echo "[ERROR] Unable to determine the user"
+        log_error "Unable to determine the user"
         return 1
     fi
     # Get the user's default shell
     local shell=$(getent passwd "$user" | cut -d: -f7 | sed 's/\/bin\///')
     shell=${shell##*/}
-    # echo "[DEBUG] Shell is ${shell}"
-    # echo "[INFO] Sourcing ${HOME}/.${shell}rc"
+    log_debug "Shell is ${shell}"
+    # log_info "Sourcing ${HOME}/.${shell}rc"
     # shellcheck source=/dev/null
     # source "${HOME}/.${shell}rc" # Note; seems to not work but running the same command again on the command line works fine
     # If the last command failed, return an error
     # if [ $? -ne 0 ]; then
-    #     echo "[ERROR] Unable to source ${HOME}/.${shell}rc"
+          # log_error "Unable to source ${HOME}/.${shell}rc"
     #     return 1
     # fi
-    # echo "[INFO] Sourced ${HOME}/.${shell}rc"
-    echo "[INFO] To apply the changes to the current shell, run the following command:"
+    # log_info "Sourced ${HOME}/.${shell}rc"
+    log_info "To apply the changes to the current shell, run the following command:"
     echo "source ${HOME}/.${shell}rc"
     return 0
 }
@@ -63,26 +63,26 @@ install_zsh () {
       brew install zsh zsh-syntax-highlighting zsh-autosuggestions
       ;;
     *)
-      echo "[ERROR] No package manager found"
+      log_error "No package manager found"
       return 1
       ;;
   esac
   # If the install failed, return an error
   if [[ $? -ne 0 ]]; then
-    echo "[ERROR] zsh install failed"
+    log_error "zsh install failed"
     return 1
   fi
   # Remind the user that they will need relink the .zshrc file that would have previously been symlinked when they run installDotFiles.sh
-  echo "[INFO] You will need to relink the .zshrc file after installing zsh"
-  echo "[INFO] Run the following command to relink the .zshrc file"
-  echo "[INFO] ./installDotFiles.sh -f .zshrc"
+  log_info "You will need to relink the .zshrc file after installing zsh"
+  log_info "Run the following command to relink the .zshrc file:"
+  echo "./installDotFiles.sh -f .zshrc"
   # Set the default shell to zsh
   # If chsh is not available, the user will need to change their shell manually
   if command -v chsh &> /dev/null; then
-    echo "[INFO] Changing default shell to zsh"
+    log_info "Changing default shell to zsh"
     chsh -s "$(which zsh)"
   else
-    echo "[WARN] chsh not available, you will need to change your shell manually"
+    log_warn "chsh not available, you will need to change your shell manually"
   fi
   return 0
 }
@@ -110,36 +110,36 @@ install_bash () {
       brew install bash bash-completion
       ;;
     *)
-      echo "[ERROR] No package manager found"
+      log_error "No package manager found"
       return 1
       ;;
   esac
   # If the install failed, return an error
   if [[ $? -ne 0 ]]; then
-    echo "[ERROR] bash install failed"
+    log_error "bash install failed"
     return 1
   fi
   # Set the default shell to bash
   # If chsh is not available, the user will need to change their shell manually
   if command -v chsh &> /dev/null; then
-    echo "[INFO] Changing default shell to bash"
+    log_info "Changing default shell to bash"
     chsh -s "$(which bash)"
   else
-    echo "[WARN] chsh not available, you will need to change your shell manually"
+    log_warn "chsh not available, you will need to change your shell manually"
   fi
 }
 
 install_omz () {
   # Install oh-my-zsh
   if [[ ! -d "${HOME}/.oh-my-zsh" ]]; then
-    echo "[INFO] Installing oh-my-zsh"
+    log_info "Installing oh-my-zsh"
     sh -c "$(curl -fsSL https://raw.github.com/ohmyzsh/ohmyzsh/master/tools/install.sh)"
   else
-    echo "[INFO] oh-my-zsh already installed"
+    log_info "oh-my-zsh already installed"
   fi
   # If the install failed, return an error
   if [[ $? -ne 0 ]]; then
-    echo "[ERROR] oh-my-zsh install failed"
+    log_error "oh-my-zsh install failed"
     return 1
   fi
   # Source the .zshrc file
@@ -150,15 +150,15 @@ install_omz () {
 install_omp () {
   # Test if the command oh-my-posh is installed
   if ! command -v oh-my-posh &> /dev/null; then
-    echo "[INFO] Installing oh-my-posh"
+    log_info "Installing oh-my-posh"
     mkdir -p ~/bin
     curl -s https://ohmyposh.dev/install.sh | bash -s -- -d ~/bin
   else
-    echo "[INFO] oh-my-posh already installed"
+    log_info "oh-my-posh already installed"
   fi
   # If the install failed, return an error
   if [[ $? -ne 0 ]]; then
-    echo "[ERROR] oh-my-posh install failed"
+    log_error "oh-my-posh install failed"
     return 1
   fi
   source_shrc
