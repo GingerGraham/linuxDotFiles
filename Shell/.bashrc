@@ -10,7 +10,7 @@ source "${REPO_ROOT}/utils/logging.sh"
 # Initial logging
 init_logger --color
 
-log_info "Running .bashrc"
+log_debug "Running .bashrc"
 
 # If not running interactively, don't do anything
 case $- in

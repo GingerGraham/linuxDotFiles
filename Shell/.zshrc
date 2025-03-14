@@ -10,7 +10,7 @@ source "${REPO_ROOT}/utils/logging.sh"
 # Initial logging
 init_logger --color
 
-log_info "Running .zshrc"
+log_debug "Running .zshrc"
 
 if [[ -f ${HOME}/.shell_common ]]; then
 	log_debug "Sourcing .shell_common"
