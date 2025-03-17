@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 #
 # logging.sh - Reusable Bash Logging Module
 # 

@@ -4,8 +4,7 @@
 # shellcheck source=/dev/null
 
 # Sourcing standard logging library
-REPO_ROOT="$(git rev-parse --show-toplevel)"
-source "${REPO_ROOT}/utils/logging.sh"
+source "${HOME}/utils/logging.sh"
 
 # Initial logging
 init_logger --color

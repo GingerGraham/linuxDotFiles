@@ -1,6 +1,9 @@
-#!/bin/bash
+#!/usr/bin/env bash
 # This script is used to provide a testing environment for the shell configuration contained within this repo
 # The script will build a Docker image and run a container with mapping the linuxDotFiles directory to the container to allow for testing
+
+# Ensure ZSH_VERSION is defined when running from zsh
+: "${ZSH_VERSION:=}"
 
 set -euo pipefail
 
@@ -11,7 +14,7 @@ source "${REPO_ROOT}/utils/logging.sh"
 # Initial logging
 init_logger --journal --tag "DotFileTest" --color
 
-VERSION=1.5.0
+VERSION=1.5.1
 OPT_STRING=":cd:huv:"
 
 DISTRO=""
@@ -26,7 +29,7 @@ main () {
     log_info "Running $(basename "$0") version ${VERSION}"
     script_dir
     if [[ ${CLEANUP} == true ]]; then
-        log_info "Cleaning up Docker images and containers"
+        log_debug "Cleaning up Docker images and containers"
         cleanup
         log_info "Cleanup complete"
         exit 0

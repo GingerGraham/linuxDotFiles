@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 # Expect 2 arguments passed to the script and assign them to the variables DISTRO and DISTRO_VERSION in that order
 
