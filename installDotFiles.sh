@@ -2,10 +2,17 @@
 # This script creates symlinks from ${HOME}/ to a dotfiles directory cloned from github
 # Github source is https://github.com/GingerGraham/linuxDotFiles
 
-VERSION=3.0.3
+VERSION=3.0.4
 
 # Sourcing standard logging library
-REPO_ROOT="$(git rev-parse --show-toplevel)"
+# REPO_ROOT="$(git rev-parse --show-toplevel)"
+# source "${REPO_ROOT}/utils/logging.sh"
+
+# Get the directory where the script is located
+SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+# Set REPO_ROOT to the script directory, as that should be the git repo root
+REPO_ROOT="${SCRIPT_DIR}"
+# Sourcing standard logging library
 source "${REPO_ROOT}/utils/logging.sh"
 
 init_logger --color --journal --tag "$(basename "${0}")"
