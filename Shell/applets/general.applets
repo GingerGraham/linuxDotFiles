@@ -14,7 +14,7 @@ cheat(){
 }
 
 # Cleanup removed branches in git
-function git_cleanup() {
+git_cleanup() {
     # Fetch updates
     git fetch -p
 
@@ -186,7 +186,7 @@ get_public_ip () {
   done
  }
 
- # Function to reregister LUKS key with tpm2 using systemd-crpytenroll
+ # to reregister LUKS key with tpm2 using systemd-crpytenroll
  # Requires the tpm2-tools and dracut tools to be installed
  register_tpm () {
     # Use lsblk with JSON output for easier parsing
@@ -300,4 +300,110 @@ list_ssh_hosts() {
           fi
       done
   fi
+}
+
+install_bitwarden() {
+  log_info "Installing or updating Bitwarden password manager..."
+  
+  # Detect package manager if not already set
+  if [[ -z "${PACKAGE_MANAGER}" ]]; then
+    detect_package_manager || return 1
+  fi
+  
+  # Check for sudo access if needed for package installation
+  if [[ "${PACKAGE_MANAGER}" == "apt" || "${PACKAGE_MANAGER}" == "dnf" || "${PACKAGE_MANAGER}" == "yum" ]]; then
+    log_info "Checking sudo access for package installation..."
+    if ! sudo_test; then
+      log_error "This installation requires sudo access. Please try again with sudo privileges."
+      return 1
+    fi
+  fi
+  
+  # Create temp directory for downloads
+  local temp_dir=$(mktemp -d)
+  log_debug "Created temporary directory: ${temp_dir}"
+  
+  # Install based on detected package manager
+  case "${PACKAGE_MANAGER}" in
+    apt)
+      log_info "Using APT package manager - installing DEB package"
+      local deb_url="https://bitwarden.com/download/?app=desktop&platform=linux&variant=deb"
+      local deb_file="${temp_dir}/bitwarden.deb"
+      
+      # Download the DEB package
+      log_info "Downloading Bitwarden DEB package..."
+      if ! curl -L -o "${deb_file}" "${deb_url}"; then
+        log_error "Failed to download Bitwarden DEB package"
+        rm -rf "${temp_dir}"
+        return 1
+      fi
+      
+      # Install the DEB package
+      log_info "Installing Bitwarden..."
+      if ! sudo dpkg -i "${deb_file}"; then
+        log_error "Failed to install Bitwarden DEB package"
+        rm -rf "${temp_dir}"
+        return 1
+      fi
+      
+      # Fix any dependency issues
+      log_info "Resolving dependencies..."
+      sudo apt-get install -f -y
+      ;;
+      
+    dnf|yum)
+      log_info "Using ${PACKAGE_MANAGER} package manager - installing RPM package"
+      local rpm_url="https://bitwarden.com/download/?app=desktop&platform=linux&variant=rpm"
+      local rpm_file="${temp_dir}/bitwarden.rpm"
+      
+      # Download the RPM package
+      log_info "Downloading Bitwarden RPM package..."
+      if ! curl -L -o "${rpm_file}" "${rpm_url}"; then
+        log_error "Failed to download Bitwarden RPM package"
+        rm -rf "${temp_dir}"
+        return 1
+      fi
+      
+      # Install the RPM package
+      log_info "Installing Bitwarden..."
+      if ! sudo "${PACKAGE_MANAGER}" install -y "${rpm_file}"; then
+        log_error "Failed to install Bitwarden RPM package"
+        rm -rf "${temp_dir}"
+        return 1
+      fi
+      ;;
+      
+    *)
+      # Try flatpak as a fallback
+      if command -v flatpak &> /dev/null; then
+        log_warn "Native package not available for ${PACKAGE_MANAGER}. Using Flatpak instead."
+        
+        # Add Flathub repository if not already added
+        if ! flatpak remotes | grep -q "flathub"; then
+          log_info "Adding Flathub repository..."
+          flatpak remote-add --if-not-exists flathub https://flathub.org/repo/flathub.flatpakrepo
+        fi
+        
+        # Install Bitwarden flatpak
+        log_info "Installing Bitwarden via Flatpak..."
+        if ! flatpak install -y flathub com.bitwarden.desktop; then
+          log_error "Failed to install Bitwarden via Flatpak"
+          rm -rf "${temp_dir}"
+          return 1
+        fi
+      else
+        log_error "No supported package manager found. Please install Bitwarden manually."
+        log_info "Visit https://bitwarden.com/download/ for installation options."
+        rm -rf "${temp_dir}"
+        return 1
+      fi
+      ;;
+  esac
+  
+  # Clean up
+  log_debug "Cleaning up temporary files"
+  rm -rf "${temp_dir}"
+  
+  log_info "Bitwarden installation completed successfully!"
+  return 0
 }
