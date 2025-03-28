@@ -82,3 +82,10 @@ fi
 if [[ -d ${HOME}/.local/opt/sonar-scanner/bin ]]; then
   export PATH="${HOME}/.local/opt/sonar-scanner/bin:${PATH}"
 fi
+
+# Set Bitwarden Session Token if possible
+if command -v bw 1> /dev/null 2>&1; then
+  if ! export BW_SESSION=$(secret-tool lookup service bitwarden user watts_graham); then
+    log_error "Bitwarden session token not found"
+  fi
+fi
