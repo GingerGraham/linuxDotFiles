@@ -12,6 +12,7 @@ alias sshclear="ssh-add -D"
 alias routeprint="netstat -rn"
 alias printrt="netstat -rn"
 alias cls="clear"
+
 # If system is Debian based and uses apt, set apt aliases
 if [[ "${OS}" = "Linux" ]] && command -v apt &> /dev/null; then
   alias apt-update='sudo apt update -y && sudo apt upgrade -y && sudo apt autoremove -y'
@@ -223,6 +224,8 @@ fi
 
 if command -v get_my_functions &> /dev/null; then
   alias aliases="get_my_functions"
+  alias reset-shell="clear && get_my_functions"
+  alias rs="clear && get_my_functions"
 fi
 
 if command -v wl-copy &> /dev/null; then
