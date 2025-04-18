@@ -4,7 +4,7 @@
 # Purpose: Install packages for common shells associated with this project, primarily zsh and bash
 # Use: Run this script to install the necessary packages for zsh and bash
 
-source_shrc () {
+source-shrc () {
     # Get the current user
     if [ -n "$USER" ]; then
         local user="$USER"
@@ -40,9 +40,9 @@ source_shrc () {
     return 0
 }
 
-install_zsh () {
+install-zsh () {
   # Install zsh with syntax highlighting and autosuggestions
-  detect_package_manager
+  detect-package-manager
   case "${PACKAGE_MANAGER}" in
     apt)
       sudo apt install -y zsh zsh-syntax-highlighting zsh-autosuggestions
@@ -87,9 +87,9 @@ install_zsh () {
   return 0
 }
 
-install_bash () {
+install-bash () {
   # Install bash with syntax highlighting
-  detect_package_manager
+  detect-package-manager
   case "${PACKAGE_MANAGER}" in
     apt)
       sudo apt install -y bash bash-completion
@@ -129,7 +129,7 @@ install_bash () {
   fi
 }
 
-install_omz () {
+install-omz () {
   # Install oh-my-zsh
   if [[ ! -d "${HOME}/.oh-my-zsh" ]]; then
     log_info "Installing oh-my-zsh"
@@ -147,7 +147,7 @@ install_omz () {
   return 0
 }
 
-install_omp () {
+install-omp () {
   # Test if the command oh-my-posh is installed
   if ! command -v oh-my-posh &> /dev/null; then
     log_info "Installing oh-my-posh"
@@ -161,6 +161,6 @@ install_omp () {
     log_error "oh-my-posh install failed"
     return 1
   fi
-  source_shrc
+  source-shrc
   return 0
 }

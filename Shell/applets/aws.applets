@@ -9,7 +9,7 @@
 # Define additional functions here
 
 # Update AWS CLI
-aws_update () {
+aws-update () {
   # Check if user has sudo access using provided function and exit if not
   if ! sudo_test; then
     log_error "Cannot update AWS CLI - user does not have sudo access"
@@ -22,12 +22,12 @@ aws_update () {
   fi
   # If the OS is Linux then run the Linux function
   if [[ "${OS}" == "Linux" ]]; then
-    aws_update_linux
+    aws-update-linux
     return 0
   fi
   # If the OS is Mac then run the Mac function
   if [[ "${OS}" == "Mac" ]]; then
-    aws_update_mac
+    aws-update-mac
     return 0
   fi
   # If the OS is not Linux or Mac then report an error - will only get here if OS is not set
@@ -35,7 +35,7 @@ aws_update () {
   return 1
 }
 
-aws_cli_install_rpm () {
+aws-cli-install-rpm () {
   # Check if the command dnf is available and use it if so
   if command -v dnf &> /dev/null; then
     log_info "Installing AWS CLI using dnf"
@@ -58,7 +58,7 @@ aws_cli_install_rpm () {
   return 0
 }
 
-aws_cli_install_curl () {
+aws-cli-install-curl () {
   # Check if the command curl is not available then return an error - required for the install
   if ! command -v curl &> /dev/null; then
     log_error "Curl is not installed - required for AWS CLI install"
@@ -99,7 +99,7 @@ aws_cli_install_curl () {
 }
 
 # Update AWS CLI on Linux
-aws_update_linux () {
+aws-update-linux () {
   # Check if the AWS CLI is already installed and if so then capture the current version
   if command -v aws &> /dev/null; then
     AWS_CURRENT_VERSION=$(aws --version 2>&1 | awk '{print $1}' | awk -F'/' '{print $2}')
@@ -121,16 +121,16 @@ aws_update_linux () {
   fi
   # Check if the command dnf or yum is available and use it if so
   if command -v dnf &> /dev/null || command -v yum &> /dev/null; then
-    aws_cli_install_rpm
+    aws-cli-install-rpm
     return 0
   fi
   # If dnf and yum are not available then use curl to install
-  aws_cli_install_curl
+  aws-cli-install-curl
   return 0
 }
 
 # Update AWS CLI on Mac
-aws_update_mac () {
+aws-update-mac () {
   # Check if the command curl is not available then return an error - required for the install
   if ! command -v curl &> /dev/null; then
     log_error "Curl is not installed - required for AWS CLI install"

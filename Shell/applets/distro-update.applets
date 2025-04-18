@@ -10,8 +10,8 @@
 
 # If distro is Fedora complete the steps to upgrade to the specified version
 # Accepts one named argument which is the version to upgrade to
-# Example: fedora_upgrade -v 40
-fedora_upgrade() {
+# Example: fedora-upgrade -v 40
+fedora-upgrade() {
   local version
   while (( "$#" )); do
     case "$1" in
@@ -48,7 +48,7 @@ fedora_upgrade() {
     # If the system needs a reboot, do not continue, prompt the user to reboot and then run the script again
     if [[ -f /var/run/reboot-required ]]; then
       log_error "System needs a reboot"
-      log_info "Reboot the system and run 'fedora_upgrade -v $version' again"
+      log_info "Reboot the system and run 'fedora-upgrade -v $version' again"
       return 1
     fi
     sudo dnf -y install dnf-plugin-system-upgrade
@@ -61,7 +61,7 @@ fedora_upgrade() {
 }
 
 # If distro is Ubuntu complete the steps to upgrade to the specified version
-ubuntu_upgrade() {
+ubuntu-upgrade() {
   # Check if the system already needs a reboot
   if [[ -f /var/run/reboot-required ]]; then
     log_error "System needs a reboot"
@@ -82,7 +82,7 @@ ubuntu_upgrade() {
 }
 
 # If the distro is openSUSE complete the steps to upgrade to the specified version
-opensuse_upgrade() {
+opensuse-upgrade() {
   # Check if the system already needs a reboot
   if [[ -f /var/run/reboot-required ]]; then
     log_error "System needs a reboot"

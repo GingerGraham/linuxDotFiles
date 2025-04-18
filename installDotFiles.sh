@@ -39,7 +39,7 @@ for file in "${EXCLUDE_FILES[@]}"; do
 done
 
 main () {
-    parse_args "${@}"
+    parse-args "${@}"
     if [[ -z ${TASK} ]]; then
         log_error "No task selected" >&2
         usage
@@ -47,19 +47,19 @@ main () {
     fi
     
     # Always ensure utils directory is linked first
-    link_utils_directory
+    link-utils-directory
 
     for task in "${TASK[@]}"; do
         ${task}
     done
 }
 
-parse_args() {
+parse-args() {
     # Manual argument parsing
     while [[ $# -gt 0 ]]; do
         case $1 in
             -a|--all)
-                TASK=("copy_all_files")
+                TASK=("copy-all-files")
                 shift
                 ;;
             -C|--check|--dry-run)
@@ -73,8 +73,8 @@ parse_args() {
                     usage
                     exit 1
                 fi
-                set_copy_file "$2"
-                TASK=("copy_selected_file")
+                set-copy-file "$2"
+                TASK=("copy-selected-file")
                 shift 2
                 ;;
             -h|--help)
@@ -82,7 +82,7 @@ parse_args() {
                 exit 0
                 ;;
             -l|--list)
-                list_files
+                list-files
                 exit 0
                 ;;
             -o|--old-dir)
@@ -91,7 +91,7 @@ parse_args() {
                     usage
                     exit 1
                 fi
-                set_old_file_dir "$2"
+                set-old-file-dir "$2"
                 shift 2
                 ;;
             -v|--version)
@@ -131,7 +131,7 @@ usage () {
     return 0
 }
 
-set_old_file_dir () {
+set-old-file-dir () {
     if [ -d "${1}" ]; then
         OLD_FILE_DIR="${1}"
     else
@@ -140,7 +140,7 @@ set_old_file_dir () {
     return 0
 }
 
-set_copy_file () {
+set-copy-file () {
     # Ensure an argument is passed in and set the COPY_FILE variable or return an error
     if [ -z "${1}" ]; then
         log_error "No file name passed in, returning"
@@ -150,13 +150,13 @@ set_copy_file () {
     COPY_FILE="${1}"
 }
 
-list_files () {
+list-files () {
     log_info "Listing available files in ${DIR}"
     find "${DIR}" -type f -name ".*" ${EXCLUDED_FILES_ARGS} -exec basename {} \;
     return 0
 }
 
-source_shell_rc() {
+source-shell-rc() {
     # Get the current user
     if [ -n "$USER" ]; then
         local user="$USER"
@@ -224,7 +224,7 @@ source_shell_rc() {
     return 0
 }
 
-create_old_file_dir () {
+create-old-file-dir () {
     CURRENT_DATE=$(date +"%Y-%m-%d")
     CURRENT_TIME=$(date +"%H-%M-%S")
     SUBDIR="${OLD_FILE_DIR}/${CURRENT_DATE}/${CURRENT_TIME}"
@@ -242,7 +242,7 @@ create_old_file_dir () {
 }
 
 # Refactored function to create a symlink
-create_symlink() {
+create-symlink() {
     local source_path="$1"
     local target_path="$2"
     
@@ -255,7 +255,7 @@ create_symlink() {
 }
 
 # Refactored function to handle moving existing files
-move_existing_file() {
+move-existing-file() {
     local source_path="$1"
     local dest_dir="$2"
     
@@ -282,7 +282,7 @@ move_existing_file() {
 }
 
 # Special handling for the .applets file and directory
-handle_applets_special_case() {
+handle-applets-special-case() {
     local shelldir="${DIR}/Shell"
     
     # Check if we're already in the applets directory to avoid recursive symlink
@@ -319,19 +319,19 @@ handle_applets_special_case() {
     fi
 }
 
-link_utils_directory() {
+link-utils-directory() {
     log_debug "Ensuring utils directory is linked to ${HOME}/utils"
     
     if [ -d "${DIR}/utils" ]; then
         if [ -d "${HOME}/utils" ] && [ ! -L "${HOME}/utils" ]; then
             # Ensure OLD_FILE_DIR exists
             if [ ! -d "${OLD_FILE_DIR}" ]; then
-                create_old_file_dir
+                create-old-file-dir
             fi
-            move_existing_file "${HOME}/utils" "${OLD_FILE_DIR}"
+            move-existing-file "${HOME}/utils" "${OLD_FILE_DIR}"
         fi
         
-        create_symlink "${DIR}/utils" "${HOME}/utils"
+        create-symlink "${DIR}/utils" "${HOME}/utils"
     else
         log_warn "utils directory not found in ${DIR}, skipping symlink creation"
     fi
@@ -339,20 +339,20 @@ link_utils_directory() {
     return 0
 }
 
-copy_all_files () {
+copy-all-files () {
     log_debug "Ensuring ${OLD_FILE_DIR} exists and creating if it does not"
-    create_old_file_dir
+    create-old-file-dir
     log_info "Copying all dot files"
 
     # Find the dot files in any subdirectory
     find "${DIR}" -type f -name ".*" ${EXCLUDED_FILES_ARGS} -not -path "*/.git/*" | while IFS= read -r FILE; do
         FILENAME=$(basename "${FILE}")
-        move_existing_file "${HOME}/${FILENAME}" "${OLD_FILE_DIR}"
-        create_symlink "${FILE}" "${HOME}/${FILENAME}"
+        move-existing-file "${HOME}/${FILENAME}" "${OLD_FILE_DIR}"
+        create-symlink "${FILE}" "${HOME}/${FILENAME}"
         
         # Special handling for .applets file
         if [ "${FILENAME}" = ".applets" ]; then
-            handle_applets_special_case
+            handle-applets-special-case
         fi
     done
     
@@ -375,16 +375,16 @@ copy_all_files () {
             if [ "$(basename "${SUBDIR}")" = "applets" ]; then
                 continue
             fi
-            create_symlink "${SUBDIR}" "${HOME}/$(basename "${SUBDIR}")"
+            create-symlink "${SUBDIR}" "${HOME}/$(basename "${SUBDIR}")"
         done
     fi
     
     # Source the shell rc file
-    source_shell_rc
+    source-shell-rc
     return 0
 }
 
-copy_selected_file () {
+copy-selected-file () {
     # Handle the file name passed in and if not file name is passed return an error
     if [ -z "${COPY_FILE}" ]; then
         log_error "No file name passed in, returning"
@@ -392,7 +392,7 @@ copy_selected_file () {
         return 1
     fi
     log_info "Ensuring ${OLD_FILE_DIR} exists and creating if it does not"
-    create_old_file_dir
+    create-old-file-dir
     log_info "Copying ${COPY_FILE}"
     # Search the parent directory of this script and all subdirectories for the file name passed in
     FILE=$(find "${DIR}" -type f -name "${COPY_FILE}" ${EXCLUDED_FILES_ARGS} ${EXCLUDED_DIRS_ARGS})
@@ -403,17 +403,17 @@ copy_selected_file () {
     
     # If the file is found then move the existing file to the OLD_FILE_DIR and create a symlink to the new file
     FILENAME=$(basename "${FILE}")
-    move_existing_file "${HOME}/${FILENAME}" "${OLD_FILE_DIR}"
-    create_symlink "${FILE}" "${HOME}/${FILENAME}"
+    move-existing-file "${HOME}/${FILENAME}" "${OLD_FILE_DIR}"
+    create-symlink "${FILE}" "${HOME}/${FILENAME}"
     
     # Special handling for .applets file
     if [ "${FILENAME}" = ".applets" ]; then
-        handle_applets_special_case
+        handle-applets-special-case
     fi
     
     # If the file copied is a shell rc file then source it by calling source_shell_rc
     if [[ "${FILENAME}" =~ ^\..*rc$ ]]; then
-        source_shell_rc
+        source-shell-rc
     fi
     return 0
 }

@@ -90,10 +90,10 @@ if command -v git &> /dev/null; then
   alias gpsh="git push"
   alias gf="git fetch"
   alias gitkeep="find . -type d -empty -exec touch {}/.gitkeep \;"
-  # If the git_cleanup function is defined, set an alias for it
-  if declare -f git_cleanup &> /dev/null; then
-    alias gitcleanup="git_cleanup"
-    alias git-remove-untracked="git_cleanup"
+  # If the git-cleanup function is defined, set an alias for it
+  if declare -f git-cleanup &> /dev/null; then
+    alias gitcleanup="git-cleanup"
+    alias git-remove-untracked="git-cleanup"
   fi
 fi
 
@@ -114,8 +114,8 @@ if command -v virtualbox &> /dev/null && command -v vagrant &> /dev/null; then
 fi
 
 # SSH aliases
-if command -v list_ssh_hosts &> /dev/null; then
-  alias sshhosts="list_ssh_hosts"
+if command -v list-ssh-hosts &> /dev/null; then
+  alias sshhosts="list-ssh-hosts"
 else
   alias sshhosts='grep -E "^Host\s" "${HOME}/.ssh/config"'
 fi
@@ -222,10 +222,10 @@ if command -v sonar-scanner &> /dev/null; then
   alias sq="sonar-scanner -Dsonar.token=$(secret-tool lookup sq_tkn local-scan)"
 fi
 
-if command -v get_my_functions &> /dev/null; then
-  alias aliases="get_my_functions"
-  alias reset-shell="clear && get_my_functions"
-  alias rs="clear && get_my_functions"
+if command -v get-my-functions &> /dev/null; then
+  alias aliases="get-my-functions"
+  alias reset-shell="clear && get-my-functions"
+  alias rs="clear && get-my-functions"
 fi
 
 if command -v wl-copy &> /dev/null; then

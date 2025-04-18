@@ -14,7 +14,7 @@ cheat(){
 }
 
 # Cleanup removed branches in git
-git_cleanup() {
+git-cleanup() {
     # Fetch updates
     git fetch -p
 
@@ -26,13 +26,13 @@ git_cleanup() {
 }
 
 # Show SSH Tunnel
-show_ssh_tunnel(){
+show-ssh-tunnel(){
   # ps -aux | grep -iE 'ssh\s+(-[fNL]+\s+)*-?[fNL]+'
   pgrep -f 'ssh\s+(-[fNL]+\s+)*-?[fNL]+'
 }
 
 # Test sudo access
-sudo_test (){
+sudo-test (){
   if [[ ! $(sudo -l -U "${USER}") ]]; then
     log_error "User does not have sudo access"
     return 1
@@ -41,7 +41,7 @@ sudo_test (){
   fi
 }
 
-detect_package_manager() {
+detect-package-manager() {
   # Detect the package manager for the current system
   if command -v apt &> /dev/null; then
     PACKAGE_MANAGER="apt"
@@ -63,7 +63,7 @@ detect_package_manager() {
   return 0
 }
 
-detect_distro () {
+detect-distro () {
   # Detect the Linux distribution
   if [[ -f /etc/os-release ]]; then
     source /etc/os-release
@@ -80,28 +80,28 @@ detect_distro () {
 }
 
 # Single command to update all tools including in this script
-update_tools () {
+update-tools () {
   set_log_format "%m"
   log_info "== Updating Tools =="
   log_info "== Updating AWS CLI =="
-  aws_update
+  aws-update
   log_info "== Updating Kubectl =="
   set_log_format "%d [%l] [%s] %m"
-  log_info " Updating Kubectl to latest version - using set_kubectl -v <version> to set a specific version"
+  log_info " Updating Kubectl to latest version - using set-kubectl -v <version> to set a specific version"
   set_log_format "%m"
-  set_kubectl -s
+  set-kubectl -s
   log_info "== Installing Helm =="
-  helm_install
+  helm-install
   log_info "== Updating Terraform =="
-  terraform_install
+  terraform-install
   log_info "== Updating Ansible =="
-  ansible_install
+  ansible-install
   set_log_format "%d [%l] [%s] %m"
   return 0
 }
 
 # Get the version of GO if installed and save it to an envrioment variable
-get_go_version () {
+get-go-version () {
   if [[ -x "$(command -v go)" ]]; then
     GO_VERSION=$(go version | awk '{print $3}'| tr -d 'go')
     export GO_VERSION
@@ -111,7 +111,7 @@ get_go_version () {
   fi
 }
 
-get_python_versions () {
+get-python-versions () {
   echo "[INFO] Python versions found:"
   for version in /usr/bin/python3*; do
     # Ignore -config directories
@@ -125,7 +125,7 @@ get_python_versions () {
 
 # Get and return public IPv4 and IPv6 addresses
 # Use dig if dig is available, otherwise use curl
-get_public_ip () {
+get-public-ip () {
   if [[ -x "$(command -v dig)" ]]; then
     echo "IPv4: $(dig -4 TXT +short o-o.myaddr.l.google.com @ns1.google.com | awk -F'"' '{ print $2}')"
     echo "IPv6: $(dig -6 TXT +short o-o.myaddr.l.google.com @ns1.google.com | awk -F'"' '{ print $2}')"
@@ -135,7 +135,7 @@ get_public_ip () {
   fi
 }
 
- open_workspace () {
+open-workspace () {
   if ! command -v code &> /dev/null && ! command -v code-insiders &> /dev/null; then
     log_error "Visual Studio Code is not installed"
     return 1
@@ -188,7 +188,7 @@ get_public_ip () {
 
  # to reregister LUKS key with tpm2 using systemd-crpytenroll
  # Requires the tpm2-tools and dracut tools to be installed
- register_tpm () {
+ register-tpm () {
     # Use lsblk with JSON output for easier parsing
     local IFS=$'\n'
     local luks_devices=()
@@ -210,7 +210,7 @@ get_public_ip () {
     fi
 
     # Check if user has sudo access
-    if ! sudo_test; then
+    if ! sudo-test; then
         return 1
     fi
 
@@ -260,7 +260,7 @@ get_public_ip () {
     return 0
  }
 
- get_my_functions () {
+ get-my-functions () {
   echo
   echo "[INFO] Loaded functions:"
   if [[ -n ${BASH_VERSION} ]]; then
@@ -281,7 +281,7 @@ get_public_ip () {
   fi
  }
 
-list_ssh_hosts() {
+list-ssh-hosts() {
   local config_dir="${HOME}/.ssh/config.d"
   local main_config="${HOME}/.ssh/config"
   
@@ -302,18 +302,18 @@ list_ssh_hosts() {
   fi
 }
 
-install_bitwarden() {
+install-bitwarden() {
   log_info "Installing or updating Bitwarden password manager..."
   
   # Detect package manager if not already set
   if [[ -z "${PACKAGE_MANAGER}" ]]; then
-    detect_package_manager || return 1
+    detect-package-manager || return 1
   fi
   
   # Check for sudo access if needed for package installation
   if [[ "${PACKAGE_MANAGER}" == "apt" || "${PACKAGE_MANAGER}" == "dnf" || "${PACKAGE_MANAGER}" == "yum" ]]; then
     log_info "Checking sudo access for package installation..."
-    if ! sudo_test; then
+    if ! sudo-test; then
       log_error "This installation requires sudo access. Please try again with sudo privileges."
       return 1
     fi

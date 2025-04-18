@@ -9,30 +9,30 @@
 # Define additional functions here
 
 # Update/Install Terraform for both Linux and mac
-terraform_install () {
+terraform-install () {
   if [[ -z ${OS} ]]; then
     log_warn "OS variable is not set"
     return 1
   fi
   # Check the latest available version of Terraform
-  TF_VERSION=$(get_latest_terraform_version)
+  TF_VERSION=$(get-latest-terraform-version)
   # Check if the version is set and if not report an error
   if [[ -z ${TF_VERSION} ]]; then
     log_error "Unable to determine the latest version of Terraform"
     return 1
   fi
   if [[ ${OS} == "Linux" ]]; then
-    is_git_installed
-    tf_install_linux "${TF_VERSION}"
-    tflint_install_linux
-    trivy_install_linux
-    # terraform_docs_install_linux
+    is-git-installed
+    tf-install-linux "${TF_VERSION}"
+    tflint-install-linux
+    trivy-install-linux
+    # terraform-docs-install-linux
   fi
   if [[ ${OS} == "Mac" ]]; then
-    tf_install_mac "${TF_VERSION}"
-    tflint_install_mac
-    trivy_install_mac
-    # terraform_docs_install_mac
+    tf-install-mac "${TF_VERSION}"
+    tflint-install-mac
+    trivy-install-mac
+    # terraform-docs-install-mac
   fi
   # If OS is not set or is not Linux or Darwin then report an error
   if [[ ${OS} != "Linux" ]] && [[ ${OS} != "Mac" ]]; then
@@ -42,12 +42,12 @@ terraform_install () {
 }
 
 # Get the current latest version of Terraform from the HashiCorp API
-get_latest_terraform_version () {
+get-latest-terraform-version () {
   curl -s https://checkpoint-api.hashicorp.com/v1/check/terraform | tr -d '\r' | grep -Eo '"current_version":"[0-9]+\.[0-9]+\.[0-9]+"' | grep -Eo '[0-9]+\.[0-9]+\.[0-9]+'
 }
 
 # Is git installed
-is_git_installed () {
+is-git-installed () {
   if ! command -v git &> /dev/null; then
     log_error "Git is not installed.  Please install Git and try again"
     return 1
@@ -55,7 +55,7 @@ is_git_installed () {
 }
 
 # Is brew installed
-is_brew_installed () {
+is-brew-installed () {
   if ! command -v brew &> /dev/null; then
     log_error "Homebrew is not installed.  Please install Homebrew and try again"
     return 1
@@ -63,13 +63,13 @@ is_brew_installed () {
 }
 
 # Install Terraform for Linux
-tf_install_linux () {
+tf-install-linux () {
   # Catch the passed version of Terraform and set it to the TF_VERSION variable
   TF_VERSION=$1
   # If the TF_VERSION variable is not set then report an error and set the TF_VERSION variable to the latest version of Terraform
   if [[ -z ${TF_VERSION} ]]; then
     log_error "Terraform version not set.  Installing latest version"
-    TF_VERSION=$(get_latest_terraform_version)
+    TF_VERSION=$(get-latest-terraform-version)
     if [[ -z ${TF_VERSION} ]]; then
       log_error "Unable to determine the latest version of Terraform"
       return 1
@@ -144,13 +144,13 @@ tf_install_linux () {
 }
 
 # Install Terraform for Mac
-tf_install_mac () {
+tf-install-mac () {
   # Catch the passed version of Terraform and set it to the TF_VERSION variable
   TF_VERSION=$1
   # If the TF_VERSION variable is not set then report an error and set the TF_VERSION variable to the latest version of Terraform
   if [[ -z ${TF_VERSION} ]]; then
     log_error "Terraform version not set.  Installing latest version"
-    TF_VERSION=$(get_latest_terraform_version)
+    TF_VERSION=$(get-latest-terraform-version)
     if [[ -z ${TF_VERSION} ]]; then
       log_error "Unable to determine the latest version of Terraform"
       return 1
@@ -224,7 +224,7 @@ tf_install_mac () {
 }
 
 # Install TFLint for Linux
-tflint_install_linux () {
+tflint-install-linux () {
   # Referring to https://github.com/terraform-linters/tflint/blob/master/README.md
   # Check the latest available version of TFLint
   TFLINT_VERSION=$(curl -s https://api.github.com/repos/terraform-linters/tflint/releases/latest | grep '"tag_name":' | sed -E 's/.+"v([^"]+)".+/\1/')
@@ -283,7 +283,7 @@ tflint_install_linux () {
 }
 
 # Install TFLint for macOS
-tflint_install_mac () {
+tflint-install-mac () {
   # Referring to https://github.com/terraform-linters/tflint/blob/master/README.md
   # Check the latest available version of TFLint
   TFLINT_VERSION=$(curl -s https://api.github.com/repos/terraform-linters/tflint/releases/latest | grep '"tag_name":' | sed -E 's/.+"v([^"]+)".+/\1/')
@@ -323,7 +323,7 @@ tflint_install_mac () {
   log_info "TFLint v${TFLINT_VERSION} installed"
 }
 
-trivy_repo_rpm () {
+trivy-repo-rpm () {
   # Referring to https://trivy.dev/latest/getting-started/installation/#rhelcentos-official
   # Test if trivy repo is already configured
   if [[ -f /etc/yum.repos.d/trivy.repo ]]; then
@@ -359,7 +359,7 @@ EOF
   log_info "Package list updated, trivy can now be installed"
 }
 
-trivy_repo_deb () {
+trivy-repo-deb () {
   # Referring to https://trivy.dev/latest/getting-started/installation/#debianubuntu-official
   # Test if trivy repo is already configured
   if [[ -f /etc/apt/sources.list.d/trivy.list ]]; then
@@ -383,7 +383,7 @@ trivy_repo_deb () {
 }
 
 # Install Trivy for Linux
-trivy_install_linux () {
+trivy-install-linux () {
   # Referring to https://trivy.dev/latest/getting-started/installation/#linux
   # Check the latest available version of Trivy
   TRIVY_VERSION=$(curl -s https://api.github.com/repos/aquasecurity/trivy/releases/latest | grep '"tag_name":' | sed -E 's/.+"v([^"]+)".+/\1/')
@@ -402,13 +402,13 @@ trivy_install_linux () {
   log_info "Trivy is not installed or is not the correct version.  Installing Trivy v${TRIVY_VERSION}"
   # Test if we have dnf or yum
   if command -v dnf &> /dev/null; then
-    trivy_repo_rpm
+    trivy-repo-rpm
     sudo dnf install trivy -y
   elif command -v yum &> /dev/null; then
-    trivy_repo_rpm
+    trivy-repo-rpm
     sudo yum install trivy -y
   elif command -v apt-get &> /dev/null; then
-    trivy_repo_deb
+    trivy-repo-deb
     sudo apt-get install trivy -y
   else
     log_error "No package manager found"
@@ -425,7 +425,7 @@ trivy_install_linux () {
 
 # Install Trivy for macOS using Homebrew
 # Referring to https://trivy.dev/latest/getting-started/installation/#homebrew-official
-trivy_install_mac () {
+trivy-install-mac () {
   # Check the latest available version of Trivy
   TRIVY_VERSION=$(curl -s https://api.github.com/repos/aquasecurity/trivy/releases/latest | grep '"tag_name":' | sed -E 's/.+"v([^"]+)".+/\1/')
   # Check if the version is set and if not report an error
@@ -464,7 +464,7 @@ trivy_install_mac () {
 }
 
 # Install terraform-docs for Linux
-terraform_docs_install_linux () {
+terraform-docs-install-linux () {
   # Issue or bug with v0.17.0 of terraform-docs, the go install doesn't produce the expected binary. For now marking this module as not working for Linux and exiting
   log_error "Automated installation of terraform-docs is not available for Linux.  Please install terraform-docs manually"
   log_error "For more information please refer to https://github.com/terraform-docs/terraform-docs#installation"
@@ -496,7 +496,7 @@ terraform_docs_install_linux () {
   log_info "Installing terraform-docs using Go"
   # If the environment variable GO_VERSION is not set then call the get_go_version function to set it
   if [[ -z ${GO_VERSION} ]]; then
-    get_go_version
+    get-go-version
   fi
   GO_MAJOR_VERSION=$(echo "${GO_VERSION}" | cut -d. -f1)
   GO_MINOR_VERSION=$(echo "${GO_VERSION}" | cut -d. -f2)
@@ -521,7 +521,7 @@ terraform_docs_install_linux () {
 }
 
 # Install terraform-docs for Mac
-terraform_docs_install_mac () {
+terraform-docs-install-mac () {
   # Referring to https://github.com/terraform-docs/terraform-docs#installation
   # Check the latest available version of terraform-docs
   TERRAFORM_DOCS_VERSION=$(curl -s https://api.github.com/repos/terraform-docs/terraform-docs/releases/latest | grep '"tag_name":' | sed -E 's/.+"v([^"]+)".+/\1/')
