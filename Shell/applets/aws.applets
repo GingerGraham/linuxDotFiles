@@ -11,38 +11,56 @@
 # Update AWS CLI
 aws-update () {
   # Check if user has sudo access using provided function and exit if not
-  if ! sudo_test; then
-    log_error "Cannot update AWS CLI - user does not have sudo access"
+  if ! sudo-test; then
+    log_error "Cannot update AWS CLI - user does not have privilege elevation access"
     return 1
   fi
+  
   # Check if the OS variable is set - should be set in .zshrc
   if [[ -z ${OS} ]]; then
     log_warn "OS variable is not set"
     return 1
   fi
+  
   # If the OS is Linux then run the Linux function
   if [[ "${OS}" == "Linux" ]]; then
     aws-update-linux
     return 0
   fi
+  
   # If the OS is Mac then run the Mac function
   if [[ "${OS}" == "Mac" ]]; then
     aws-update-mac
     return 0
   fi
+  
   # If the OS is not Linux or Mac then report an error - will only get here if OS is not set
   log_error "OS not supported: OS is not Linux or Mac"
   return 1
 }
 
 aws-cli-install-rpm () {
+  # Get the elevation command (sudo or run0)
+  local elevation_cmd
+  elevation_cmd=$(get-elevation-command)
+  if [[ $? -ne 0 || -z "$elevation_cmd" ]]; then
+    log_error "Failed to determine elevation mechanism"
+    return 1
+  fi
+  
+  # If using run0, warn about multiple prompts
+  if [[ "$elevation_cmd" == "run0" ]]; then
+    log_warn "Using run0 for AWS CLI installation - you may be prompted multiple times"
+    log_warn "run0 does not cache credentials like sudo does"
+  fi
+  
   # Check if the command dnf is available and use it if so
   if command -v dnf &> /dev/null; then
     log_info "Installing AWS CLI using dnf"
-    sudo dnf install -y aws-cli
+    ${elevation_cmd} dnf install -y awscli2
   elif command -v yum &> /dev/null; then
     log_info "Installing AWS CLI using yum"
-    sudo yum install -y aws-cli
+    ${elevation_cmd} yum install -y awscli2
   else
     log_error "Neither dnf nor yum is installed - required for AWS CLI install"
     return 1
@@ -59,6 +77,20 @@ aws-cli-install-rpm () {
 }
 
 aws-cli-install-curl () {
+  # Get the elevation command (sudo or run0)
+  local elevation_cmd
+  elevation_cmd=$(get-elevation-command)
+  if [[ $? -ne 0 || -z "$elevation_cmd" ]]; then
+    log_error "Failed to determine elevation mechanism"
+    return 1
+  fi
+  
+  # If using run0, warn about multiple prompts
+  if [[ "$elevation_cmd" == "run0" ]]; then
+    log_warn "Using run0 for AWS CLI installation - you may be prompted multiple times"
+    log_warn "run0 does not cache credentials like sudo does"
+  fi
+  
   # Check if the command curl is not available then return an error - required for the install
   if ! command -v curl &> /dev/null; then
     log_error "Curl is not installed - required for AWS CLI install"
@@ -84,7 +116,7 @@ aws-cli-install-curl () {
   fi
   log_info "Unzipped AWS CLI"
   log_info "Installing AWS CLI"
-  sudo ./aws/install --bin-dir /usr/local/bin --install-dir /usr/local/aws-cli --update
+  ${elevation_cmd} ./aws/install --bin-dir /usr/local/bin --install-dir /usr/local/aws-cli --update
   # If the install fails then exit
   if [[ $? -ne 0 ]]; then
     log_error "AWS CLI install failed"
@@ -131,6 +163,20 @@ aws-update-linux () {
 
 # Update AWS CLI on Mac
 aws-update-mac () {
+  # Get the elevation command (sudo or run0)
+  local elevation_cmd
+  elevation_cmd=$(get-elevation-command)
+  if [[ $? -ne 0 || -z "$elevation_cmd" ]]; then
+    log_error "Failed to determine elevation mechanism"
+    return 1
+  fi
+  
+  # If using run0, warn about multiple prompts
+  if [[ "$elevation_cmd" == "run0" ]]; then
+    log_warn "Using run0 for AWS CLI installation - you may be prompted multiple times"
+    log_warn "run0 does not cache credentials like sudo does"
+  fi
+  
   # Check if the command curl is not available then return an error - required for the install
   if ! command -v curl &> /dev/null; then
     log_error "Curl is not installed - required for AWS CLI install"
@@ -160,7 +206,7 @@ aws-update-mac () {
   curl "https://awscli.amazonaws.com/AWSCLIV2.pkg" -o "AWSCLIV2.pkg"
   log_info "AWS CLI downloaded"
   log_info "Installing AWS CLI"
-  sudo installer -pkg ./AWSCLIV2.pkg -target /
+  ${elevation_cmd} installer -pkg ./AWSCLIV2.pkg -target /
   # If the install fails then exit
   if [[ $? -ne 0 ]]; then
     log_error "AWS CLI install failed"

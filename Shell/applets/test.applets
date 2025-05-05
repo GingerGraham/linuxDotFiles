@@ -1,0 +1,20 @@
+#!/usr/bin/env bash
+
+# Path: .applets
+# Purpose: Test applets for shell commands
+# Use: Add applets to this file and they will be sourced by ~/.applets
+
+# This script adds testing helper functions to the shell
+# It is sourced by .bashrc or .zshrc via ~/.applets
+# Define additional functions here
+
+if applets-feature-enabled "test01"; then
+  some_func(){
+    if applets-feature-enabled "test02"; then
+      some_other_func(){
+        # This is a nested function
+        echo "This is a nested function"
+      }
+    fi
+  }
+fi

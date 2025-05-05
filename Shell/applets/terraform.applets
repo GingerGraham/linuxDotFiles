@@ -324,6 +324,20 @@ tflint-install-mac () {
 }
 
 trivy-repo-rpm () {
+  # Get the elevation command (sudo or run0)
+  local elevation_cmd
+  elevation_cmd=$(get-elevation-command)
+  if [[ $? -ne 0 || -z "$elevation_cmd" ]]; then
+    log_error "Failed to determine elevation mechanism"
+    return 1
+  fi
+  
+  # If using run0, warn about multiple prompts
+  if [[ "$elevation_cmd" == "run0" ]]; then
+    log_warn "Using run0 for repository configuration - you may be prompted multiple times"
+    log_warn "run0 does not cache credentials like sudo does"
+  fi
+
   # Referring to https://trivy.dev/latest/getting-started/installation/#rhelcentos-official
   # Test if trivy repo is already configured
   if [[ -f /etc/yum.repos.d/trivy.repo ]]; then
@@ -332,7 +346,7 @@ trivy-repo-rpm () {
   fi
   # Configure the trivy repository
   log_info "Configuring Trivy repository"
-  cat << EOF | sudo tee -a /etc/yum.repos.d/trivy.repo
+  cat << EOF | ${elevation_cmd} tee -a /etc/yum.repos.d/trivy.repo
 [trivy]
 name=Trivy repository
 baseurl=https://aquasecurity.github.io/trivy-repo/rpm/releases/\$basearch/
@@ -349,9 +363,9 @@ EOF
   # Update the package list
   # Test if we have dnf or yum
   if command -v dnf &> /dev/null; then
-    sudo dnf check-update --refresh -y
+    ${elevation_cmd} dnf check-update --refresh -y
   elif command -v yum &> /dev/null; then
-    sudo yum check-update -y
+    ${elevation_cmd} yum check-update -y
   else
     log_error "No package manager found"
     return 1
@@ -360,6 +374,20 @@ EOF
 }
 
 trivy-repo-deb () {
+  # Get the elevation command (sudo or run0)
+  local elevation_cmd
+  elevation_cmd=$(get-elevation-command)
+  if [[ $? -ne 0 || -z "$elevation_cmd" ]]; then
+    log_error "Failed to determine elevation mechanism"
+    return 1
+  fi
+  
+  # If using run0, warn about multiple prompts
+  if [[ "$elevation_cmd" == "run0" ]]; then
+    log_warn "Using run0 for repository configuration - you may be prompted multiple times"
+    log_warn "run0 does not cache credentials like sudo does"
+  fi
+
   # Referring to https://trivy.dev/latest/getting-started/installation/#debianubuntu-official
   # Test if trivy repo is already configured
   if [[ -f /etc/apt/sources.list.d/trivy.list ]]; then
@@ -368,9 +396,9 @@ trivy-repo-deb () {
   fi
   # Configure the trivy repository
   log_info "Configuring Trivy repository"
-  sudo apt-get install wget gnupg
-  wget -qO - https://aquasecurity.github.io/trivy-repo/deb/public.key | gpg --dearmor | sudo tee /usr/share/keyrings/trivy.gpg > /dev/null
-  echo "deb [signed-by=/usr/share/keyrings/trivy.gpg] https://aquasecurity.github.io/trivy-repo/deb generic main" | sudo tee -a /etc/apt/sources.list.d/trivy.list
+  ${elevation_cmd} apt-get install wget gnupg
+  wget -qO - https://aquasecurity.github.io/trivy-repo/deb/public.key | gpg --dearmor | ${elevation_cmd} tee /usr/share/keyrings/trivy.gpg > /dev/null
+  echo "deb [signed-by=/usr/share/keyrings/trivy.gpg] https://aquasecurity.github.io/trivy-repo/deb generic main" | ${elevation_cmd} tee -a /etc/apt/sources.list.d/trivy.list
   # Test if the trivy repository is configured
   if [[ ! -f /etc/apt/sources.list.d/trivy.list ]]; then
     log_error "Error configuring Trivy repository"
@@ -378,12 +406,26 @@ trivy-repo-deb () {
   fi
   log_info "Trivy repository configured... Updating package list"
   # Update the package list
-  sudo apt-get update
+  ${elevation_cmd} apt-get update
   log_info "Package list updated, trivy can now be installed"
 }
 
 # Install Trivy for Linux
 trivy-install-linux () {
+  # Get the elevation command (sudo or run0)
+  local elevation_cmd
+  elevation_cmd=$(get-elevation-command)
+  if [[ $? -ne 0 || -z "$elevation_cmd" ]]; then
+    log_error "Failed to determine elevation mechanism"
+    return 1
+  fi
+  
+  # If using run0, warn about multiple prompts
+  if [[ "$elevation_cmd" == "run0" ]]; then
+    log_warn "Using run0 for package installation - you may be prompted multiple times"
+    log_warn "run0 does not cache credentials like sudo does"
+  fi
+
   # Referring to https://trivy.dev/latest/getting-started/installation/#linux
   # Check the latest available version of Trivy
   TRIVY_VERSION=$(curl -s https://api.github.com/repos/aquasecurity/trivy/releases/latest | grep '"tag_name":' | sed -E 's/.+"v([^"]+)".+/\1/')
@@ -403,13 +445,13 @@ trivy-install-linux () {
   # Test if we have dnf or yum
   if command -v dnf &> /dev/null; then
     trivy-repo-rpm
-    sudo dnf install trivy -y
+    ${elevation_cmd} dnf install trivy -y
   elif command -v yum &> /dev/null; then
     trivy-repo-rpm
-    sudo yum install trivy -y
+    ${elevation_cmd} yum install trivy -y
   elif command -v apt-get &> /dev/null; then
     trivy-repo-deb
-    sudo apt-get install trivy -y
+    ${elevation_cmd} apt-get install trivy -y
   else
     log_error "No package manager found"
     return 1

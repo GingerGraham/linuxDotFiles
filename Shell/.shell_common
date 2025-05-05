@@ -62,6 +62,12 @@ if [ "${OS}" = "Mac" ]; then
   log_debug "iTerm2 shell integration loaded"
 fi
 
+# Load feature flags
+if [[ -f ${HOME}/applets/.applets-feature-flags ]]; then
+  log_debug "Sourcing applets feature flags"
+  source "${HOME}/applets/.applets-feature-flags"
+fi
+
 if [[ ! ":$PATH:" == *":${HOME}/.local/bin:"* ]]; then
   log_debug "Adding ${HOME}/.local/bin to PATH"
   PATH="${HOME}/.local/bin:${PATH}"
@@ -75,36 +81,36 @@ fi
 # Adding node.js / nvm
 if [[ -f ${HOME}/.nvm/nvm.sh ]]; then
   log_debug "Sourcing nodeJS configuration"
-  source ${HOME}/.node
+  source "${HOME}/.node"
 fi
 
 # Adding path variables
 if [[ -f ${HOME}/.pathVars ]]; then
   log_debug "Sourcing path variables"
-  source ${HOME}/.pathVars
+  source "${HOME}/.pathVars"
 fi
 
 # Adding applets
 if [[ -f ${HOME}/.applets ]]; then
   log_debug "Sourcing applets"
-  source ${HOME}/.applets
+  source "${HOME}/.applets"
 fi
 
 # Adding tasks
 if [[ -f ${HOME}/.tasks ]]; then
   log_debug "Sourcing tasks"
-	source ${HOME}/.tasks
+	source "${HOME}/.tasks"
 fi
 
 # Adding machine specific configuration
 if [[ -f ${HOME}/.machine_local ]]; then
   log_debug "Sourcing machine specific configuration"
-  source ${HOME}/.machine_local
+  source "${HOME}/.machine_local"
 fi
 
-if [ -f ${HOME}/.asdf/asdf.sh ]; then
+if [ -f "${HOME}/.asdf/asdf.sh" ]; then
   log_debug "Sourcing asdf"
-  source ${HOME}/.asdf/asdf.sh
+  source "${HOME}/.asdf/asdf.sh"
 fi
 
 # Test if we have oh-my-posh, or oh-my-zsh installed and if so load them.  If we have both preference is given to oh-my-posh such that priority order is oh-my-posh, oh-my-zsh, default zsh profile/prompt configuration
@@ -123,7 +129,7 @@ fi
 # Adding aliases
 if [[ -f ${HOME}/.alias ]]; then
   log_debug "Sourcing aliases"
-  source ${HOME}/.alias
+  source "${HOME}/.alias"
 fi
 
 # If bat is installed set the BAT_THEME to Visual Studio Dark+ if it's not already set.

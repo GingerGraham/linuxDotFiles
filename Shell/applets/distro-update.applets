@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 # Path: .applets
-# Purpose: General purpose applets for shell commands
+# Purpose: Distro update applets for shell commands
 # Use: Add applets to this file and they will be sourced by ~/.applets
 
 # This script adds helper functions to the shell
@@ -40,20 +40,34 @@ fedora-upgrade() {
     log_error "System needs a reboot"
     return 1
   fi
+  
+  # Get the elevation command (sudo or run0)
+  local elevation_cmd
+  elevation_cmd=$(get-elevation-command)
+  if [[ $? -ne 0 || -z "$elevation_cmd" ]]; then
+    log_error "Failed to determine elevation mechanism"
+    return 1
+  fi
+  
+  # If using run0, warn about multiple prompts
+  if [[ "$elevation_cmd" == "run0" ]]; then
+    log_warn "Using run0 for distro upgrade - you may be prompted multiple times"
+    log_warn "run0 does not cache credentials like sudo does"
+  fi
 
   if [[ -f /etc/fedora-release ]]; then
     log_info "Updating Fedora to version $version"
-    sudo dnf -y --refresh update
-    sudo dnf -y upgrade
+    ${elevation_cmd} dnf -y --refresh update
+    ${elevation_cmd} dnf -y upgrade
     # If the system needs a reboot, do not continue, prompt the user to reboot and then run the script again
     if [[ -f /var/run/reboot-required ]]; then
       log_error "System needs a reboot"
       log_info "Reboot the system and run 'fedora-upgrade -v $version' again"
       return 1
     fi
-    sudo dnf -y install dnf-plugin-system-upgrade
-    sudo dnf -y system-upgrade download --releasever="$version"
-    sudo dnf -y system-upgrade reboot
+    ${elevation_cmd} dnf -y install dnf-plugin-system-upgrade
+    ${elevation_cmd} dnf -y system-upgrade download --releasever="$version"
+    ${elevation_cmd} dnf -y system-upgrade reboot
   else
     log_error "Not a Fedora system"
     return 1
@@ -67,14 +81,28 @@ ubuntu-upgrade() {
     log_error "System needs a reboot"
     return 1
   fi
+  
+  # Get the elevation command (sudo or run0)
+  local elevation_cmd
+  elevation_cmd=$(get-elevation-command)
+  if [[ $? -ne 0 || -z "$elevation_cmd" ]]; then
+    log_error "Failed to determine elevation mechanism"
+    return 1
+  fi
+  
+  # If using run0, warn about multiple prompts
+  if [[ "$elevation_cmd" == "run0" ]]; then
+    log_warn "Using run0 for distro upgrade - you may be prompted multiple times"
+    log_warn "run0 does not cache credentials like sudo does"
+  fi
 
   if [[ -f /etc/lsb-release ]]; then
     log_info "Updating Ubuntu"
-    sudo apt update
-    sudo apt upgrade -y
-    sudo apt dist-upgrade -y
-    sudo apt install update-manager-core
-    sudo do-release-upgrade -f DistUpgradeViewNonInteractive -m desktop
+    ${elevation_cmd} apt update
+    ${elevation_cmd} apt upgrade -y
+    ${elevation_cmd} apt dist-upgrade -y
+    ${elevation_cmd} apt install update-manager-core
+    ${elevation_cmd} do-release-upgrade -f DistUpgradeViewNonInteractive -m desktop
   else
     log_error "Not an Ubuntu system"
     return 1
@@ -88,12 +116,26 @@ opensuse-upgrade() {
     log_error "System needs a reboot"
     return 1
   fi
+  
+  # Get the elevation command (sudo or run0)
+  local elevation_cmd
+  elevation_cmd=$(get-elevation-command)
+  if [[ $? -ne 0 || -z "$elevation_cmd" ]]; then
+    log_error "Failed to determine elevation mechanism"
+    return 1
+  fi
+  
+  # If using run0, warn about multiple prompts
+  if [[ "$elevation_cmd" == "run0" ]]; then
+    log_warn "Using run0 for distro upgrade - you may be prompted multiple times"
+    log_warn "run0 does not cache credentials like sudo does"
+  fi
 
   if [[ -f /etc/os-release ]]; then
     log_info "Updating openSUSE"
-    sudo zypper refresh
-    sudo zypper update
-    sudo zypper dist-upgrade
+    ${elevation_cmd} zypper refresh
+    ${elevation_cmd} zypper update
+    ${elevation_cmd} zypper dist-upgrade
   else
     log_error "Not an openSUSE system"
     return 1

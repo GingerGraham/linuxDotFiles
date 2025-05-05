@@ -11,7 +11,8 @@ source-shrc () {
     elif [ -n "$USERNAME" ]; then
         local user="$USERNAME"
     elif [ -n "$(whoami)" ]; then
-        local user="$(whoami)"
+        local user
+        user="$(whoami)"
     else
         log_error "Unable to determine the user"
         return 1
@@ -23,7 +24,8 @@ source-shrc () {
         return 1
     fi
     # Get the user's default shell
-    local shell=$(getent passwd "$user" | cut -d: -f7 | sed 's/\/bin\///')
+    local shell
+    shell=$(getent passwd "$user" | cut -d: -f7 | sed 's/\/bin\///')
     shell=${shell##*/}
     log_debug "Shell is ${shell}"
     # log_info "Sourcing ${HOME}/.${shell}rc"
@@ -43,21 +45,36 @@ source-shrc () {
 install-zsh () {
   # Install zsh with syntax highlighting and autosuggestions
   detect-package-manager
+  
+  # Get the elevation command (sudo or run0)
+  local elevation_cmd
+  elevation_cmd=$(get-elevation-command)
+  if [[ $? -ne 0 || -z "$elevation_cmd" ]]; then
+    log_error "Failed to determine elevation mechanism"
+    return 1
+  fi
+  
+  # If using run0, warn about multiple prompts
+  if [[ "$elevation_cmd" == "run0" ]]; then
+    log_warn "Using run0 for package installation - you may be prompted multiple times"
+    log_warn "run0 does not cache credentials like sudo does"
+  fi
+  
   case "${PACKAGE_MANAGER}" in
     apt)
-      sudo apt install -y zsh zsh-syntax-highlighting zsh-autosuggestions
+      ${elevation_cmd} apt install -y zsh zsh-syntax-highlighting zsh-autosuggestions
       ;;
     dnf)
-      sudo dnf install -y zsh zsh-syntax-highlighting zsh-autosuggestions
+      ${elevation_cmd} dnf install -y zsh zsh-syntax-highlighting zsh-autosuggestions
       ;;
     yum)
-      sudo yum install -y zsh zsh-syntax-highlighting zsh-autosuggestions
+      ${elevation_cmd} yum install -y zsh zsh-syntax-highlighting zsh-autosuggestions
       ;;
     zypper)
-      sudo zypper install -y zsh zsh-syntax-highlighting zsh-autosuggestions
+      ${elevation_cmd} zypper install -y zsh zsh-syntax-highlighting zsh-autosuggestions
       ;;
     pacman)
-      sudo pacman -S --noconfirm zsh zsh-syntax-highlighting zsh-autosuggestions
+      ${elevation_cmd} pacman -S --noconfirm zsh zsh-syntax-highlighting zsh-autosuggestions
       ;;
     brew)
       brew install zsh zsh-syntax-highlighting zsh-autosuggestions
@@ -68,6 +85,7 @@ install-zsh () {
       ;;
   esac
   # If the install failed, return an error
+  # shellcheck disable=SC2181
   if [[ $? -ne 0 ]]; then
     log_error "zsh install failed"
     return 1
@@ -90,21 +108,36 @@ install-zsh () {
 install-bash () {
   # Install bash with syntax highlighting
   detect-package-manager
+  
+  # Get the elevation command (sudo or run0)
+  local elevation_cmd
+  elevation_cmd=$(get-elevation-command)
+  if [[ $? -ne 0 || -z "$elevation_cmd" ]]; then
+    log_error "Failed to determine elevation mechanism"
+    return 1
+  fi
+  
+  # If using run0, warn about multiple prompts
+  if [[ "$elevation_cmd" == "run0" ]]; then
+    log_warn "Using run0 for package installation - you may be prompted multiple times"
+    log_warn "run0 does not cache credentials like sudo does"
+  fi
+  
   case "${PACKAGE_MANAGER}" in
     apt)
-      sudo apt install -y bash bash-completion
+      ${elevation_cmd} apt install -y bash bash-completion
       ;;
     dnf)
-      sudo dnf install -y bash bash-completion
+      ${elevation_cmd} dnf install -y bash bash-completion
       ;;
     yum)
-      sudo yum install -y bash bash-completion
+      ${elevation_cmd} yum install -y bash bash-completion
       ;;
     zypper)
-      sudo zypper install -y bash bash-completion
+      ${elevation_cmd} zypper install -y bash bash-completion
       ;;
     pacman)
-      sudo pacman -S --noconfirm bash bash-completion
+      ${elevation_cmd} pacman -S --noconfirm bash bash-completion
       ;;
     brew)
       brew install bash bash-completion
@@ -115,6 +148,7 @@ install-bash () {
       ;;
   esac
   # If the install failed, return an error
+  # shellcheck disable=SC2181
   if [[ $? -ne 0 ]]; then
     log_error "bash install failed"
     return 1
@@ -138,11 +172,13 @@ install-omz () {
     log_info "oh-my-zsh already installed"
   fi
   # If the install failed, return an error
+  # shellcheck disable=SC2181
   if [[ $? -ne 0 ]]; then
     log_error "oh-my-zsh install failed"
     return 1
   fi
   # Source the .zshrc file
+  # shellcheck disable=SC1091
   source "${HOME}/.zshrc"
   return 0
 }
@@ -157,6 +193,7 @@ install-omp () {
     log_info "oh-my-posh already installed"
   fi
   # If the install failed, return an error
+  # shellcheck disable=SC2181
   if [[ $? -ne 0 ]]; then
     log_error "oh-my-posh install failed"
     return 1

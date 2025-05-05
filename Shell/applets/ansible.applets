@@ -10,10 +10,24 @@
 
 
 ansible-install-dnf () {
+  # Get the elevation command (sudo or run0)
+  local elevation_cmd
+  elevation_cmd=$(get-elevation-command)
+  if [[ $? -ne 0 || -z "$elevation_cmd" ]]; then
+    log_error "Failed to determine elevation mechanism"
+    return 1
+  fi
+  
+  # If using run0, warn about multiple prompts
+  if [[ "$elevation_cmd" == "run0" ]]; then
+    log_warn "Using run0 for package installation - you may be prompted multiple times"
+    log_warn "run0 does not cache credentials like sudo does"
+  fi
+
   # Check if the command dnf is available and use it if so
   if command -v dnf &> /dev/null; then
     log_info "Installing Ansible using dnf"
-    sudo dnf install -y ansible
+    ${elevation_cmd} dnf install -y ansible
   else
     log_error "dnf is not installed - required for Ansible install"
     return 1
@@ -30,10 +44,24 @@ ansible-install-dnf () {
 }
 
 ansible-install-yum () {
+  # Get the elevation command (sudo or run0)
+  local elevation_cmd
+  elevation_cmd=$(get-elevation-command)
+  if [[ $? -ne 0 || -z "$elevation_cmd" ]]; then
+    log_error "Failed to determine elevation mechanism"
+    return 1
+  fi
+  
+  # If using run0, warn about multiple prompts
+  if [[ "$elevation_cmd" == "run0" ]]; then
+    log_warn "Using run0 for package installation - you may be prompted multiple times"
+    log_warn "run0 does not cache credentials like sudo does"
+  fi
+
   # Check if the command yum is available and use it if so
   if command -v yum &> /dev/null; then
     log_info "Installing Ansible using yum"
-    sudo yum install -y ansible
+    ${elevation_cmd} yum install -y ansible
   else
     log_error "yum is not installed - required for Ansible install"
     return 1
@@ -50,10 +78,24 @@ ansible-install-yum () {
 }
 
 ansible-install-zypper () {
+  # Get the elevation command (sudo or run0)
+  local elevation_cmd
+  elevation_cmd=$(get-elevation-command)
+  if [[ $? -ne 0 || -z "$elevation_cmd" ]]; then
+    log_error "Failed to determine elevation mechanism"
+    return 1
+  fi
+  
+  # If using run0, warn about multiple prompts
+  if [[ "$elevation_cmd" == "run0" ]]; then
+    log_warn "Using run0 for package installation - you may be prompted multiple times"
+    log_warn "run0 does not cache credentials like sudo does"
+  fi
+
   # Check if the command zypper is available and use it if so
   if command -v zypper &> /dev/null; then
     log_info "Installing Ansible using zypper"
-    sudo zypper install -y ansible
+    ${elevation_cmd} zypper install -y ansible
   else
     log_error "zypper is not installed - required for Ansible install"
     return 1
@@ -70,10 +112,24 @@ ansible-install-zypper () {
 }
 
 ansible-install-pacman () {
+  # Get the elevation command (sudo or run0)
+  local elevation_cmd
+  elevation_cmd=$(get-elevation-command)
+  if [[ $? -ne 0 || -z "$elevation_cmd" ]]; then
+    log_error "Failed to determine elevation mechanism"
+    return 1
+  fi
+  
+  # If using run0, warn about multiple prompts
+  if [[ "$elevation_cmd" == "run0" ]]; then
+    log_warn "Using run0 for package installation - you may be prompted multiple times"
+    log_warn "run0 does not cache credentials like sudo does"
+  fi
+
   # Check if the command pacman is available and use it if so
   if command -v pacman &> /dev/null; then
     log_info "Installing Ansible using pacman"
-    sudo pacman -S --noconfirm ansible
+    ${elevation_cmd} pacman -S --noconfirm ansible
   else
     log_error "pacman is not installed - required for Ansible install"
     return 1
@@ -89,17 +145,31 @@ ansible-install-pacman () {
 }
 
 ansible-add-ppa () {
+  # Get the elevation command (sudo or run0)
+  local elevation_cmd
+  elevation_cmd=$(get-elevation-command)
+  if [[ $? -ne 0 || -z "$elevation_cmd" ]]; then
+    log_error "Failed to determine elevation mechanism"
+    return 1
+  fi
+  
+  # If using run0, warn about multiple prompts
+  if [[ "$elevation_cmd" == "run0" ]]; then
+    log_warn "Using run0 for repository configuration - you may be prompted multiple times"
+    log_warn "run0 does not cache credentials like sudo does"
+  fi
+
   # Check if the command apt-add-repository is available and use it if so
   if command -v apt-add-repository &> /dev/null; then
     log_info "Adding Ansible PPA"
-    sudo apt update
+    ${elevation_cmd} apt update
     if ! dpkg -l | grep -q software-properties-common; then
       log_info "Installing software-properties-common"
-      sudo apt install -y software-properties-common
+      ${elevation_cmd} apt install -y software-properties-common
     else
       log_info "software-properties-common is already installed"
     fi
-    sudo apt-add-repository -y ppa:ansible/ansible
+    ${elevation_cmd} apt-add-repository -y ppa:ansible/ansible
   else
     log_error "apt-add-repository is not installed - required for Ansible PPA add"
     return 1

@@ -1,0 +1,748 @@
+#!/usr/bin/env bash
+# File: ~/.applets-feature-flags
+# Purpose: Feature flag system for shell applets
+# Version: 1.0.0
+
+# ---------------------------------------------------
+# Configuration
+# ---------------------------------------------------
+APPLETS_CONFIG_FILE="${HOME}/applets/.applets-config"
+APPLETS_DEFAULT_TTL=86400  # 1 hour in seconds
+APPLETS_DEV_LOCAL_OVERRIDE="${HOME}/applets/.applets-dev-flags.json"
+APPLETS_DEFAULT_ENV="production" # Default environment
+APPLETS_FLAGS_CACHE_DIR="${HOME}/.cache/applets"
+APPLETS_FLAGS_CACHE_FILE="${APPLETS_FLAGS_CACHE_DIR}/feature_flags.json"
+APPLETS_FLAGS_URL="http://localhost:4000/flags/test01.json"
+APPLETS_SYNC_BEHAVIOR="auto" # Can be "auto", "manual", or "local-only"
+APPLETS_TEST_LOCAL_OVERRIDE="${HOME}/applets/.applets-test-flags.json"
+
+# Create cache directory if it doesn't exist
+mkdir -p "${APPLETS_FLAGS_CACHE_DIR}"
+
+# Load environment configuration
+# shellcheck source=/dev/null
+if [ -f "${APPLETS_CONFIG_FILE}" ]; then
+    source "${APPLETS_CONFIG_FILE}"
+else
+    # Create default config if it doesn't exist
+    echo "APPLETS_ENVIRONMENT=\"$APPLETS_DEFAULT_ENV\"" > "${APPLETS_CONFIG_FILE}"
+    APPLETS_ENVIRONMENT="$APPLETS_DEFAULT_ENV"
+fi
+
+# ---------------------------------------------------
+# Private Functions
+# ---------------------------------------------------
+
+# Get default feature flags when no source is available
+# Returns: JSON string with default feature configuration
+_applets_get_default_flags() {
+    cat <<EOF
+{
+  "metadata": {
+    "version": "0.0.1",
+    "generated_at": "$(date -u +"%Y-%m-%dT%H:%M:%SZ")",
+    "ttl": {
+      "development": 1800,
+      "testing": 3600,
+      "production": 86400
+    }
+  },
+  "development": {},
+  "testing": {},
+  "production": {}
+}
+EOF
+}
+
+# Determine if flags should be synced from remote
+# Based on environment and sync behavior settings
+# Returns: "true" if should sync, "false" otherwise
+_applets_should_sync_from_remote() {
+    # Always sync in production
+    if [ "$APPLETS_ENVIRONMENT" = "production" ]; then
+        return 0 # true
+    fi
+    
+    # Check sync behavior setting
+    if [ "$APPLETS_SYNC_BEHAVIOR" = "local-only" ]; then
+        return 1 # false
+    fi
+    
+    if [ "$APPLETS_SYNC_BEHAVIOR" = "manual" ]; then
+        # Only sync manually 
+        return 1 # false
+    fi
+    
+    # For "auto" behavior, check environment
+    if [ "$APPLETS_ENVIRONMENT" = "development" ] || [ "$APPLETS_ENVIRONMENT" = "testing" ]; then
+        # Check if local override exists
+        if [ "$APPLETS_ENVIRONMENT" = "development" ] && [ -f "$APPLETS_DEV_LOCAL_OVERRIDE" ]; then
+            return 1 # false - use local override
+        fi
+        
+        if [ "$APPLETS_ENVIRONMENT" = "testing" ] && [ -f "$APPLETS_TEST_LOCAL_OVERRIDE" ]; then
+            return 1 # false - use local override
+        fi
+        
+        # Check if we have a valid cache already
+        if [ -f "$APPLETS_FLAGS_CACHE_FILE" ]; then
+            return 1 # false - use cache
+        fi
+    fi
+    
+    # Default to syncing
+    return 0 # true
+}
+
+# Fetch feature flags from remote URL or fallback to cache/defaults
+# Returns: JSON string with feature configuration
+_applets_fetch_feature_flags() {
+    local current_time
+    current_time=$(date +%s)
+    local should_fetch=true
+    local ttl=$APPLETS_DEFAULT_TTL
+    
+    # Check for environment-specific overrides first
+    if [ "$APPLETS_ENVIRONMENT" = "development" ] && [ -f "$APPLETS_DEV_LOCAL_OVERRIDE" ]; then
+        # Use developer override instead of remote/cache
+        cat "$APPLETS_DEV_LOCAL_OVERRIDE"
+        return
+    fi
+    
+    if [ "$APPLETS_ENVIRONMENT" = "testing" ] && [ -f "$APPLETS_TEST_LOCAL_OVERRIDE" ]; then
+        # Use testing override instead of remote/cache
+        cat "$APPLETS_TEST_LOCAL_OVERRIDE"
+        return
+    fi
+    
+    # Check if we should try to sync from remote
+    if ! _applets_should_sync_from_remote; then
+        # Use cache if available
+        if [ -f "$APPLETS_FLAGS_CACHE_FILE" ]; then
+            cat "$APPLETS_FLAGS_CACHE_FILE"
+            return
+        fi
+    fi
+    
+    # Check if cache exists and is valid
+    if [ -f "$APPLETS_FLAGS_CACHE_FILE" ]; then
+        # Read existing file to get TTL
+        local cached_json
+        cached_json=$(cat "$APPLETS_FLAGS_CACHE_FILE")
+        if [ -z "$cached_json" ]; then
+            # Cache is empty, fetch new data
+            should_fetch=true
+        else
+            # Cache is valid, check TTL
+            should_fetch=false
+        fi
+        
+        # Try to extract environment-specific TTL from the cached file
+        if command -v jq &>/dev/null; then
+            local env_ttl
+            env_ttl=$(echo "$cached_json" | jq -r ".metadata.ttl.$APPLETS_ENVIRONMENT // $APPLETS_DEFAULT_TTL" 2>/dev/null)
+            if [[ "$env_ttl" =~ ^[0-9]+$ ]]; then
+                ttl=$env_ttl
+            fi
+        fi
+        
+        # Check if cache is still valid based on TTL
+        local cache_time
+        cache_time=$(stat -c %Y "$APPLETS_FLAGS_CACHE_FILE" 2>/dev/null || stat -f %m "$APPLETS_FLAGS_CACHE_FILE" 2>/dev/null)
+        
+        if [ -n "$cache_time" ]; then
+            local age=$((current_time - cache_time))
+            if [ $age -lt "$ttl" ]; then
+                should_fetch=false
+            fi
+        fi
+    fi
+    
+    # Fetch new data if needed and allowed
+    if [ "$should_fetch" = true ] && _applets_should_sync_from_remote; then
+        local new_flags=""
+        
+        # Try to fetch from website
+        if command -v curl &>/dev/null; then
+            new_flags=$(curl -s --max-time 3 "$APPLETS_FLAGS_URL" 2>/dev/null)
+        elif command -v wget &>/dev/null; then
+            new_flags=$(wget -q -O - "$APPLETS_FLAGS_URL" 2>/dev/null)
+        fi
+        
+        # Validate JSON if jq is available
+        if [ -n "$new_flags" ] && command -v jq &>/dev/null; then
+            if echo "$new_flags" | jq . &>/dev/null; then
+                # Valid JSON, update cache
+                echo "$new_flags" > "$APPLETS_FLAGS_CACHE_FILE"
+                
+                # For development and testing, create initial local override if it doesn't exist
+                if [ "$APPLETS_ENVIRONMENT" = "development" ] && [ ! -f "$APPLETS_DEV_LOCAL_OVERRIDE" ]; then
+                    echo "$new_flags" > "$APPLETS_DEV_LOCAL_OVERRIDE"
+                    echo "Created initial developer override at $APPLETS_DEV_LOCAL_OVERRIDE"
+                fi
+                
+                if [ "$APPLETS_ENVIRONMENT" = "testing" ] && [ ! -f "$APPLETS_TEST_LOCAL_OVERRIDE" ]; then
+                    echo "$new_flags" > "$APPLETS_TEST_LOCAL_OVERRIDE"
+                    echo "Created initial testing override at $APPLETS_TEST_LOCAL_OVERRIDE"
+                fi
+                
+                echo "$new_flags"
+                return
+            fi
+        fi
+    fi
+    
+    # Fetch failed, check for overrides again (redundant check but ensures correct order)
+    if [ "$APPLETS_ENVIRONMENT" = "development" ] && [ -f "$APPLETS_DEV_LOCAL_OVERRIDE" ]; then
+        cat "$APPLETS_DEV_LOCAL_OVERRIDE"
+        return
+    fi
+    
+    if [ "$APPLETS_ENVIRONMENT" = "testing" ] && [ -f "$APPLETS_TEST_LOCAL_OVERRIDE" ]; then
+        cat "$APPLETS_TEST_LOCAL_OVERRIDE"
+        return
+    fi
+    
+    # Use valid cache if available
+    if [ -f "$APPLETS_FLAGS_CACHE_FILE" ]; then
+        cat "$APPLETS_FLAGS_CACHE_FILE"
+        return
+    fi
+    
+    # No valid cache or override, use defaults
+    local default_flags
+    default_flags=$(_applets_get_default_flags)
+    echo "$default_flags" > "$APPLETS_FLAGS_CACHE_FILE"
+    echo "$default_flags"
+    return
+}
+
+# Check if a specific feature is enabled
+# Arguments:
+#   $1 - Feature name
+#   $2 - Flags JSON
+#   $3 - Environment (optional, defaults to APPLETS_ENVIRONMENT)
+# Returns: 0 if enabled, 1 if disabled
+_applets_is_feature_enabled() {
+    local feature_name="$1"
+    local flags_json="$2"
+    local environment="${3:-$APPLETS_ENVIRONMENT}"
+    
+    # Fall back to JSON parsing
+    if command -v jq &>/dev/null; then
+        local enabled
+        enabled=$(echo "$flags_json" | jq -r ".$environment.$feature_name // false" 2>/dev/null)
+        if [ "$enabled" = "true" ]; then
+            return 0  # Feature is enabled
+        else
+            return 1  # Feature is disabled
+        fi
+    else
+        # Fallback for systems without jq - use grep with some JSON parsing
+        local pattern="\"$environment\":[^}]*\"$feature_name\":[^,}]*true"
+        if echo "$flags_json" | grep -q "$pattern"; then
+            return 0  # Feature is enabled
+        else
+            return 1  # Feature is disabled
+        fi
+    fi
+}
+
+# Get cached feature flags or fetch them if not yet loaded
+# Returns: JSON string with feature configuration
+_applets_get_feature_flags() {
+    # Only fetch once per session and store in a global variable
+    if [ -z "$_APPLETS_FLAGS_JSON" ]; then
+        _APPLETS_FLAGS_JSON=$(_applets_fetch_feature_flags)
+    fi
+    echo "$_APPLETS_FLAGS_JSON"
+}
+
+# Initialize the feature flag system
+# Fetches flags from web if needed
+_applets_initialize() {
+    # Check if the cache file exists
+    if [ ! -f "$APPLETS_FLAGS_CACHE_FILE" ]; then
+        # No cache file - attempt to fetch from web
+        echo "No local cache found, attempting to fetch feature flags from web..."
+        _APPLETS_FLAGS_JSON=$(_applets_fetch_feature_flags)
+    else
+        # Cache file exists - check if it's expired
+        local current_time
+        current_time=$(date +%s)
+        local cached_json
+        cached_json=$(cat "$APPLETS_FLAGS_CACHE_FILE")
+        local ttl=$APPLETS_DEFAULT_TTL
+        
+        # Try to extract environment-specific TTL from the cached file
+        if command -v jq &>/dev/null; then
+            local env_ttl
+            env_ttl=$(echo "$cached_json" | jq -r ".metadata.ttl.$APPLETS_ENVIRONMENT // $APPLETS_DEFAULT_TTL" 2>/dev/null)
+            if [[ "$env_ttl" =~ ^[0-9]+$ ]]; then
+                ttl=$env_ttl
+            fi
+        fi
+        
+        # Check if cache is expired
+        local cache_time
+        cache_time=$(stat -c %Y "$APPLETS_FLAGS_CACHE_FILE" 2>/dev/null || stat -f %m "$APPLETS_FLAGS_CACHE_FILE" 2>/dev/null)
+        
+        if [ -n "$cache_time" ]; then
+            local age=$((current_time - cache_time))
+            if [ $age -gt "$ttl" ]; then
+                # Cache is expired - fetch from web
+                echo "Feature flags cache expired, refreshing from web..."
+                _APPLETS_FLAGS_JSON=$(_applets_fetch_feature_flags)
+            else
+                # Cache is still valid - use it
+                _APPLETS_FLAGS_JSON=$cached_json
+            fi
+        else
+            # Can't determine cache time - fetch to be safe
+            _APPLETS_FLAGS_JSON=$(_applets_fetch_feature_flags)
+        fi
+    fi
+}
+
+# ---------------------------------------------------
+# Public Functions
+# ---------------------------------------------------
+
+# Check if a feature is enabled
+# Arguments:
+#   $1 - Feature name
+# Returns: 0 if enabled, 1 if disabled
+applets-feature-enabled() {
+    local feature_name="$1"
+    
+    # Get flags and check if feature is enabled
+    local flags_json
+    flags_json=$(_applets_get_feature_flags)
+    _applets_is_feature_enabled "$feature_name" "$flags_json"
+}
+
+# Manually refresh feature flags
+# Useful when changing environments or after updating flags on the server
+applets-refresh-features() {
+    # Reload environment setting from config file
+    if [ -f "$APPLETS_CONFIG_FILE" ]; then
+        # shellcheck disable=SC1090
+        source "$APPLETS_CONFIG_FILE"
+        echo "Reloaded environment setting: $APPLETS_ENVIRONMENT"
+    fi
+    
+    # Force refresh by clearing the cached variable
+    unset _APPLETS_FLAGS_JSON
+    
+    # Remove the cache file
+    rm -f "$APPLETS_FLAGS_CACHE_FILE"
+    
+    # Fetch fresh flags
+    _APPLETS_FLAGS_JSON=$(_applets_fetch_feature_flags)
+    
+    # Show current feature status
+    applets-show-features
+}
+
+# Show current feature status
+# Displays environment and all feature flags with their values
+applets-show-features() {
+    local flags_json
+    flags_json=$(_applets_get_feature_flags)
+    
+    echo "Current environment: $APPLETS_ENVIRONMENT"
+    
+    if command -v jq &>/dev/null; then
+        # Extract metadata with jq
+        local version
+        version=$(echo "$flags_json" | jq -r '.metadata.version // "unknown"')
+        local generated_at
+        generated_at=$(echo "$flags_json" | jq -r '.metadata.generated_at // "unknown"')
+        local ttl
+        ttl=$(echo "$flags_json" | jq -r ".metadata.ttl.$APPLETS_ENVIRONMENT // $APPLETS_DEFAULT_TTL")
+        
+        echo "Flags version: $version (generated: $generated_at, TTL: ${ttl}s)"
+        
+        echo "Feature status:"
+        
+        # Process all features in a single jq command to avoid subshell issues
+        local feature_list
+        feature_list=$(echo "$flags_json" | jq -r ".$APPLETS_ENVIRONMENT | to_entries[] | \"\(.key): \(.value)\"" 2>/dev/null)
+        
+        if [ -n "$feature_list" ]; then
+            echo "$feature_list" | while read -r line; do
+                echo "  - $line"
+            done
+        else
+            echo "  No features defined for $APPLETS_ENVIRONMENT environment"
+        fi
+    else
+        # Simplified output without jq
+        echo "Feature flags loaded (jq not available for detailed view)"
+        echo "Raw flags: $(echo "$flags_json" | grep -o "\"$APPLETS_ENVIRONMENT\":{[^}]*}")"
+    fi
+
+    echo ""
+    echo "Use 'applets-switch-env <environment>' to switch environments."
+    if [[ "$APPLETS_ENVIRONMENT" = "development" ]] || [[ "$APPLETS_ENVIRONMENT" = "testing" ]]; then
+        echo "Use 'applets-force-sync' to force sync from remote server."
+        echo "Use 'applets-set-feature <feature_name> <value>' to set a feature flag."
+        echo "Use 'applets-remove-feature <feature_name>' to remove a feature flag."
+        echo "Use 'applets-set-sync <behavior>' to set synchronization behavior."
+        echo "Use 'applets-show-sync-info' to view synchronization settings."
+        echo "Use 'applets-refresh-features' to refresh feature flags."
+    fi
+    echo ""
+}
+
+# Remove a feature flag locally
+# Arguments:
+#   $1 - Feature name
+#   $2 - Environment (optional, defaults to current environment)
+applets-remove-feature() {
+    local feature_name="$1"
+    local environment="${2:-$APPLETS_ENVIRONMENT}"
+    
+    # Validate inputs
+    if [ -z "$feature_name" ]; then
+        echo "Error: Feature name is required"
+        return 1
+    fi
+    
+    # Get current flags
+    local flags_json
+    flags_json=$(_applets_get_feature_flags)
+    
+    # Check if feature exists - fixed this check
+    if ! echo "$flags_json" | jq -e ".$environment | has(\"$feature_name\")" &>/dev/null || \
+       [ "$(echo "$flags_json" | jq -e ".$environment | has(\"$feature_name\")")" != "true" ]; then
+        echo "Error: Feature '$feature_name' does not exist in $environment environment"
+        return 1
+    fi
+    
+    # Update the version number
+    local current_version
+    current_version=$(echo "$flags_json" | jq -r ".metadata.version")
+    local major minor patch
+    IFS='.' read -r major minor patch <<< "$current_version"
+    patch=$((patch + 1))
+    local new_version="$major.$minor.$patch"
+    
+    # Use jq to update the JSON
+    local updated_json
+    updated_json=$(echo "$flags_json" | jq "del(.$environment.\"$feature_name\") | .metadata.version = \"$new_version\" | .metadata.generated_at = \"$(date -u +"%Y-%m-%dT%H:%M:%SZ")\"")
+    
+    # Update cache
+    echo "$updated_json" > "$APPLETS_FLAGS_CACHE_FILE"
+    
+    # Update in-memory cache
+    _APPLETS_FLAGS_JSON="$updated_json"
+    
+    echo "Removed feature '$feature_name' from $environment environment"
+    echo "Updated version to $new_version"
+    
+    # Show updated features
+    applets-show-features
+}
+
+# Set a feature flag locally (for development/testing)
+# Arguments:
+#   $1 - Feature name
+#   $2 - Value (true/false)
+#   $3 - Environment (optional, defaults to current environment)
+applets-set-feature() {
+    local feature_name="$1"
+    local value="$2"
+    local environment="${3:-$APPLETS_ENVIRONMENT}"
+    
+    # Validate inputs
+    if [ -z "$feature_name" ]; then
+        echo "Error: Feature name is required"
+        return 1
+    fi
+    
+    if [ "$value" != "true" ] && [ "$value" != "false" ]; then
+        echo "Error: Value must be 'true' or 'false'"
+        return 1
+    fi
+    
+    # Get current flags
+    local flags_json
+    flags_json=$(_applets_get_feature_flags)
+    
+    # Check if feature already exists with the same value
+    local feature_exists=false
+    local current_value=""
+    
+    if echo "$flags_json" | jq -e ".$environment.\"$feature_name\"" &>/dev/null; then
+        feature_exists=true
+        current_value=$(echo "$flags_json" | jq -r ".$environment.\"$feature_name\"")
+    fi
+    
+    # Only increment version if the feature is new or the value is changing
+    local new_version
+    if [ "$feature_exists" = "false" ] || [ "$current_value" != "$value" ]; then
+        # Update the version number
+        local current_version
+        current_version=$(echo "$flags_json" | jq -r ".metadata.version")
+        local major minor patch
+        IFS='.' read -r major minor patch <<< "$current_version"
+        patch=$((patch + 1))
+        new_version="$major.$minor.$patch"
+    else
+        # No change, keep the same version
+        new_version=$(echo "$flags_json" | jq -r ".metadata.version")
+    fi
+    
+    # Update the flag and metadata
+    local updated_json
+    updated_json=$(echo "$flags_json" | jq ".$environment.\"$feature_name\" = $value | .metadata.version = \"$new_version\" | .metadata.generated_at = \"$(date -u +"%Y-%m-%dT%H:%M:%SZ")\"")
+    
+    # Update cache
+    echo "$updated_json" > "$APPLETS_FLAGS_CACHE_FILE"
+    
+    # Update in-memory cache
+    _APPLETS_FLAGS_JSON="$updated_json"
+    
+    if [ "$feature_exists" = "false" ]; then
+        echo "Added feature '$feature_name' with value $value in $environment environment"
+        echo "Updated version to $new_version"
+    elif [ "$current_value" != "$value" ]; then
+        echo "Updated feature '$feature_name' from $current_value to $value in $environment environment"
+        echo "Updated version to $new_version"
+    else
+        echo "Feature '$feature_name' already set to $value in $environment environment"
+        echo "No version change needed"
+    fi
+    
+    # Show updated features
+    applets-show-features
+}
+
+# Switch between environments
+# Arguments:
+#   $1 - Environment name (development, testing, production)
+applets-switch-env() {
+    local input_env="$1"
+    local env=""
+    
+    # Default environment mappings
+    declare -A env_map
+    env_map=( 
+        ["dev"]="development"
+        ["test"]="testing" 
+        ["prod"]="production"
+    )
+    
+    # Load custom environments from config if available
+    # Details for the custom environment file
+    # File: ~/.applets-environments
+    # Purpose: Define custom environment mappings
+
+    # Additional environment abbreviations
+    # env_map["ins"]="insider"  # Add short form for insider
+    # env_map["canary"]="canary"  # Example additional environment
+    # env_map["beta"]="beta"  # Example additional environment
+    # Add more mappings as needed
+    local custom_env_file="${HOME}/.applets-environments"
+    if [ -f "$custom_env_file" ]; then
+        # shellcheck disable=SC1090
+        source "$custom_env_file"
+    fi
+    
+    # Try direct match first
+    if [ -n "${env_map[$input_env]}" ]; then
+        # Input is an abbreviation, get the full name
+        env="${env_map[$input_env]}"
+    else
+        # Check if it's already a full environment name
+        local found=false
+        for valid_env in "${env_map[@]}"; do
+            if [ "$input_env" = "$valid_env" ]; then
+                env="$input_env"
+                found=true
+                break
+            fi
+        done
+        
+        # If still not found, use as-is (custom environment)
+        if [ "$found" = false ]; then
+            env="$input_env"
+        fi
+    fi
+    
+    # Save previous environment for comparison
+    local prev_env="$APPLETS_ENVIRONMENT"
+    
+    # Update config file, preserving sync behavior
+    if [ -f "$APPLETS_CONFIG_FILE" ] && grep -q "APPLETS_SYNC_BEHAVIOR" "$APPLETS_CONFIG_FILE"; then
+        local sync_behavior
+        sync_behavior=$(grep "APPLETS_SYNC_BEHAVIOR" "$APPLETS_CONFIG_FILE" | cut -d'"' -f2)
+        
+        echo "APPLETS_ENVIRONMENT=\"$env\"" > "$APPLETS_CONFIG_FILE"
+        echo "APPLETS_SYNC_BEHAVIOR=\"$sync_behavior\"" >> "$APPLETS_CONFIG_FILE"
+    else
+        echo "APPLETS_ENVIRONMENT=\"$env\"" > "$APPLETS_CONFIG_FILE"
+        
+        # Only add sync behavior if it's defined
+        if [ -n "$APPLETS_SYNC_BEHAVIOR" ]; then
+            echo "APPLETS_SYNC_BEHAVIOR=\"$APPLETS_SYNC_BEHAVIOR\"" >> "$APPLETS_CONFIG_FILE"
+        fi
+    fi
+    
+    # Update current session
+    APPLETS_ENVIRONMENT="$env"
+    
+    echo "Switched from $prev_env to $env environment."
+    
+    # Make sure we have a valid default JSON for the new environment
+    # This fixes the JQ parse errors by ensuring a valid JSON structure
+    local flags_json
+    flags_json=$(_applets_get_feature_flags)
+    
+    # Check if the environment key exists in the JSON
+    if command -v jq &>/dev/null; then
+        if ! echo "$flags_json" | jq -e "has(\"$env\")" &>/dev/null; then
+            # Environment doesn't exist in JSON, add it
+            local updated_json
+            updated_json=$(echo "$flags_json" | jq ".$env = {}")
+            echo "$updated_json" > "$APPLETS_FLAGS_CACHE_FILE"
+            
+            # Update in-memory cache if used
+            if [ -n "$_APPLETS_FLAGS_JSON" ]; then
+                _APPLETS_FLAGS_JSON="$updated_json"
+            fi
+        fi
+    else
+        # Without jq, attempt a simple check if environment section exists
+        if ! grep -q "\"$env\":{" "$APPLETS_FLAGS_CACHE_FILE" 2>/dev/null; then
+            # Add an empty environment section
+            # This is a simplistic approach - better with jq
+            local temp_file
+            temp_file=$(mktemp)
+            
+            cat "$APPLETS_FLAGS_CACHE_FILE" | sed "s/\"metadata\":/\"$env\":{},\"metadata\":/" > "$temp_file"
+            mv "$temp_file" "$APPLETS_FLAGS_CACHE_FILE"
+        fi
+    fi
+    
+    # Always refresh when changing environments
+    echo "Running applets-refresh-features to update current session..."
+    applets-refresh-features
+    
+    # Show sync status if function exists
+    if type applets-show-sync-info &>/dev/null; then
+        applets-show-sync-info
+    fi
+}
+
+# Set the synchronization behavior for feature flags
+# Arguments:
+#   $1 - Sync behavior: "auto", "manual", or "local-only"
+applets-set-sync() {
+    local behavior="$1"
+    
+    if [[ "$behavior" =~ ^(auto|manual|local-only)$ ]]; then
+        # Update config file to include sync behavior
+        if [ -f "$APPLETS_CONFIG_FILE" ]; then
+            # Read existing config without sync setting
+            local config_content
+            config_content=$(grep -v "APPLETS_SYNC_BEHAVIOR" "$APPLETS_CONFIG_FILE")
+            
+            # Write back config with new sync setting
+            echo "$config_content" > "$APPLETS_CONFIG_FILE"
+            echo "APPLETS_SYNC_BEHAVIOR=\"$behavior\"" >> "$APPLETS_CONFIG_FILE"
+        else
+            # Create new config
+            echo "APPLETS_ENVIRONMENT=\"$APPLETS_ENVIRONMENT\"" > "$APPLETS_CONFIG_FILE"
+            echo "APPLETS_SYNC_BEHAVIOR=\"$behavior\"" >> "$APPLETS_CONFIG_FILE"
+        fi
+        
+        # Update current session
+        APPLETS_SYNC_BEHAVIOR="$behavior"
+        
+        echo "Set synchronization behavior to '$behavior'"
+        
+        # Show sync info
+        applets-show-sync-info
+    else
+        echo "Invalid sync behavior. Use 'auto', 'manual', or 'local-only'."
+        return 1
+    fi
+}
+
+# Display synchronization settings
+applets-show-sync-info() {
+    echo "Current synchronization behavior: $APPLETS_SYNC_BEHAVIOR"
+    echo ""
+    echo "Available behaviors:"
+    echo "  - auto: Automatically sync in production, use local overrides in dev/test if available"
+    echo "  - manual: Only sync when explicitly refreshed with applets-refresh-features"
+    echo "  - local-only: Never sync from remote, always use local files"
+    echo ""
+    echo "Use 'applets-set-sync <behavior>' to change the sync behavior."
+    echo ""
+    
+    if [ "$APPLETS_ENVIRONMENT" = "development" ]; then
+        if [ -f "$APPLETS_DEV_LOCAL_OVERRIDE" ]; then
+            echo "Developer override file exists at: $APPLETS_DEV_LOCAL_OVERRIDE"
+        else
+            echo "No developer override file found"
+        fi
+    fi
+    
+    if [ "$APPLETS_ENVIRONMENT" = "testing" ]; then
+        if [ -f "$APPLETS_TEST_LOCAL_OVERRIDE" ]; then
+            echo "Testing override file exists at: $APPLETS_TEST_LOCAL_OVERRIDE"
+        else
+            echo "No testing override file found"
+        fi
+    fi
+}
+
+# Force sync from remote server
+# Useful for updating local overrides with latest server config
+applets-force-sync() {
+    local current_env="$APPLETS_ENVIRONMENT"
+    local should_update_override=false
+    local override_file=""
+    
+    if [ "$current_env" = "development" ]; then
+        should_update_override=true
+        override_file="$APPLETS_DEV_LOCAL_OVERRIDE"
+    elif [ "$current_env" = "testing" ]; then
+        should_update_override=true
+        override_file="$APPLETS_TEST_LOCAL_OVERRIDE"
+    fi
+    
+    # Temporarily set sync behavior to auto
+    local original_behavior="$APPLETS_SYNC_BEHAVIOR"
+    APPLETS_SYNC_BEHAVIOR="auto"
+    
+    # Force cache invalidation
+    rm -f "$APPLETS_FLAGS_CACHE_FILE"
+    unset _APPLETS_FLAGS_JSON
+    
+    # Fetch fresh data
+    local new_flags
+    new_flags=$(_applets_fetch_feature_flags)
+    
+    # Update local override if needed
+    if [ "$should_update_override" = true ] && [ -n "$override_file" ]; then
+        echo "$new_flags" > "$override_file"
+        echo "Updated local override at $override_file"
+    fi
+    
+    # Restore original sync behavior
+    APPLETS_SYNC_BEHAVIOR="$original_behavior"
+    
+    echo "Synced latest feature flags from remote server"
+    applets-show-features
+}
+
+# ---------------------------------------------------
+# Initialization (root level)
+# ---------------------------------------------------
+
+# Initial load of feature flags
+_applets_initialize
