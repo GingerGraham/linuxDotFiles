@@ -20,3 +20,6 @@ testing/**/dockerfile
 
 # Ignoring SonarQube scannerwork directory
 .scannerwork/
+Shell/applets/.applets-config
+Shell/applets/.applets-dev-flags.json
+Shell/applets/.applets-test-flags.json
