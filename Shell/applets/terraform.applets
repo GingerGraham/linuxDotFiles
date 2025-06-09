@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-# Path: .applets
+# Path: Shell/applets/terraform.applets
 # Purpose: Terraform (and Terragrunt) focused applets for shell commands
 # Use: Add applets to this file and they will be sourced by ~/.applets
 

@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
-# File: ~/.applets-feature-flags
+
+# Path: Shell/applets/.applets-feature-flags
 # Purpose: Feature flag system for shell applets
 # Version: 1.0.0
 

@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
-# File: ~/.feature-flags
+
+# Path: Shell/applets/.feature-flags
 # Purpose: Generic feature flag system for shell scripts
 # Version: 2.0.0
 

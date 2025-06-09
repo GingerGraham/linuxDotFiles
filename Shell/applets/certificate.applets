@@ -1,0 +1,136 @@
+#!/usr/bin/env bash
+
+# Path: Shell/applets/certificate.applets
+# Purpose: Applets for managing certificates
+# Use: Add applets to this file and they will be sourced by ~/.applets
+
+# This script adds helper functions to the shell
+# It is sourced by .bashrc or .zshrc via ~/.applets
+# Define additional functions here
+
+# Check the content of a certificate file
+check-cert () {
+  if [[ -z "$1" ]]; then
+    echo "Usage: check-cert <certificate-file>"
+    return 1
+  fi
+
+  if [[ ! -f "$1" ]]; then
+    echo "File not found: $1"
+    return 1
+  fi
+
+  if ! openssl x509 -text -noout -in "$1"; then
+    log_error "Failed to read certificate: $1"
+    return 1
+  fi
+}
+
+# Check the content of all certificates in a bundle or chain file
+check-cert-bundle () {
+  if [[ -z "$1" ]]; then
+    echo "Usage: check-cert-bundle <bundle-file>"
+    return 1
+  fi
+
+  if [[ ! -f "$1" ]]; then
+    echo "File not found: $1"
+    return 1
+  fi
+
+  local cert_count=0
+  local temp_cert
+  temp_cert=$(mktemp)
+  
+  # Extract and process each certificate in the bundle
+  awk '/BEGIN CERTIFICATE/,/END CERTIFICATE/{print}' "$1" | while read  -r line; do
+    echo "$line" >> "$temp_cert"
+    if [[ "$line" == *"END CERTIFICATE"* ]]; then
+      echo -e "\n=== Certificate $((++cert_count)) ===\n"
+      if ! openssl x509 -text -noout -in "$temp_cert"; then
+        log_error "Failed to read certificate ${cert_count} in bundle: $1"
+        rm "$temp_cert"
+        return 1
+      fi
+      true > "$temp_cert"  # Clear the temp file for the next certificate
+    fi
+  done
+
+  rm "$temp_cert"
+  if [[ ${cert_count} -eq 0 ]]; then
+    log_error "No certificates found in: $1"
+    return 1
+  fi
+  echo -e "\nFound ${cert_count} certificate(s) in bundle"
+}
+
+# Check the content of a certificate signing request (CSR)
+check-csr () {
+  if [[ -z "$1" ]]; then
+    echo "Usage: check-csr <csr-file>"
+    return 1
+  fi
+
+  if [[ ! -f "$1" ]]; then
+    echo "File not found: $1"
+    return 1
+  fi
+
+  if ! openssl req -text -noout -verify -in "$1"; then
+    log_error "Failed to read CSR: $1"
+    return 1
+  fi
+}
+
+# Check the content of a private key
+check-key () {
+  if [[ -z "$1" ]]; then
+    echo "Usage: check-key <key-file>"
+    return 1
+  fi
+
+  if [[ ! -f "$1" ]]; then
+    echo "File not found: $1"
+    return 1
+  fi
+
+  if ! openssl rsa -text -noout -in "$1"; then
+    log_error "Failed to read private key: $1"
+    return 1
+  fi
+}
+
+# Check the content of a public key
+check-public-key () {
+  if [[ -z "$1" ]]; then
+    echo "Usage: check-public-key <public-key-file>"
+    return 1
+  fi
+
+  if [[ ! -f "$1" ]]; then
+    echo "File not found: $1"
+    return 1
+  fi
+
+  if ! openssl pkey -pubin -text -noout -in "$1"; then
+    log_error "Failed to read public key: $1"
+    return 1
+  fi
+}
+
+# Check the certificate on a remote server
+check-cert-remote () {
+  if [[ -z "$1" ]]; then
+    echo "Usage: check-cert-remote <hostname>[:port]"
+    return 1
+  fi
+
+  local host="${1%%:*}"
+  local port="${1##*:}"
+  port=${port:-443} # Default to port 443 if not specified
+
+  if ! openssl s_client -connect "$host:$port" -servername "$host" -showcerts </dev/null; then
+    log_error "Failed to connect to $host on port $port"
+    return 1
+  fi
+}
