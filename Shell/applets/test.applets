@@ -10,9 +10,11 @@
 
 if applets-feature-enabled "test01"; then
   some_func(){
+    echo "This is a test function"
     if applets-feature-enabled "test02"; then
       some_other_func(){
         # This is a nested function
+        # shellcheck disable=SC2317
         echo "This is a nested function"
       }
     fi

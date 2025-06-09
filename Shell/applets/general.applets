@@ -239,6 +239,56 @@ open-workspace () {
   done
  }
 
+if applets-feature-enabled "list_workspaces"; then
+  list-workspaces () {
+    if ! command -v code &> /dev/null && ! command -v code-insiders &> /dev/null; then
+      log_error "Visual Studio Code is not installed"
+      return 1
+    fi
+    # Accept a directory path as an argument or set ${HOME}/Development/workspaces as the default
+    local workspace_path="${1:-${HOME}/Development/workspaces}"
+    local workspaces_full_path=()
+    # Check if workspace_path is a symlink and if it is get the full path
+    if [[ -L "${workspace_path}" ]]; then
+      workspace_path=$(readlink -f "${workspace_path}")
+    fi
+    # Check if the directory exists and if it does ensure that we have the full valid path
+    if [[ -d "${workspace_path}" ]]; then
+      if command -v mapfile &> /dev/null; then
+        mapfile -t workspaces_full_path < <(find "${workspace_path}" -type f -name "*.code-workspace")
+      else
+        # shellcheck disable=SC2207
+        workspaces_full_path=($(find "${workspace_path}" -type f -name "*.code-workspace"))
+      fi
+    fi
+    # Check if we have any workspaces
+    if [[ ${#workspaces_full_path[@]} -eq 0 ]]; then
+      log_error "No workspaces found in ${workspace_path}"
+      return 1
+    fi
+    
+    local workspaces=()
+    for workspace in "${workspaces_full_path[@]}"; do
+      workspaces+=("$(basename "${workspace}" .code-workspace)")
+    done
+    
+    echo "Available workspaces:"
+    
+    # Format output in columns like open-workspace does
+    local temp_output=""
+    local i=1
+    for workspace in "${workspaces[@]}"; do
+      temp_output+="$i) $workspace"$'\n'
+      ((i++))
+    done
+    
+    # Use column to format the output nicely
+    echo "$temp_output" | column
+    
+    return 0
+  }
+fi
+
  # to reregister LUKS key with tpm2 using systemd-crpytenroll
  # Requires the tpm2-tools and dracut tools to be installed
  register-tpm () {
@@ -344,7 +394,7 @@ list-ssh-hosts() {
   echo
 
   # Process each file in config.d
-  if [[ -d "$config_dir" ]]; then
+  if ([[ -d "$config_dir" ]]); then
       for config_file in "${config_dir}"/*; do
           if [ -f "$config_file" ]; then
               echo "=== $(basename "$config_file") ==="

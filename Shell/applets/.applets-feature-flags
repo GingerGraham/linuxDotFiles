@@ -7,7 +7,7 @@
 # Configuration
 # ---------------------------------------------------
 APPLETS_CONFIG_FILE="${HOME}/applets/.applets-config"
-APPLETS_DEFAULT_TTL=86400  # 1 hour in seconds
+APPLETS_DEFAULT_TTL=86400  # 1 day in seconds
 APPLETS_DEV_LOCAL_OVERRIDE="${HOME}/applets/.applets-dev-flags.json"
 APPLETS_DEFAULT_ENV="production" # Default environment
 APPLETS_FLAGS_CACHE_DIR="${HOME}/.cache/applets"
