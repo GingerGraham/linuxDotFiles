@@ -149,6 +149,8 @@ update-tools () {
   terraform-install
   log_info "== Updating Ansible =="
   ansible-install
+  log_info "== Updating Microsoft Edit =="
+  install-edit
   set_log_format "%d [%l] [%s] %m"
   return 0
 }
@@ -528,5 +530,687 @@ install-bitwarden() {
   rm -rf "${temp_dir}"
   
   log_info "Bitwarden installation completed successfully!"
+  return 0
+}
+
+install-opendeck() {
+  log_info "Installing or updating OpenDeck..."
+  
+  # Detect package manager if not already set
+  if [[ -z "${PACKAGE_MANAGER}" ]]; then
+    detect-package-manager || return 1
+  fi
+  
+  # Check for privilege elevation access
+  if [[ "${PACKAGE_MANAGER}" == "apt" || "${PACKAGE_MANAGER}" == "dnf" || "${PACKAGE_MANAGER}" == "yum" || "${PACKAGE_MANAGER}" == "zypper" || "${PACKAGE_MANAGER}" == "pacman" ]]; then
+    log_info "Checking privilege elevation access for package installation..."
+    if ! sudo-test; then
+      log_error "This installation requires administrator privileges. Please try again with appropriate permissions."
+      return 1
+    fi
+    
+    # Get the elevation command to use
+    local elevation_cmd
+    elevation_cmd=$(get-elevation-command)
+    if [[ -z "${elevation_cmd}" ]]; then
+      log_error "Failed to determine elevation mechanism"
+      return 1
+    fi
+    
+    # If using run0, warn about multiple prompts
+    if [[ "${elevation_cmd}" == "run0" ]]; then
+      log_warn "Using run0 for package installation - you may be prompted multiple times during this operation"
+      log_warn "run0 does not cache credentials like sudo does"
+    fi
+  fi
+  
+  # Get latest release information from GitHub API
+  log_info "Fetching latest OpenDeck release information..."
+  local api_response
+  api_response=$(curl -s "https://api.github.com/repos/nekename/OpenDeck/releases/latest")
+  
+  if [[ -z "$api_response" ]]; then
+    log_error "Failed to fetch release information from GitHub API"
+    return 1
+  fi
+  
+  # Extract version and download URLs
+  local version
+  local download_url=""
+  local asset_name=""
+  
+  # Parse version
+  version=$(echo "$api_response" | grep '"tag_name":' | sed -E 's/.*"tag_name": *"([^"]+)".*/\1/')
+  
+  if [[ -z "$version" ]]; then
+    log_error "Could not determine latest version from GitHub API"
+    return 1
+  fi
+  
+  log_info "Latest OpenDeck version: ${version}"
+  
+  # Check if OpenDeck is already installed and get current version
+  if command -v opendeck &> /dev/null; then
+    # Try to get current version - this may vary depending on how OpenDeck reports version
+    local current_version
+    current_version=$(opendeck --version 2>/dev/null | grep -oE '[0-9]+\.[0-9]+\.[0-9]+' | head -1)
+    
+    if [[ -n "$current_version" && "$current_version" == "${version#v}" ]]; then
+      log_info "OpenDeck ${current_version} is already installed and up to date"
+      return 0
+    fi
+  fi
+  
+  # Create temp directory for downloads
+  local temp_dir
+  temp_dir=$(mktemp -d)
+  log_debug "Created temporary directory: ${temp_dir}"
+  
+  # Determine appropriate package based on package manager
+  case "${PACKAGE_MANAGER}" in
+    apt)
+      log_info "Looking for DEB package..."
+      # Parse assets for .deb file
+      download_url=$(echo "$api_response" | grep '"browser_download_url":.*\.deb"' | sed -E 's/.*"browser_download_url": *"([^"]+)".*/\1/')
+      asset_name=$(basename "$download_url")
+      
+      if [[ -z "$download_url" ]]; then
+        log_error "No DEB package found in latest release"
+        rm -rf "${temp_dir}"
+        return 1
+      fi
+      
+      local package_file="${temp_dir}/${asset_name}"
+      
+      # Download the package
+      log_info "Downloading OpenDeck DEB package: ${asset_name}"
+      if ! curl -L -o "${package_file}" "${download_url}"; then
+        log_error "Failed to download OpenDeck DEB package"
+        rm -rf "${temp_dir}"
+        return 1
+      fi
+      
+      # Install the package
+      log_info "Installing OpenDeck..."
+      if ! ${elevation_cmd} dpkg -i "${package_file}"; then
+        log_warn "dpkg installation may have dependency issues, trying to resolve..."
+        ${elevation_cmd} apt-get install -f -y
+      fi
+      ;;
+      
+    dnf|yum)
+      log_info "Looking for RPM package..."
+      # Parse assets for .rpm file
+      download_url=$(echo "$api_response" | grep '"browser_download_url":.*\.rpm"' | sed -E 's/.*"browser_download_url": *"([^"]+)".*/\1/')
+      asset_name=$(basename "$download_url")
+      
+      if [[ -z "$download_url" ]]; then
+        log_error "No RPM package found in latest release"
+        rm -rf "${temp_dir}"
+        return 1
+      fi
+      
+      local package_file="${temp_dir}/${asset_name}"
+      
+      # Download the package
+      log_info "Downloading OpenDeck RPM package: ${asset_name}"
+      if ! curl -L -o "${package_file}" "${download_url}"; then
+        log_error "Failed to download OpenDeck RPM package"
+        rm -rf "${temp_dir}"
+        return 1
+      fi
+      
+      # Install the package
+      log_info "Installing OpenDeck..."
+      if ! ${elevation_cmd} ${PACKAGE_MANAGER} install -y "${package_file}"; then
+        log_error "Failed to install OpenDeck RPM package"
+        rm -rf "${temp_dir}"
+        return 1
+      fi
+      ;;
+      
+    zypper)
+      log_info "Looking for RPM package for openSUSE..."
+      # Parse assets for .rpm file
+      download_url=$(echo "$api_response" | grep '"browser_download_url":.*\.rpm"' | sed -E 's/.*"browser_download_url": *"([^"]+)".*/\1/')
+      asset_name=$(basename "$download_url")
+      
+      if [[ -z "$download_url" ]]; then
+        log_error "No RPM package found in latest release"
+        rm -rf "${temp_dir}"
+        return 1
+      fi
+      
+      local package_file="${temp_dir}/${asset_name}"
+      
+      # Download the package
+      log_info "Downloading OpenDeck RPM package: ${asset_name}"
+      if ! curl -L -o "${package_file}" "${download_url}"; then
+        log_error "Failed to download OpenDeck RPM package"
+        rm -rf "${temp_dir}"
+        return 1
+      fi
+      
+      # Install the package
+      log_info "Installing OpenDeck..."
+      if ! ${elevation_cmd} zypper install -y "${package_file}"; then
+        log_error "Failed to install OpenDeck RPM package"
+        rm -rf "${temp_dir}"
+        return 1
+      fi
+      ;;
+      
+    pacman)
+      log_info "Looking for generic package for Arch Linux..."
+      # For Arch, we might need to look for a tar.xz or similar package
+      # Or potentially build from AUR - this depends on what OpenDeck provides
+      download_url=$(echo "$api_response" | grep '"browser_download_url":.*\.tar\.xz"' | sed -E 's/.*"browser_download_url": *"([^"]+)".*/\1/')
+      
+      if [[ -z "$download_url" ]]; then
+        # Fallback to looking for any Linux binary
+        download_url=$(echo "$api_response" | grep '"browser_download_url":.*linux.*' | sed -E 's/.*"browser_download_url": *"([^"]+)".*/\1/' | head -1)
+      fi
+      
+      if [[ -z "$download_url" ]]; then
+        log_warn "No native Arch package found. You may need to install from AUR or build manually."
+        log_info "Visit https://github.com/nekename/OpenDeck/releases/latest for manual installation"
+        rm -rf "${temp_dir}"
+        return 1
+      fi
+      
+      asset_name=$(basename "$download_url")
+      local package_file="${temp_dir}/${asset_name}"
+      
+      # Download and extract if it's a tar.xz
+      log_info "Downloading OpenDeck package: ${asset_name}"
+      if ! curl -L -o "${package_file}" "${download_url}"; then
+        log_error "Failed to download OpenDeck package"
+        rm -rf "${temp_dir}"
+        return 1
+      fi
+      
+      # This would need to be customized based on actual package format
+      log_warn "Manual installation may be required for Arch Linux"
+      log_info "Downloaded to: ${package_file}"
+      ;;
+      
+    *)
+      # Try flatpak as a fallback or look for AppImage
+      log_info "Looking for AppImage or generic Linux binary..."
+      
+      # Look for AppImage first
+      download_url=$(echo "$api_response" | grep '"browser_download_url":.*\.AppImage"' | sed -E 's/.*"browser_download_url": *"([^"]+)".*/\1/')
+      
+      if [[ -n "$download_url" ]]; then
+        asset_name=$(basename "$download_url")
+        local appimage_file="${HOME}/Applications/${asset_name}"
+        
+        # Create Applications directory if it doesn't exist
+        mkdir -p "${HOME}/Applications"
+        
+        # Download the AppImage
+        log_info "Downloading OpenDeck AppImage: ${asset_name}"
+        if ! curl -L -o "${appimage_file}" "${download_url}"; then
+          log_error "Failed to download OpenDeck AppImage"
+          rm -rf "${temp_dir}"
+          return 1
+        fi
+        
+        # Make it executable
+        chmod +x "${appimage_file}"
+        log_info "OpenDeck AppImage installed to ${appimage_file}"
+        
+        # Optionally create a desktop entry or symlink
+        if [[ ! -L "${HOME}/.local/bin/opendeck" ]]; then
+          ln -s "${appimage_file}" "${HOME}/.local/bin/opendeck"
+          log_info "Created symlink in ${HOME}/.local/bin/opendeck"
+        fi
+      else
+        log_error "No supported package format found for your system"
+        log_info "Supported package managers: apt (DEB), dnf/yum (RPM), zypper (RPM)"
+        log_info "Visit https://github.com/nekename/OpenDeck/releases/latest for manual installation"
+        rm -rf "${temp_dir}"
+        return 1
+      fi
+      ;;
+  esac
+  
+  # Clean up
+  log_debug "Cleaning up temporary files"
+  rm -rf "${temp_dir}"
+  
+  # Verify installation
+  if command -v opendeck &> /dev/null; then
+    local installed_version
+    installed_version=$(opendeck --version 2>/dev/null | grep -oE '[0-9]+\.[0-9]+\.[0-9]+' | head -1)
+    log_info "OpenDeck installation completed successfully!"
+    if [[ -n "$installed_version" ]]; then
+      log_info "Installed version: ${installed_version}"
+    fi
+  else
+    log_warn "Installation completed but 'opendeck' command not found in PATH"
+    log_info "You may need to restart your shell or check the installation"
+  fi
+  
+  return 0
+}
+
+# Function to list available OpenDeck releases
+list-opendeck-releases() {
+  log_info "Fetching OpenDeck release information..."
+  
+  local api_response
+  api_response=$(curl -s "https://api.github.com/repos/nekename/OpenDeck/releases")
+  
+  if [[ -z "$api_response" ]]; then
+    log_error "Failed to fetch release information from GitHub API"
+    return 1
+  fi
+  
+  echo "Available OpenDeck releases:"
+  echo "$api_response" | grep '"tag_name":' | sed -E 's/.*"tag_name": *"([^"]+)".*/\1/' | head -10
+}
+
+# Function to install a specific version of OpenDeck
+install-opendeck-version() {
+  local target_version="$1"
+  
+  if [[ -z "$target_version" ]]; then
+    log_error "Please specify a version to install"
+    log_info "Usage: install-opendeck-version <version>"
+    log_info "Use 'list-opendeck-releases' to see available versions"
+    return 1
+  fi
+  
+  log_info "Installing OpenDeck version: ${target_version}"
+  
+  # Modify the API URL to get specific version
+  local api_response
+  api_response=$(curl -s "https://api.github.com/repos/nekename/OpenDeck/releases/tags/${target_version}")
+  
+  if [[ -z "$api_response" ]] || echo "$api_response" | grep -q '"message": "Not Found"'; then
+    log_error "Version ${target_version} not found"
+    log_info "Use 'list-opendeck-releases' to see available versions"
+    return 1
+  fi
+  
+  # The rest follows the same logic as install-opendeck but with the specific version
+  # For brevity, this would essentially be the same function with the API response
+  # already set to the specific version
+  log_info "Feature not fully implemented - use install-opendeck for latest version"
+  return 1
+}
+
+install-edit() {
+  log_info "Installing or updating Microsoft Edit CLI editor..."
+  
+  # Check if required tools are available
+  if ! command -v curl &> /dev/null; then
+    log_error "curl is required but not installed. Please install curl first."
+    return 1
+  fi
+  
+  if ! command -v tar &> /dev/null; then
+    log_error "tar is required but not installed. Please install tar first."
+    return 1
+  fi
+  
+  # Check for zstd support (needed for .tar.zst files)
+  if ! command -v zstd &> /dev/null; then
+    log_warn "zstd is not installed. Attempting to install it..."
+    
+    # Detect package manager if not already set
+    if [[ -z "${PACKAGE_MANAGER}" ]]; then
+      detect-package-manager || {
+        log_error "Could not detect package manager to install zstd. Please install zstd manually."
+        return 1
+      }
+    fi
+    
+    # Check for privilege elevation access
+    if ! sudo-test; then
+      log_error "This installation requires administrator privileges to install zstd. Please install zstd manually or run with appropriate permissions."
+      return 1
+    fi
+    
+    # Get the elevation command to use
+    local elevation_cmd
+    elevation_cmd=$(get-elevation-command)
+    if [[ -z "${elevation_cmd}" ]]; then
+      log_error "Failed to determine elevation mechanism"
+      return 1
+    fi
+    
+    # Install zstd based on package manager
+    case "${PACKAGE_MANAGER}" in
+      apt)
+        ${elevation_cmd} apt-get update && ${elevation_cmd} apt-get install -y zstd
+        ;;
+      dnf|yum)
+        ${elevation_cmd} ${PACKAGE_MANAGER} install -y zstd
+        ;;
+      zypper)
+        ${elevation_cmd} zypper install -y zstd
+        ;;
+      pacman)
+        ${elevation_cmd} pacman -S --noconfirm zstd
+        ;;
+      *)
+        log_error "Unable to install zstd for package manager: ${PACKAGE_MANAGER}"
+        log_info "Please install zstd manually and try again"
+        return 1
+        ;;
+    esac
+    
+    # Verify zstd installation
+    if ! command -v zstd &> /dev/null; then
+      log_error "Failed to install zstd. Please install it manually."
+      return 1
+    fi
+  fi
+  
+  # Get latest release information from GitHub API
+  log_info "Fetching latest Microsoft Edit release information..."
+  local api_response
+  api_response=$(curl -s "https://api.github.com/repos/microsoft/edit/releases/latest")
+  
+  if [[ -z "$api_response" ]]; then
+    log_error "Failed to fetch release information from GitHub API"
+    return 1
+  fi
+  
+  # Extract version
+  local version
+  version=$(echo "$api_response" | grep '"tag_name":' | sed -E 's/.*"tag_name": *"([^"]+)".*/\1/')
+  
+  if [[ -z "$version" ]]; then
+    log_error "Could not determine latest version from GitHub API"
+    return 1
+  fi
+  
+  log_info "Latest Microsoft Edit version: ${version}"
+  
+  # Check if Edit is already installed and get current version
+  if command -v edit &> /dev/null; then
+    # Try to get current version
+    local current_version
+    current_version=$(edit --version 2>/dev/null | grep -oE 'v?[0-9]+\.[0-9]+\.[0-9]+' | head -1)
+    
+    if [[ -n "$current_version" ]]; then
+      # Normalize version strings (remove 'v' prefix if present)
+      local normalized_current="${current_version#v}"
+      local normalized_latest="${version#v}"
+      
+      if [[ "$normalized_current" == "$normalized_latest" ]]; then
+        log_info "Microsoft Edit ${normalized_current} is already installed and up to date"
+        return 0
+      else
+        log_info "Current version: ${normalized_current}, updating to: ${normalized_latest}"
+      fi
+    fi
+  fi
+  
+  # Detect architecture
+  local arch
+  case "$(uname -m)" in
+    x86_64)
+      arch="x86_64-linux-gnu"
+      ;;
+    aarch64|arm64)
+      arch="aarch64-linux-gnu"
+      ;;
+    *)
+      log_error "Unsupported architecture: $(uname -m)"
+      log_info "Microsoft Edit currently supports x86_64 and aarch64 architectures"
+      return 1
+      ;;
+  esac
+  
+  # Construct download URL and asset name
+  local asset_name="edit-${version}-${arch}.tar.zst"
+  local download_url
+  download_url=$(echo "$api_response" | grep '"browser_download_url":.*'"${asset_name}"'"' | sed -E 's/.*"browser_download_url": *"([^"]+)".*/\1/')
+  
+  if [[ -z "$download_url" ]]; then
+    log_error "Could not find download URL for ${asset_name}"
+    log_info "Available assets:"
+    echo "$api_response" | grep '"name":.*\.tar\.zst"' | sed -E 's/.*"name": *"([^"]+)".*/\1/'
+    return 1
+  fi
+  
+  # Create temp directory for downloads
+  local temp_dir
+  temp_dir=$(mktemp -d)
+  log_debug "Created temporary directory: ${temp_dir}"
+  
+  # Download the package
+  local package_file="${temp_dir}/${asset_name}"
+  log_info "Downloading Microsoft Edit: ${asset_name}"
+  
+  if ! curl -L -o "${package_file}" "${download_url}"; then
+    log_error "Failed to download Microsoft Edit package"
+    rm -rf "${temp_dir}"
+    return 1
+  fi
+  
+  # Create installation directory
+  local install_dir="${HOME}/.local/bin"
+  mkdir -p "${install_dir}"
+  
+  # Extract and install
+  log_info "Extracting Microsoft Edit..."
+  
+  # Extract the tar.zst file
+  if ! tar -xf "${package_file}" -C "${temp_dir}"; then
+    log_error "Failed to extract Microsoft Edit package"
+    rm -rf "${temp_dir}"
+    return 1
+  fi
+  
+  # Find the extracted edit binary
+  local edit_binary
+  edit_binary=$(find "${temp_dir}" -name "edit" -type f -executable | head -1)
+  
+  if [[ -z "$edit_binary" ]]; then
+    log_error "Could not find edit binary in extracted package"
+    rm -rf "${temp_dir}"
+    return 1
+  fi
+  
+  # Copy the binary to the installation directory
+  if ! cp "${edit_binary}" "${install_dir}/edit"; then
+    log_error "Failed to copy edit binary to ${install_dir}"
+    rm -rf "${temp_dir}"
+    return 1
+  fi
+  
+  # Make sure it's executable
+  chmod +x "${install_dir}/edit"
+  
+  # Clean up
+  log_debug "Cleaning up temporary files"
+  rm -rf "${temp_dir}"
+  
+  # Verify installation
+  if command -v edit &> /dev/null; then
+    local installed_version
+    installed_version=$(edit --version 2>/dev/null | grep -oE 'v?[0-9]+\.[0-9]+\.[0-9]+' | head -1)
+    log_info "Microsoft Edit installation completed successfully!"
+    if [[ -n "$installed_version" ]]; then
+      log_info "Installed version: ${installed_version}"
+    fi
+    
+    # Check if ~/.local/bin is in PATH
+    if [[ ":$PATH:" != *":${HOME}/.local/bin:"* ]]; then
+      log_warn "${HOME}/.local/bin is not in your PATH. Add it to your shell profile:"
+      log_warn "echo 'export PATH=\"\${HOME}/.local/bin:\$PATH\"' >> ~/.bashrc"
+      log_warn "or"
+      log_warn "echo 'export PATH=\"\${HOME}/.local/bin:\$PATH\"' >> ~/.zshrc"
+    fi
+  else
+    log_warn "Installation completed but 'edit' command not found in PATH"
+    log_info "You may need to restart your shell or add ~/.local/bin to your PATH"
+  fi
+  
+  return 0
+}
+
+# Function to list available Microsoft Edit releases
+list-edit-releases() {
+  log_info "Fetching Microsoft Edit release information..."
+  
+  local api_response
+  api_response=$(curl -s "https://api.github.com/repos/microsoft/edit/releases")
+  
+  if [[ -z "$api_response" ]]; then
+    log_error "Failed to fetch release information from GitHub API"
+    return 1
+  fi
+  
+  echo "Available Microsoft Edit releases:"
+  echo "$api_response" | grep '"tag_name":' | sed -E 's/.*"tag_name": *"([^"]+)".*/\1/' | head -10
+}
+
+# Function to install a specific version of Microsoft Edit
+install-edit-version() {
+  local target_version="$1"
+  
+  if [[ -z "$target_version" ]]; then
+    log_error "Please specify a version to install"
+    log_info "Usage: install-edit-version <version>"
+    log_info "Use 'list-edit-releases' to see available versions"
+    return 1
+  fi
+  
+  log_info "Installing Microsoft Edit version: ${target_version}"
+  
+  # Check if required tools are available
+  if ! command -v curl &> /dev/null; then
+    log_error "curl is required but not installed. Please install curl first."
+    return 1
+  fi
+  
+  if ! command -v tar &> /dev/null; then
+    log_error "tar is required but not installed. Please install tar first."
+    return 1
+  fi
+  
+  if ! command -v zstd &> /dev/null; then
+    log_error "zstd is required but not installed. Please install zstd first or use install-edit which will attempt to install it."
+    return 1
+  fi
+  
+  # Modify the API URL to get specific version
+  local api_response
+  api_response=$(curl -s "https://api.github.com/repos/microsoft/edit/releases/tags/${target_version}")
+  
+  if [[ -z "$api_response" ]] || echo "$api_response" | grep -q '"message": "Not Found"'; then
+    log_error "Version ${target_version} not found"
+    log_info "Use 'list-edit-releases' to see available versions"
+    return 1
+  fi
+  
+  # Detect architecture
+  local arch
+  case "$(uname -m)" in
+    x86_64)
+      arch="x86_64-linux-gnu"
+      ;;
+    aarch64|arm64)
+      arch="aarch64-linux-gnu"
+      ;;
+    *)
+      log_error "Unsupported architecture: $(uname -m)"
+      log_info "Microsoft Edit currently supports x86_64 and aarch64 architectures"
+      return 1
+      ;;
+  esac
+  
+  # Construct download URL and asset name
+  local asset_name="edit-${target_version}-${arch}.tar.zst"
+  local download_url
+  download_url=$(echo "$api_response" | grep '"browser_download_url":.*'"${asset_name}"'"' | sed -E 's/.*"browser_download_url": *"([^"]+)".*/\1/')
+  
+  if [[ -z "$download_url" ]]; then
+    log_error "Could not find download URL for ${asset_name}"
+    log_info "Available assets for ${target_version}:"
+    echo "$api_response" | grep '"name":.*\.tar\.zst"' | sed -E 's/.*"name": *"([^"]+)".*/\1/'
+    return 1
+  fi
+  
+  # Create temp directory for downloads
+  local temp_dir
+  temp_dir=$(mktemp -d)
+  log_debug "Created temporary directory: ${temp_dir}"
+  
+  # Download the package
+  local package_file="${temp_dir}/${asset_name}"
+  log_info "Downloading Microsoft Edit ${target_version}: ${asset_name}"
+  
+  if ! curl -L -o "${package_file}" "${download_url}"; then
+    log_error "Failed to download Microsoft Edit package"
+    rm -rf "${temp_dir}"
+    return 1
+  fi
+  
+  # Create installation directory
+  local install_dir="${HOME}/.local/bin"
+  mkdir -p "${install_dir}"
+  
+  # Extract and install
+  log_info "Extracting Microsoft Edit..."
+  
+  # Extract the tar.zst file
+  if ! tar -xf "${package_file}" -C "${temp_dir}"; then
+    log_error "Failed to extract Microsoft Edit package"
+    rm -rf "${temp_dir}"
+    return 1
+  fi
+  
+  # Find the extracted edit binary
+  local edit_binary
+  edit_binary=$(find "${temp_dir}" -name "edit" -type f -executable | head -1)
+  
+  if [[ -z "$edit_binary" ]]; then
+    log_error "Could not find edit binary in extracted package"
+    rm -rf "${temp_dir}"
+    return 1
+  fi
+  
+  # Copy the binary to the installation directory
+  if ! cp "${edit_binary}" "${install_dir}/edit"; then
+    log_error "Failed to copy edit binary to ${install_dir}"
+    rm -rf "${temp_dir}"
+    return 1
+  fi
+  
+  # Make sure it's executable
+  chmod +x "${install_dir}/edit"
+  
+  # Clean up
+  log_debug "Cleaning up temporary files"
+  rm -rf "${temp_dir}"
+  
+  # Verify installation
+  if command -v edit &> /dev/null; then
+    local installed_version
+    installed_version=$(edit --version 2>/dev/null | grep -oE 'v?[0-9]+\.[0-9]+\.[0-9]+' | head -1)
+    log_info "Microsoft Edit ${target_version} installation completed successfully!"
+    if [[ -n "$installed_version" ]]; then
+      log_info "Installed version: ${installed_version}"
+    fi
+    
+    # Check if ~/.local/bin is in PATH
+    if [[ ":$PATH:" != *":${HOME}/.local/bin:"* ]]; then
+      log_warn "${HOME}/.local/bin is not in your PATH. Add it to your shell profile:"
+      log_warn "echo 'export PATH=\"\${HOME}/.local/bin:\$PATH\"' >> ~/.bashrc"
+      log_warn "or"
+      log_warn "echo 'export PATH=\"\${HOME}/.local/bin:\$PATH\"' >> ~/.zshrc"
+    fi
+  else
+    log_warn "Installation completed but 'edit' command not found in PATH"
+    log_info "You may need to restart your shell or add ~/.local/bin to your PATH"
+  fi
+  
   return 0
 }
