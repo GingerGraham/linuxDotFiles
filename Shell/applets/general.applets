@@ -966,8 +966,9 @@ install-edit() {
       ;;
   esac
   
-  # Construct download URL and asset name
-  local asset_name="edit-${version}-${arch}.tar.zst"
+  # Construct download URL and asset name (normalize version by removing 'v' prefix)
+  local normalized_version="${version#v}"
+  local asset_name="edit-${normalized_version}-${arch}.tar.zst"
   local download_url
   download_url=$(echo "$api_response" | grep '"browser_download_url":.*'"${asset_name}"'"' | sed -E 's/.*"browser_download_url": *"([^"]+)".*/\1/')
   
@@ -1126,8 +1127,9 @@ install-edit-version() {
       ;;
   esac
   
-  # Construct download URL and asset name
-  local asset_name="edit-${target_version}-${arch}.tar.zst"
+  # Construct download URL and asset name (normalize version by removing 'v' prefix)
+  local normalized_version="${target_version#v}"
+  local asset_name="edit-${normalized_version}-${arch}.tar.zst"
   local download_url
   download_url=$(echo "$api_response" | grep '"browser_download_url":.*'"${asset_name}"'"' | sed -E 's/.*"browser_download_url": *"([^"]+)".*/\1/')
   
