@@ -72,6 +72,7 @@ if [[ "${OS}" = "Linux" ]] && command -v systemctl &> /dev/null; then
   alias zzz="sudo systemctl suspend --check-inhibitors=no"
   alias reboot="sudo systemctl reboot"
   alias bye="sudo systemctl poweroff"
+  alias services="systemctl --type=service --state=running"
 fi
 
 # If tmux is installed, set tmux specific aliases
@@ -89,6 +90,9 @@ if command -v git &> /dev/null; then
   alias gps="git push"
   alias gpsh="git push"
   alias gf="git fetch"
+  alias gsw="git switch"
+  alias gswm="git switch main"
+  alias gba="git branch -a"
   alias gitkeep="find . -type d -empty -exec touch {}/.gitkeep \;"
   # If the git-cleanup function is defined, set an alias for it
   if declare -f git-cleanup &> /dev/null; then
@@ -100,6 +104,7 @@ fi
 # If the github cli and copilot extension are installed, set alias for copilot
 if command -v gh &> /dev/null && gh extension list | grep -q "gh copilot"; then
   alias copilot="gh copilot"
+  alias upgrade-copilot="gh extension upgrade gh-copilot"
 fi
 
 # If ansible is installed, set ansible specific aliases

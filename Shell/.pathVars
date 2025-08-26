@@ -89,3 +89,8 @@ if command -v bw 1> /dev/null 2>&1; then
     log_error "Bitwarden session token not found"
   fi
 fi
+
+# LM Studio CLI path addition
+if [[ -d "${HOME}/.lmstudio/bin" ]] && [[ ":$PATH:" != *":${HOME}/.lmstudio/bin:"* ]]; then
+  export PATH="$PATH:${HOME}/.lmstudio/bin"
+fi

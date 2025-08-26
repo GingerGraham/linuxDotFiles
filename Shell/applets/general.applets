@@ -13,6 +13,24 @@ cheat(){
     curl "https://cheat.sh/$1"
 }
 
+# Add to your shell rc file
+dedupe_path() {
+    if ! command -v awk &> /dev/null; then
+        log_error "awk command not found, cannot deduplicate PATH"
+        return 1
+    fi
+    if ! command -v tr &> /dev/null; then
+        log_error "tr command not found, cannot deduplicate PATH"
+        return 1
+    fi
+    if ! command -v sed &> /dev/null; then
+        log_error "sed command not found, cannot deduplicate PATH"
+        return 1
+    fi
+    # Remove duplicates from current session
+    export PATH=$(echo "$PATH" | tr ':' '\n' | awk '!seen[$0]++' | tr '\n' ':' | sed 's/:$//')
+}
+
 # Cleanup removed branches in git
 git-cleanup() {
     # Fetch updates
