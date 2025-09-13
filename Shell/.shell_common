@@ -154,16 +154,16 @@ if command -v fzf &> /dev/null; then
   # export FZF_DEFAULT_COMMAND="fd --type f --hidden --follow --exclude .git"
 fi
 
-# Some tools like the nix profile script can duplicate into PATH so we should dedupe PATH if necessary
-if command dedupe_path &> /dev/null; then
-  PATH=$(dedupe_path "$PATH")
-else
-  log_warn "dedupe_path command not found, skipping PATH deduplication"
-fi
-
 # As a last step, if the aliases aliased command is available run it, to show the aliases when a new shell is opened
 if command -v aliases &> /dev/null; then
   log_debug "Printing aliases"
   # clear
   aliases
+fi
+
+# Some tools like the nix profile script can duplicate into PATH so we should dedupe PATH if necessary
+if command dedupe_path &> /dev/null; then
+  PATH=$(dedupe_path "$PATH")
+else
+  log_warn "dedupe_path command not found, skipping PATH deduplication"
 fi
