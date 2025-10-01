@@ -420,7 +420,7 @@ install-bitwarden() {
       
       # Download the DEB package
       log_info "Downloading Bitwarden DEB package..."
-      if ! curl -L -o "${deb_file}" "${deb_url}"; then
+      if ! download_file_robust "${deb_url}" "${deb_file}"; then
         log_error "Failed to download Bitwarden DEB package"
         rm -rf "${temp_dir}"
         return 1
@@ -446,7 +446,7 @@ install-bitwarden() {
       
       # Download the RPM package
       log_info "Downloading Bitwarden RPM package..."
-      if ! curl -L -o "${rpm_file}" "${rpm_url}"; then
+      if ! download_file_robust "${rpm_url}" "${rpm_file}"; then
         log_error "Failed to download Bitwarden RPM package"
         rm -rf "${temp_dir}"
         return 1
@@ -468,7 +468,7 @@ install-bitwarden() {
       
       # Download the RPM package
       log_info "Downloading Bitwarden RPM package..."
-      if ! curl -L -o "${rpm_file}" "${rpm_url}"; then
+      if ! download_file_robust "${rpm_url}" "${rpm_file}"; then
         log_error "Failed to download Bitwarden RPM package"
         rm -rf "${temp_dir}"
         return 1
@@ -504,7 +504,7 @@ install-bitwarden() {
         mkdir -p "${HOME}/Applications"
         
         # Download the AppImage
-        if ! curl -L -o "${appimage_file}" "${appimage_url}"; then
+        if ! download_file_robust "${appimage_url}" "${appimage_file}"; then
           log_error "Failed to download Bitwarden AppImage"
           rm -rf "${temp_dir}"
           return 1
@@ -642,7 +642,7 @@ install-opendeck() {
       
       # Download the package
       log_info "Downloading OpenDeck DEB package: ${asset_name}"
-      if ! curl -L -o "${package_file}" "${download_url}"; then
+      if ! download_file_robust "${download_url}" "${package_file}"; then
         log_error "Failed to download OpenDeck DEB package"
         rm -rf "${temp_dir}"
         return 1
@@ -672,7 +672,7 @@ install-opendeck() {
       
       # Download the package
       log_info "Downloading OpenDeck RPM package: ${asset_name}"
-      if ! curl -L -o "${package_file}" "${download_url}"; then
+      if ! download_file_robust "${download_url}" "${package_file}"; then
         log_error "Failed to download OpenDeck RPM package"
         rm -rf "${temp_dir}"
         return 1
@@ -703,7 +703,7 @@ install-opendeck() {
       
       # Download the package
       log_info "Downloading OpenDeck RPM package: ${asset_name}"
-      if ! curl -L -o "${package_file}" "${download_url}"; then
+      if ! download_file_robust "${download_url}" "${package_file}"; then
         log_error "Failed to download OpenDeck RPM package"
         rm -rf "${temp_dir}"
         return 1
@@ -741,7 +741,7 @@ install-opendeck() {
       
       # Download and extract if it's a tar.xz
       log_info "Downloading OpenDeck package: ${asset_name}"
-      if ! curl -L -o "${package_file}" "${download_url}"; then
+      if ! download_file_robust "${download_url}" "${package_file}"; then
         log_error "Failed to download OpenDeck package"
         rm -rf "${temp_dir}"
         return 1
@@ -768,7 +768,7 @@ install-opendeck() {
         
         # Download the AppImage
         log_info "Downloading OpenDeck AppImage: ${asset_name}"
-        if ! curl -L -o "${appimage_file}" "${download_url}"; then
+        if ! download_file_robust "${download_url}" "${appimage_file}"; then
           log_error "Failed to download OpenDeck AppImage"
           rm -rf "${temp_dir}"
           return 1
@@ -1006,7 +1006,7 @@ install-edit() {
   local package_file="${temp_dir}/${asset_name}"
   log_info "Downloading Microsoft Edit: ${asset_name}"
   
-  if ! curl -L -o "${package_file}" "${download_url}"; then
+  if ! download_file_robust "${download_url}" "${package_file}"; then
     log_error "Failed to download Microsoft Edit package"
     rm -rf "${temp_dir}"
     return 1
@@ -1167,7 +1167,7 @@ install-edit-version() {
   local package_file="${temp_dir}/${asset_name}"
   log_info "Downloading Microsoft Edit ${target_version}: ${asset_name}"
   
-  if ! curl -L -o "${package_file}" "${download_url}"; then
+  if ! download_file_robust "${download_url}" "${package_file}"; then
     log_error "Failed to download Microsoft Edit package"
     rm -rf "${temp_dir}"
     return 1
@@ -1232,6 +1232,483 @@ install-edit-version() {
     log_info "You may need to restart your shell or add ~/.local/bin to your PATH"
   fi
   
+  return 0
+}
+
+# Robust download function with fallbacks and retry logic
+download_file_robust() {
+  local url="$1"
+  local output_file="$2"
+  local max_retries=3
+  local retry_count=0
+  
+  if [[ -z "$url" || -z "$output_file" ]]; then
+    log_error "download_file_robust: URL and output file are required"
+    return 1
+  fi
+  
+  log_debug "Attempting to download: ${url}"
+  log_debug "Output file: ${output_file}"
+  
+  while [[ $retry_count -lt $max_retries ]]; do
+    retry_count=$((retry_count + 1))
+    
+    if [[ $retry_count -gt 1 ]]; then
+      log_info "Download attempt ${retry_count} of ${max_retries}..."
+      sleep 2  # Brief pause between retries
+    fi
+    
+    # Try with default HTTP version first (HTTP/2 where supported)
+    log_debug "Trying download with default HTTP version (HTTP/2 where available)..."
+    if curl -L -C - --connect-timeout 30 --max-time 1800 --retry 2 --retry-delay 1 -o "${output_file}" "${url}"; then
+      log_debug "Download completed successfully with default HTTP version"
+      return 0
+    fi
+    
+    log_warn "Default HTTP version download failed, trying with HTTP/1.1 fallback..."
+    
+    # Fallback to HTTP/1.1 for problematic networks/proxies
+    if curl --http1.1 -L -C - --connect-timeout 30 --max-time 1800 -o "${output_file}" "${url}"; then
+      log_debug "Download completed successfully with HTTP/1.1 fallback"
+      return 0
+    fi
+    
+    log_warn "Download attempt ${retry_count} failed"
+    
+    # Remove partial file if it exists and is empty or corrupted
+    if [[ -f "${output_file}" ]]; then
+      local file_size
+      file_size=$(stat -c%s "${output_file}" 2>/dev/null || echo "0")
+      if [[ "$file_size" -lt 1024 ]]; then  # If file is less than 1KB, likely corrupted
+        log_debug "Removing potentially corrupted partial download"
+        rm -f "${output_file}"
+      fi
+    fi
+  done
+  
+  log_error "All download attempts failed after ${max_retries} tries"
+  return 1
+}
+
+install-noteshub() {
+  log_info "Installing or updating NotesHub..."
+  
+  # Detect package manager if not already set
+  if [[ -z "${PACKAGE_MANAGER}" ]]; then
+    detect-package-manager || return 1
+  fi
+  
+  # Check for privilege elevation access
+  if [[ "${PACKAGE_MANAGER}" == "apt" || "${PACKAGE_MANAGER}" == "dnf" || "${PACKAGE_MANAGER}" == "yum" || "${PACKAGE_MANAGER}" == "zypper" || "${PACKAGE_MANAGER}" == "pacman" ]]; then
+    log_info "Checking privilege elevation access for package installation..."
+    if ! sudo-test; then
+      log_error "This installation requires administrator privileges. Please try again with appropriate permissions."
+      return 1
+    fi
+    
+    # Get the elevation command to use
+    local elevation_cmd
+    elevation_cmd=$(get-elevation-command)
+    if [[ -z "${elevation_cmd}" ]]; then
+      log_error "Failed to determine elevation mechanism"
+      return 1
+    fi
+    
+    # If using run0, warn about multiple prompts
+    if [[ "${elevation_cmd}" == "run0" ]]; then
+      log_warn "Using run0 for package installation - you may be prompted multiple times during this operation"
+      log_warn "run0 does not cache credentials like sudo does"
+    fi
+  fi
+  
+  # Get latest release information from GitHub API
+  log_info "Fetching latest NotesHub release information..."
+  local api_response
+  api_response=$(curl -s "https://api.github.com/repos/NotesHubApp/noteshub-releases/releases/latest")
+  
+  if [[ -z "$api_response" ]]; then
+    log_error "Failed to fetch release information from GitHub API"
+    return 1
+  fi
+  
+  # Extract version
+  local version
+  version=$(echo "$api_response" | grep '"tag_name":' | sed -E 's/.*"tag_name": *"([^"]+)".*/\1/')
+  
+  if [[ -z "$version" ]]; then
+    log_error "Could not extract version from GitHub API response"
+    return 1
+  fi
+  
+  log_info "Latest NotesHub version: ${version}"
+  
+  # Check if NotesHub is already installed and get current version
+  if command -v noteshub &> /dev/null; then
+    # Try to get current version - NotesHub may not have a --version flag
+    local current_version
+    current_version=$(noteshub --version 2>/dev/null | grep -oE 'v?[0-9]+\.[0-9]+\.[0-9]+' | head -1)
+    
+    if [[ -n "$current_version" ]]; then
+      # Normalize version strings (remove 'V' prefix if present)
+      local normalized_current="${current_version#V}"
+      local normalized_latest="${version#V}"
+      
+      if [[ "$normalized_current" == "$normalized_latest" ]]; then
+        log_info "NotesHub ${normalized_current} is already installed and up to date"
+        return 0
+      else
+        log_info "Current version: ${normalized_current}, updating to: ${normalized_latest}"
+      fi
+    fi
+  fi
+  
+  # Detect architecture for multi-arch packages
+  local arch_suffix=""
+  case "$(uname -m)" in
+    x86_64)
+      arch_suffix="amd64"
+      ;;
+    aarch64|arm64)
+      arch_suffix="arm64"
+      ;;
+    *)
+      log_error "Unsupported architecture: $(uname -m)"
+      log_info "NotesHub currently supports x86_64 (amd64) and aarch64 (arm64) architectures"
+      return 1
+      ;;
+  esac
+  
+  # Create temp directory for downloads
+  local temp_dir
+  temp_dir=$(mktemp -d)
+  log_debug "Created temporary directory: ${temp_dir}"
+  
+  # Install based on detected package manager
+  case "${PACKAGE_MANAGER}" in
+    apt)
+      log_info "Using APT package manager - installing DEB package"
+      
+      # Extract download URL for DEB package
+      local deb_url
+      deb_url=$(echo "$api_response" | grep '"browser_download_url":.*noteshub_.*_'"${arch_suffix}"'\.deb"' | sed -E 's/.*"browser_download_url": *"([^"]+)".*/\1/')
+      
+      if [[ -z "$deb_url" ]]; then
+        log_error "Could not find DEB package download URL for architecture ${arch_suffix}"
+        rm -rf "${temp_dir}"
+        return 1
+      fi
+      
+      local deb_file="${temp_dir}/noteshub.deb"
+      
+      # Download the DEB package
+      log_info "Downloading NotesHub DEB package..."
+      if ! download_file_robust "${deb_url}" "${deb_file}"; then
+        log_error "Failed to download NotesHub DEB package"
+        rm -rf "${temp_dir}"
+        return 1
+      fi
+      
+      # Install the DEB package
+      log_info "Installing NotesHub..."
+      if ! ${elevation_cmd} dpkg -i "${deb_file}"; then
+        log_error "Failed to install NotesHub DEB package"
+        rm -rf "${temp_dir}"
+        return 1
+      fi
+      
+      # Fix any dependency issues
+      log_info "Resolving dependencies..."
+      ${elevation_cmd} apt-get install -f -y
+      ;;
+      
+    dnf|yum)
+      log_info "Using ${PACKAGE_MANAGER} package manager - installing RPM package"
+      
+      # Extract download URL for RPM package (x86_64 architecture)
+      local rpm_url
+      rpm_url=$(echo "$api_response" | grep '"browser_download_url":.*NotesHub-.*\.x86_64\.rpm"' | sed -E 's/.*"browser_download_url": *"([^"]+)".*/\1/')
+      
+      if [[ -z "$rpm_url" ]]; then
+        log_error "Could not find RPM package download URL"
+        rm -rf "${temp_dir}"
+        return 1
+      fi
+      
+      # Check architecture compatibility for RPM (only x86_64 available)
+      if [[ "${arch_suffix}" != "amd64" ]]; then
+        log_error "RPM package is only available for x86_64 architecture"
+        rm -rf "${temp_dir}"
+        return 1
+      fi
+      
+      local rpm_file="${temp_dir}/noteshub.rpm"
+      
+      # Download the RPM package
+      log_info "Downloading NotesHub RPM package..."
+      if ! download_file_robust "${rpm_url}" "${rpm_file}"; then
+        log_error "Failed to download NotesHub RPM package"
+        rm -rf "${temp_dir}"
+        return 1
+      fi
+      
+      # Install the RPM package
+      log_info "Installing NotesHub..."
+      if ! ${elevation_cmd} ${PACKAGE_MANAGER} install -y "${rpm_file}"; then
+        log_error "Failed to install NotesHub RPM package"
+        rm -rf "${temp_dir}"
+        return 1
+      fi
+      ;;
+      
+    zypper)
+      log_info "Using Zypper package manager - installing RPM package"
+      
+      # Extract download URL for RPM package (x86_64 architecture)
+      local rpm_url
+      rpm_url=$(echo "$api_response" | grep '"browser_download_url":.*NotesHub-.*\.x86_64\.rpm"' | sed -E 's/.*"browser_download_url": *"([^"]+)".*/\1/')
+      
+      if [[ -z "$rpm_url" ]]; then
+        log_error "Could not find RPM package download URL"
+        rm -rf "${temp_dir}"
+        return 1
+      fi
+      
+      # Check architecture compatibility for RPM (only x86_64 available)
+      if [[ "${arch_suffix}" != "amd64" ]]; then
+        log_error "RPM package is only available for x86_64 architecture"
+        rm -rf "${temp_dir}"
+        return 1
+      fi
+      
+      local rpm_file="${temp_dir}/noteshub.rpm"
+      
+      # Download the RPM package
+      log_info "Downloading NotesHub RPM package..."
+      if ! download_file_robust "${rpm_url}" "${rpm_file}"; then
+        log_error "Failed to download NotesHub RPM package"
+        rm -rf "${temp_dir}"
+        return 1
+      fi
+      
+      # Install the RPM package
+      log_info "Installing NotesHub..."
+      if ! ${elevation_cmd} zypper install -y "${rpm_file}"; then
+        log_error "Failed to install NotesHub RPM package"
+        rm -rf "${temp_dir}"
+        return 1
+      fi
+      ;;
+      
+    pacman)
+      log_info "Using Pacman package manager"
+      
+      # Check if yay is available for AUR access
+      if command -v yay &> /dev/null; then
+        log_info "Looking for NotesHub in AUR..."
+        if yay -Ss noteshub | grep -q "noteshub"; then
+          log_info "Installing NotesHub using yay (AUR)..."
+          if ! yay -S --noconfirm noteshub; then
+            log_error "Failed to install NotesHub using yay"
+            rm -rf "${temp_dir}"
+            return 1
+          fi
+        else
+          log_warn "NotesHub not found in AUR. Manual installation may be required."
+          log_info "Visit https://github.com/NotesHubApp/noteshub-releases/releases/latest for manual installation"
+          rm -rf "${temp_dir}"
+          return 1
+        fi
+      else
+        log_warn "yay not available and no native Arch package found"
+        log_info "Install yay for AUR access or visit https://github.com/NotesHubApp/noteshub-releases/releases/latest for manual installation"
+        rm -rf "${temp_dir}"
+        return 1
+      fi
+      ;;
+      
+    *)
+      log_error "No supported package manager found for NotesHub"
+      log_info "Supported package managers: apt (DEB), dnf/yum (RPM), zypper (RPM)"
+      log_info "Visit https://github.com/NotesHubApp/noteshub-releases/releases/latest for manual installation"
+      rm -rf "${temp_dir}"
+      return 1
+      ;;
+  esac
+  
+  # Clean up
+  log_debug "Cleaning up temporary files"
+  rm -rf "${temp_dir}"
+  
+  # Verify installation
+  if command -v noteshub &> /dev/null; then
+    log_info "NotesHub installation completed successfully!"
+  else
+    log_warn "Installation completed but 'noteshub' command not found in PATH"
+    log_info "NotesHub may be installed as a desktop application. Check your application menu."
+  fi
+  
+  return 0
+}
+
+# Function to list available NotesHub releases
+list-noteshub-releases() {
+  log_info "Fetching NotesHub release information..."
+  
+  local api_response
+  api_response=$(curl -s "https://api.github.com/repos/NotesHubApp/noteshub-releases/releases")
+  
+  if [[ -z "$api_response" ]]; then
+    log_error "Failed to fetch release information from GitHub API"
+    return 1
+  fi
+  
+  echo "Available NotesHub releases:"
+  echo "$api_response" | grep '"tag_name":' | sed -E 's/.*"tag_name": *"([^"]+)".*/\1/' | head -10
+}
+
+# Function to install a specific version of NotesHub
+install-noteshub-version() {
+  local target_version="$1"
+  
+  if [[ -z "$target_version" ]]; then
+    log_error "Please specify a version to install"
+    log_info "Usage: install-noteshub-version <version>"
+    log_info "Use 'list-noteshub-releases' to see available versions"
+    return 1
+  fi
+  
+  log_info "Installing NotesHub version: ${target_version}"
+  
+  # Modify the API URL to get specific version
+  local api_response
+  api_response=$(curl -s "https://api.github.com/repos/NotesHubApp/noteshub-releases/releases/tags/${target_version}")
+  
+  if [[ -z "$api_response" ]] || echo "$api_response" | grep -q '"message": "Not Found"'; then
+    log_error "Version ${target_version} not found"
+    log_info "Use 'list-noteshub-releases' to see available versions"
+    return 1
+  fi
+  
+  # The rest follows the same logic as install-noteshub but with the specific version
+  log_info "Installing specific NotesHub version..."
+  
+  # Detect package manager if not already set
+  if [[ -z "${PACKAGE_MANAGER}" ]]; then
+    detect-package-manager || return 1
+  fi
+  
+  # Check for privilege elevation access
+  if [[ "${PACKAGE_MANAGER}" == "apt" || "${PACKAGE_MANAGER}" == "dnf" || "${PACKAGE_MANAGER}" == "yum" || "${PACKAGE_MANAGER}" == "zypper" || "${PACKAGE_MANAGER}" == "pacman" ]]; then
+    log_info "Checking privilege elevation access for package installation..."
+    if ! sudo-test; then
+      log_error "This installation requires administrator privileges. Please try again with appropriate permissions."
+      return 1
+    fi
+    
+    # Get the elevation command to use
+    local elevation_cmd
+    elevation_cmd=$(get-elevation-command)
+    if [[ -z "${elevation_cmd}" ]]; then
+      log_error "Failed to determine elevation mechanism"
+      return 1
+    fi
+  fi
+  
+  # Detect architecture for multi-arch packages
+  local arch_suffix=""
+  case "$(uname -m)" in
+    x86_64)
+      arch_suffix="amd64"
+      ;;
+    aarch64|arm64)
+      arch_suffix="arm64"
+      ;;
+    *)
+      log_error "Unsupported architecture: $(uname -m)"
+      return 1
+      ;;
+  esac
+  
+  # Create temp directory for downloads
+  local temp_dir
+  temp_dir=$(mktemp -d)
+  log_debug "Created temporary directory: ${temp_dir}"
+  
+  # Install based on detected package manager (simplified version)
+  case "${PACKAGE_MANAGER}" in
+    apt)
+      local deb_url
+      deb_url=$(echo "$api_response" | grep '"browser_download_url":.*noteshub_.*_'"${arch_suffix}"'\.deb"' | sed -E 's/.*"browser_download_url": *"([^"]+)".*/\1/')
+      
+      if [[ -z "$deb_url" ]]; then
+        log_error "Could not find DEB package download URL for version ${target_version}"
+        rm -rf "${temp_dir}"
+        return 1
+      fi
+      
+      local deb_file="${temp_dir}/noteshub.deb"
+      
+      log_info "Downloading NotesHub DEB package..."
+      if ! download_file_robust "${deb_url}" "${deb_file}"; then
+        log_error "Failed to download NotesHub DEB package"
+        rm -rf "${temp_dir}"
+        return 1
+      fi
+      
+      log_info "Installing NotesHub..."
+      if ! ${elevation_cmd} dpkg -i "${deb_file}"; then
+        log_error "Failed to install NotesHub DEB package"
+        rm -rf "${temp_dir}"
+        return 1
+      fi
+      
+      ${elevation_cmd} apt-get install -f -y
+      ;;
+      
+    dnf|yum|zypper)
+      local rpm_url
+      rpm_url=$(echo "$api_response" | grep '"browser_download_url":.*NotesHub-.*\.x86_64\.rpm"' | sed -E 's/.*"browser_download_url": *"([^"]+)".*/\1/')
+      
+      if [[ -z "$rpm_url" ]]; then
+        log_error "Could not find RPM package download URL for version ${target_version}"
+        rm -rf "${temp_dir}"
+        return 1
+      fi
+      
+      if [[ "${arch_suffix}" != "amd64" ]]; then
+        log_error "RPM package is only available for x86_64 architecture"
+        rm -rf "${temp_dir}"
+        return 1
+      fi
+      
+      local rpm_file="${temp_dir}/noteshub.rpm"
+      
+      log_info "Downloading NotesHub RPM package..."
+      if ! download_file_robust "${rpm_url}" "${rpm_file}"; then
+        log_error "Failed to download NotesHub RPM package"
+        rm -rf "${temp_dir}"
+        return 1
+      fi
+      
+      log_info "Installing NotesHub..."
+      if [[ "${PACKAGE_MANAGER}" == "zypper" ]]; then
+        ${elevation_cmd} zypper install -y "${rpm_file}"
+      else
+        ${elevation_cmd} ${PACKAGE_MANAGER} install -y "${rpm_file}"
+      fi
+      ;;
+      
+    *)
+      log_error "No supported package manager found for NotesHub"
+      rm -rf "${temp_dir}"
+      return 1
+      ;;
+  esac
+  
+  # Clean up
+  rm -rf "${temp_dir}"
+  
+  log_info "NotesHub ${target_version} installation completed!"
   return 0
 }
 

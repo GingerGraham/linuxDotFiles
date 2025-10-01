@@ -2,13 +2,20 @@
 	excludesfile = /home/gwatts/.gitignore_global
 	# autocrlf = true
 	editor = code --wait
-	#editor = code-insiders --wait
 
 [push]
 	autoSetupRemote = true
 
 [helper]
 	credential = store
+
+[credential "https://github.com"]
+	helper =
+	helper = !/usr/bin/gh auth git-credential
+
+[credential "https://gist.github.com"]
+	helper =
+	helper = !/usr/bin/gh auth git-credential
 
 [init]
 	defaultBranch = main
@@ -30,20 +37,10 @@
 
 [difftool "code"]
 	cmd = code --wait --diff $LOCAL $REMOTE
-	#cmd = code-insiders --wait --diff $LOCAL $REMOTE
-	path =
-
-[difftool "sourcetree"]
-	cmd = opendiff \"$LOCAL\" \"$REMOTE\"
 	path =
 
 [mergetool "code"]
 	cmd = code --wait $MERGED
-	#cmd = code-insiders --wait $MERGED
-	trustExitCode = true
-
-[mergetool "sourcetree"]
-	cmd = /Applications/Sourcetree.app/Contents/Resources/opendiff-w.sh \"$LOCAL\" \"$REMOTE\" -ancestor \"$BASE\" -merge \"$MERGED\"
 	trustExitCode = true
 
 [filter "lfs"]
@@ -52,46 +49,24 @@
 	smudge = git-lfs smudge -- %f
 	process = git-lfs filter-process
 
-; Includes for Linux
-;[includeIf "gitdir:/home/gwatts/Development/AL/AWS/"]
-;    path = /home/gwatts/Development/AL/AWS/.gitconfig-aws
-[includeIf "gitdir:/home/gwatts/Development/AL/AWS/NetReveal/"]
-    path = /home/gwatts/Development/AL/AWS/NetReveal/.gitconfig-aws-nr
-[includeIf "gitdir:/home/gwatts/Development/AL/Bitbucket/"]
-    path = /home/gwatts/Development/AL/Bitbucket/.gitconfig-bitbucket
+# Includes for personal Linux systems
 [includeIf "gitdir:/home/gwatts/Development/Personal/AzureDevOps/"]
     path = /home/gwatts/Development/Personal/AzureDevOps/.gitconfig-azure
+[includeIf "gitdir:/home/gwatts/Development/Personal/Bitbucket/"]
+    path = /home/gwatts/Development/Personal/Bitbucket/.gitconfig-bitbucket
 [includeIf "gitdir:/home/gwatts/Development/Personal/GitHub/"]
     path = /home/gwatts/Development/Personal/GitHub/.gitconfig-github
 [includeIf "gitdir:/home/gwatts/Development/Personal/GitLab/"]
     path = /home/gwatts/Development/Personal/GitLab/.gitconfig-gitlab
 
-; Includes for Windows
-[includeIf "gitdir:C:/Users/gwatts/Development/AL/AWS/"]
-		path = C:/Users/gwatts/Development/AL/AWS/.gitconfig-aws
-[includeIf "gitdir:C:/Users/gwatts/Development/AL/Bitbucket/"]
-		path = C:/Users/gwatts/Development/AL/Bitbucket/.gitconfig-bitbucket
-[includeIf "gitdir:C:/Users/gwatts/Development/Personal/AzureDevOps/"]
-		path = C:/Users/gwatts/Development/Personal/AzureDevOps/.gitconfig-azure
-[includeIf "gitdir:C:/Users/gwatts/Development/Personal/GitHub/"]
-		path = C:/Users/gwatts/Development/Personal/GitHub/.gitconfig-github
-[includeIf "gitdir:C:/Users/gwatts/Development/Personal/GitLab/"]
-		path = C:/Users/gwatts/Development/Personal/GitLab/.gitconfig-gitlab
-
-; Includes for Apple
-[includeIf "gitdir:/Users/gwatts/Development/AL/AWS/"]
-		path = /Users/gwatts/Development/AL/AWS/.gitconfig-aws
-[includeIf "gitdir:/Users/gwatts/Development/AL/Bitbucket/"]
-		path = /Users/gwatts/Development/AL/Bitbucket/.gitconfig-bitbucket
-[includeIf "gitdir:/Users/gwatts/Development/Personal/AzureDevOps/"]
-		path = /Users/gwatts/Development/Personal/AzureDevOps/.gitconfig-azure
-[includeIf "gitdir:/Users/gwatts/Development/Personal/GitHub/"]
-		path = /Users/gwatts/Development/Personal/GitHub/.gitconfig-github
-[includeIf "gitdir:/Users/gwatts/Development/Personal/GitLab/"]
-		path = /Users/gwatts/Development/Personal/GitLab/.gitconfig-gitlab
-[credential "https://github.com"]
-	helper = 
-	helper = !/usr/bin/gh auth git-credential
-[credential "https://gist.github.com"]
-	helper = 
-	helper = !/usr/bin/gh auth git-credential
+; Includes for personal Windows systems
+[includeIf "gitdir:C:/Users/watts/Development/AL/AWS/"]
+		path = C:/Users/watts/Development/AL/AWS/.gitconfig-aws
+[includeIf "gitdir:C:/Users/watts/Development/AL/Bitbucket/"]
+		path = C:/Users/watts/Development/AL/Bitbucket/.gitconfig-bitbucket
+[includeIf "gitdir:C:/Users/watts/Development/Personal/AzureDevOps/"]
+		path = C:/Users/watts/Development/Personal/AzureDevOps/.gitconfig-azure
+[includeIf "gitdir:C:/Users/watts/Development/Personal/GitHub/"]
+		path = C:/Users/watts/Development/Personal/GitHub/.gitconfig-github
+[includeIf "gitdir:C:/Users/watts/Development/Personal/GitLab/"]
+		path = C:/Users/watts/Development/Personal/GitLab/.gitconfig-gitlab
