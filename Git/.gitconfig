@@ -3,16 +3,24 @@
 	# autocrlf = true
 	editor = code --wait
 
+# Default user details
+[user]
+	email = watts_graham@hotmail.com
+	name = Graham Watts
+	signingkey = 30C0CDEB4BF5B08326268A5F957C7A29670B1772
+
 [push]
 	autoSetupRemote = true
 
 [helper]
 	credential = store
 
+# Use GitHub CLI for authentication
 [credential "https://github.com"]
 	helper =
 	helper = !/usr/bin/gh auth git-credential
 
+# Use GitHub CLI for authentication with Gists
 [credential "https://gist.github.com"]
 	helper =
 	helper = !/usr/bin/gh auth git-credential
