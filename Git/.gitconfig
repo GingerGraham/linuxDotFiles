@@ -17,12 +17,10 @@
 
 # Use GitHub CLI for authentication
 [credential "https://github.com"]
-	helper =
 	helper = !/usr/bin/gh auth git-credential
 
 # Use GitHub CLI for authentication with Gists
 [credential "https://gist.github.com"]
-	helper =
 	helper = !/usr/bin/gh auth git-credential
 
 [init]
