@@ -15,14 +15,6 @@
 [helper]
 	credential = store
 
-# Use GitHub CLI for authentication
-[credential "https://github.com"]
-	helper = !/usr/bin/gh auth git-credential
-
-# Use GitHub CLI for authentication with Gists
-[credential "https://gist.github.com"]
-	helper = !/usr/bin/gh auth git-credential
-
 [init]
 	defaultBranch = main
 
