@@ -51,9 +51,14 @@ fi
 log_debug "Editor is: ${EDITOR}"
 
 # If the Bitwarden SSH agent is enabled, load the agent
-if [[ -f ${HOME}/.bitwarden-ssh-agent.sock ]]; then
+if [[ -S ${HOME}/.bitwarden-ssh-agent.sock ]]; then
   export SSH_AUTH_SOCK=${HOME}/.bitwarden-ssh-agent.sock
   log_debug "Bitwarden SSH agent is enabled"
+elif [[ -e ${HOME}/.bitwarden-ssh-agent.sock ]]; then
+  export SSH_AUTH_SOCK=${HOME}/.bitwarden-ssh-agent.sock
+  log_debug "Bitwarden SSH agent is enabled"
+else
+  log_debug "Bitwarden SSH agent is not enabled"
 fi
 
 # If OS is Mac test if iTerm2 is installed and if so, load the shell integration
@@ -117,7 +122,7 @@ fi
 if command -v oh-my-posh &> /dev/null; then
   log_debug "oh-my-posh is installed"
   # Source the .omp file to configure oh-my-posh
-  source "${HOME}/.omp"  
+  source "${HOME}/.omp"
 elif [[ -d "${HOME}/.oh-my-zsh" ]] && [[ "${CURRENT_SHELL}" == "zsh" ]]; then
   log_debug "oh-my-zsh is installed and using zsh shell"
   # Source the .omz file to configure oh-my-zsh
@@ -142,7 +147,7 @@ fi
 
 if [[ -e ${HOME}/.nix-profile/etc/profile.d/nix.sh ]]; then
   log_debug "Sourcing Nix"
-  source "${HOME}"/.nix-profile/etc/profile.d/nix.sh; 
+  source "${HOME}"/.nix-profile/etc/profile.d/nix.sh;
 fi
 
 # FZF configuration
