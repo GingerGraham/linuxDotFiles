@@ -3,6 +3,9 @@
 	# autocrlf = true
 	editor = code --wait
 
+[gpg]
+	program = /usr/bin/gpg # Set using git config --global gpg.program $(which gpg)
+
 # Default user details
 [user]
 	email = watts_graham@hotmail.com
@@ -68,3 +71,5 @@
 		path = C:/Users/watts/Development/Personal/GitHub/.gitconfig-github
 [includeIf "gitdir:C:/Users/watts/Development/Personal/GitLab/"]
 		path = C:/Users/watts/Development/Personal/GitLab/.gitconfig-gitlab
+[gpg]
+	program = /usr/bin/gpg
