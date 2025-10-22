@@ -4,6 +4,17 @@
 # Purpose: Add additional paths to PATH
 # Use: Add additional paths to PATH by defining them here and they will be sourced by .zshrc
 
+# ==============================================================
+# Ensuring we have system paths in PATH before adding user paths
+# ==============================================================
+# Defensively ensure system paths are in PATH
+for sys_path in /usr/local/bin /usr/bin /bin /usr/local/sbin /usr/sbin /sbin; do
+    if [[ -d "$sys_path" ]] && [[ ":$PATH:" != *":$sys_path:"* ]]; then
+        PATH="$sys_path${PATH:+:$PATH}"
+    fi
+done
+# ==============================================================
+
 # Set PATH to include users ~/bin directory if it exists
 if [[ -d "${HOME}/bin" ]] && [[ ":$PATH:" != *":${HOME}/bin:"* ]]; then
   PATH="${HOME}/bin:${PATH}"
@@ -17,15 +28,6 @@ fi
 # If OS is Mac add Homebrew to PATH
 if [[ ${OS} == "Mac" ]]; then
 	eval "$(/opt/homebrew/bin/brew shellenv)"
-fi
-
-# If OS is Mac and pyenv is installed initialise pyenv
-if [[ ${OS} == "Mac" ]] && command -v pyenv 1>/dev/null 2>&1; then
-	eval "$(pyenv init -)"
-fi
-# If pyenv-virtualenv-init is also installed init that too
-if [[ ${OS} == "Mac" ]] && which pyenv-virtualenv-init > /dev/null; then
-  eval "$(pyenv virtualenv-init -)"
 fi
 
 # If go/golang is installed add to PATH
@@ -94,3 +96,18 @@ fi
 if [[ -d "${HOME}/.lmstudio/bin" ]] && [[ ":$PATH:" != *":${HOME}/.lmstudio/bin:"* ]]; then
   export PATH="$PATH:${HOME}/.lmstudio/bin"
 fi
+
+# Add pyenv to PATH if it exists
+if [[ -d "${HOME}/.pyenv/bin" ]] && [[ ":$PATH:" != *":${HOME}/.pyenv/bin:"* ]]; then
+  export PATH="${HOME}/.pyenv/bin:${PATH}"
+fi
+
+# ==============================================================
+# This must always be at the end of the file
+# ==============================================================
+# Defensively ensure system paths are in PATH
+for sys_path in /usr/local/bin /usr/bin /bin /usr/local/sbin /usr/sbin /sbin; do
+    if [[ -d "$sys_path" ]] && [[ ":$PATH:" != *":$sys_path:"* ]]; then
+        PATH="$sys_path${PATH:+:$PATH}"
+    fi
+done

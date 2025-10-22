@@ -166,9 +166,20 @@ if command -v aliases &> /dev/null; then
   aliases
 fi
 
+# Init pyenv if installed
+if [[ -d "${HOME}/.pyenv" ]] && command -v pyenv &> /dev/null; then
+  log_debug "Initializing pyenv"
+  if [[ "${CURRENT_SHELL}" == "zsh" ]]; then
+    eval "$(pyenv init - zsh)"
+  else
+    eval "$(pyenv init - bash)"
+  fi
+  eval "$(pyenv virtualenv-init -)"
+fi
+
 # Some tools like the nix profile script can duplicate into PATH so we should dedupe PATH if necessary
-if command dedupe_path &> /dev/null; then
-  PATH=$(dedupe_path "$PATH")
+if command -v dedupe_path &> /dev/null; then
+  dedupe_path
 else
   log_warn "dedupe_path command not found, skipping PATH deduplication"
 fi
