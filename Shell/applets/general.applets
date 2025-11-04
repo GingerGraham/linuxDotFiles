@@ -46,6 +46,8 @@ git-cleanup() {
 gwt() {
     local branch
     local use_local=false
+    local create_new=false
+    local base_branch=""
     local worktree_dir=".worktrees"
 
     # Parse arguments
@@ -55,8 +57,21 @@ gwt() {
                 use_local=true
                 shift
                 ;;
-            *)
+            -b)
+                create_new=true
+                shift
                 branch="$1"
+                shift
+                # Optional: base branch to branch from
+                if [[ -n "$1" && "$1" != --* ]]; then
+                    base_branch="$1"
+                    shift
+                fi
+                ;;
+            *)
+                if [[ -z "$branch" ]]; then
+                    branch="$1"
+                fi
                 shift
                 ;;
         esac
@@ -64,15 +79,20 @@ gwt() {
 
     if [[ -z "$branch" ]]; then
         echo "Usage: gwt [--local] <branch-name>"
+        echo "   or: gwt [--local] -b <new-branch> [base-branch]"
         return 1
     fi
 
-    # Validate branch exists
-    if ! git rev-parse --verify "$branch" &>/dev/null; then
-        echo "Error: Branch '$branch' does not exist"
-        echo "Available branches:"
-        git branch -a | sed 's/^/  /'
-        return 1
+    # Validate branch exists (unless we're creating a new one)
+    if [[ "$create_new" == false ]]; then
+        if ! git rev-parse --verify "$branch" &>/dev/null; then
+            echo "Error: Branch '$branch' does not exist"
+            echo "Available branches:"
+            git branch -a | sed 's/^/  /'
+            echo ""
+            echo "To create a new branch, use: gwt -b $branch"
+            return 1
+        fi
     fi
 
     # Ensure worktree directory exists
@@ -94,7 +114,42 @@ gwt() {
     fi
 
     # Create the worktree
-    git worktree add "${worktree_dir}/${branch}" "$branch"
+    if [[ "$create_new" == true ]]; then
+        if [[ -n "$base_branch" ]]; then
+            git worktree add -b "$branch" "${worktree_dir}/${branch}" "$base_branch"
+        else
+            git worktree add -b "$branch" "${worktree_dir}/${branch}"
+        fi
+    else
+        git worktree add "${worktree_dir}/${branch}" "$branch"
+    fi
+}
+
+gwt-cd() {
+    local branch="$1"
+
+    if [[ -z "$branch" ]]; then
+        echo "Usage: gwt-cd <branch-name|main>"
+        return 1
+    fi
+
+    # Special handling for default branch
+    if [[ "$branch" == "main" || "$branch" == "master" ]]; then
+        # Navigate up to find the repo root
+        local repo_root
+        repo_root=$(git rev-parse --show-toplevel 2>/dev/null)
+        if [[ -n "$repo_root" ]]; then
+            cd "$repo_root" || return 1
+        else
+            echo "Not in a git repository"
+            return 1
+        fi
+    elif [[ -d ".worktrees/${branch}" ]]; then
+        cd ".worktrees/${branch}" || return 1
+    else
+        echo "Worktree for branch '$branch' not found"
+        return 1
+    fi
 }
 
 # Show SSH Tunnel
