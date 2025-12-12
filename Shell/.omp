@@ -12,7 +12,7 @@
 
 OMP_THEME="atomic"
 # Determine the current shell
-CURRENT_SHELL="$(ps -p $$ | tail -1 | awk '{print $NF}')"
+CURRENT_SHELL="$(ps -p $$ | tail -1 | awk '{print $NF}' | sed 's/^-//; s|.*/||')"
 
 # Use which to find where oh-my-posh is installed if it is installed
 if command -v oh-my-posh &> /dev/null; then

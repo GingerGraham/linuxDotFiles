@@ -29,6 +29,18 @@ fi
 if [[ "${OS}" = "Linux" ]] && command -v zypper &> /dev/null; then
   alias zypper-update='sudo zypper update -y && sudo zypper clean -a'
 fi
+# If system is Arch based and uses pacman, set pacman aliases
+if [[ "${OS}" = "Linux" ]] && command -v pacman &> /dev/null; then
+  alias pacman-update='sudo pacman -Syu --noconfirm'
+fi
+# If system is macOS and uses brew, set brew aliases
+if [[ "${OS}" = "Darwin" ]] && command -v brew &> /dev/null; then
+  alias brew-update='brew update && brew upgrade && brew cleanup'
+fi
+# If system is Linux and is using lvfs, set lvfs alias
+if [[ "${OS}" = "Linux" ]] && command -v fwupdmgr &> /dev/null; then
+  alias lvfs-update='sudo fwupdmgr refresh --force && sudo fwupdmgr get-updates && sudo fwupdmgr update'
+fi
 # No longer using python2
 # If python 3 is installed alias python to python3
 if command -v python3 &> /dev/null; then
@@ -224,7 +236,7 @@ if command -v cmatrix &> /dev/null; then
 fi
 
 if command -v sonar-scanner &> /dev/null; then
-  alias sq="sonar-scanner -Dsonar.token=$(secret-tool lookup sq_tkn local-scan)"
+  alias sq="sonar-scanner -Dsonar.token=$(secret-tool lookup service sonarqube account scanner)"
 fi
 
 if command -v get-my-functions &> /dev/null; then
