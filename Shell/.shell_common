@@ -95,6 +95,12 @@ if [[ -f ${HOME}/.pathVars ]]; then
   source "${HOME}/.pathVars"
 fi
 
+# If OpenTofu tenv is installed set auto install variable
+if command -v tenv &> /dev/null; then
+  export TENV_AUTO_INSTALL=true
+  log_debug "OpenTofu tenv auto install enabled"
+fi
+
 # Adding applets
 if [[ -f ${HOME}/.applets ]]; then
   log_debug "Sourcing applets"

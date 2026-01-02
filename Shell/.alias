@@ -105,6 +105,7 @@ if command -v git &> /dev/null; then
   alias gsw="git switch"
   alias gswm="git switch main"
   alias gba="git branch -a"
+  alias gbd="git branch -D"
   alias gitkeep="find . -type d -empty -exec touch {}/.gitkeep \;"
   # If the git-cleanup function is defined, set an alias for it
   if declare -f git-cleanup &> /dev/null; then
@@ -170,23 +171,81 @@ if command -v code-insiders &> /dev/null; then
   alias code="code-insiders"
 fi
 
-# If Terraform is installed set aliases for common Terraform commands
+# If Terraform or OpenTofu is installed set aliases for common commands
+# Prefer OpenTofu if both are available, but provide both sets of aliases
+if command -v tofu &> /dev/null; then
+  # OpenTofu aliases (preferred)
+  alias tf="tofu"
+  alias tfi="tofu init"
+  alias tfp="tofu plan"
+  alias tfpd="tofu plan -destroy"
+  alias tfa="tofu apply"
+  alias tfaa="tofu apply -auto-approve"
+  alias tfd="tofu destroy"
+  alias tfr="tofu refresh"
+  alias tfsh="tofu show"
+  alias tfsl="tofu state list"
+  alias tfo="tofu output"
+  alias tfv="tofu version"
+  alias tffmt="tofu fmt"
+  alias tfva="tofu validate"
+  alias tfws="tofu workspace"
+  
+  # Explicit OpenTofu aliases
+  alias otf="tofu"
+  alias otfi="tofu init"
+  alias otfp="tofu plan"
+  alias otfpd="tofu plan -destroy"
+  alias otfa="tofu apply"
+  alias otfaa="tofu apply -auto-approve"
+  alias otfd="tofu destroy"
+  alias otfr="tofu refresh"
+  alias otfsh="tofu show"
+  alias otfsl="tofu state list"
+  alias otfo="tofu output"
+  alias otfv="tofu version"
+  alias otffmt="tofu fmt"
+  alias otfva="tofu validate"
+  alias otfws="tofu workspace"
+fi
+
+# Terraform-specific aliases (if terraform is available)
 if command -v terraform &> /dev/null; then
-  alias tf="terraform"
-  alias tfi="terraform init"
-  alias tfp="terraform plan"
-  alias tfpd="terraform plan -destroy"
-  alias tfa="terraform apply"
-  alias tfaa="terraform apply -auto-approve"
-  alias tfd="terraform destroy"
-  alias tfr="terraform refresh"
-  alias tfsh="terraform show"
-  alias tfsl="terraform state list"
-  alias tfo="terraform output"
-  alias tfv="terraform version"
-  alias tffmt="terraform fmt"
-  alias tfva="terraform validate"
-  alias tfws="terraform workspace"
+  # Only set tf* aliases if OpenTofu is not available
+  if ! command -v tofu &> /dev/null; then
+    alias tf="terraform"
+    alias tfi="terraform init"
+    alias tfp="terraform plan"
+    alias tfpd="terraform plan -destroy"
+    alias tfa="terraform apply"
+    alias tfaa="terraform apply -auto-approve"
+    alias tfd="terraform destroy"
+    alias tfr="terraform refresh"
+    alias tfsh="terraform show"
+    alias tfsl="terraform state list"
+    alias tfo="terraform output"
+    alias tfv="terraform version"
+    alias tffmt="terraform fmt"
+    alias tfva="terraform validate"
+    alias tfws="terraform workspace"
+  fi
+  
+  # Explicit Terraform aliases (always available when terraform is installed)
+  alias hctf="terraform"
+  alias hctfi="terraform init"
+  alias hctfp="terraform plan"
+  alias hctfpd="terraform plan -destroy"
+  alias hctfa="terraform apply"
+  alias hctfaa="terraform apply -auto-approve"
+  alias hctfd="terraform destroy"
+  alias hctfr="terraform refresh"
+  alias hctfsh="terraform show"
+  alias hctfsl="terraform state list"
+  alias hctfo="terraform output"
+  alias hctfv="terraform version"
+  alias hctffmt="terraform fmt"
+  alias hctfva="terraform validate"
+  alias hctfws="terraform workspace"
 fi
 
 # If Terragrunt is installed set aliases for common Terragrunt commands
