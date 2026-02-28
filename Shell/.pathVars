@@ -102,6 +102,19 @@ if [[ -d "${HOME}/.pyenv/bin" ]] && [[ ":$PATH:" != *":${HOME}/.pyenv/bin:"* ]];
   export PATH="${HOME}/.pyenv/bin:${PATH}"
 fi
 
+# Add Bun values if Bun is installed
+if [[ -d "${HOME}/.bun" ]]; then
+  export BUN_INSTALL="${HOME}/.bun"
+  export PATH="$BUN_INSTALL/bin:$PATH"
+  # bun completions - zsh only
+  # Note: bun has a bug where `bun completions bash` outputs zsh completions
+  # instead of bash completions, so we only enable completions for zsh
+  # shellcheck disable=SC1091
+  if [[ "${CURRENT_SHELL}" == *"zsh"* ]]; then
+    [ -s "/home/gwatts/.bun/_bun" ] && source "/home/gwatts/.bun/_bun"
+  fi
+fi
+
 # ==============================================================
 # This must always be at the end of the file
 # ==============================================================

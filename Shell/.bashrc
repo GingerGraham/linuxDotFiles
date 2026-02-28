@@ -7,7 +7,7 @@
 source "${HOME}/utils/logging.sh"
 
 # Initial logging
-init_logger --color
+init_logger --color --name "bashrc"
 
 log_debug "Running .bashrc"
 

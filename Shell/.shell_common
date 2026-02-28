@@ -8,6 +8,7 @@
 
 CURRENT_SHELL="$(ps -p $$ | tail -1 | awk '{print $NF}')"
 log_debug "Current shell is: ${CURRENT_SHELL}"
+log_debug "Logging library version: ${BASH_LOGGER_VERSION}"
 
 # Checking what OS we're running on and setting a variable accordingly
 unameOut="$(uname -s)"
@@ -31,7 +32,9 @@ fi
 log_debug "WSL is: ${WSL}"
 
 # Test which editor(s) are available and set a variable $PREFERRED_EDITOR based on the preference order vim, vi, nano
-if command -v vim &> /dev/null; then
+if command -v nvim &> /dev/null; then
+  PREFERRED_EDITOR="nvim"
+elif command -v vim &> /dev/null; then
 	PREFERRED_EDITOR="vim"
 elif command -v vi &> /dev/null; then
 	PREFERRED_EDITOR="vi"
@@ -183,9 +186,26 @@ if [[ -d "${HOME}/.pyenv" ]] && command -v pyenv &> /dev/null; then
   eval "$(pyenv virtualenv-init -)"
 fi
 
+if command -v tenv &> /dev/null; then
+  TENV_AUTO_INSTALL=true
+fi
+
 # Some tools like the nix profile script can duplicate into PATH so we should dedupe PATH if necessary
 if command -v dedupe_path &> /dev/null; then
   dedupe_path
 else
   log_warn "dedupe_path command not found, skipping PATH deduplication"
+fi
+
+# If the github cli is installed and logged in, set the GITHUB_PERSONAL_ACCESS_TOKEN environment variable to the output of gh auth token, so that tools that use the GITHUB_PERSONAL_ACCESS_TOKEN environment variable can work without the user having to manually set it.
+if command -v gh &> /dev/null; then
+  if gh auth status &> /dev/null; then
+    export GITHUB_PERSONAL_ACCESS_TOKEN
+    GITHUB_PERSONAL_ACCESS_TOKEN="$(gh auth token)"
+    log_debug "GITHUB_PERSONAL_ACCESS_TOKEN environment variable set from gh auth token"
+  else
+    log_warn "GitHub CLI is installed but not authenticated, skipping setting GITHUB_PERSONAL_ACCESS_TOKEN environment variable"
+  fi
+else
+  log_error "GitHub CLI is not installed, skipping setting GITHUB_PERSONAL_ACCESS_TOKEN environment variable"
 fi

@@ -7,7 +7,7 @@
 source "${HOME}/utils/logging.sh"
 
 # Initial logging
-init_logger --color
+init_logger --color --name "zshrc"
 
 log_debug "Running .zshrc"
 
@@ -20,6 +20,17 @@ fi
 autoload -Uz promptinit
 promptinit
 prompt elite2 green
+
+# Open buffer line in editor
+log_debug "Setting up edit-command-line widget"
+autoload -Uz edit-command-line
+zle -N edit-command-line
+bindkey '^X^E' edit-command-line
+
+# Bind keys
+log_debug "Setting up key bindings"
+bindkey ' ' magic-space
+bindkey '^_' undo
 
 # Setup history
 log_debug "Setting up history"
@@ -95,3 +106,12 @@ elif [[ -d "${HOME}/.oh-my-zsh/custom/plugins/zsh-syntax-highlighting" ]]; then
 	log_debug "Setting up zsh-syntax-highlighting from oh-my-zsh"
 	source "${HOME}/.oh-my-zsh/custom/plugins/zsh-syntax-highlighting/zsh-syntax-highlighting.plugin.zsh"
 fi
+
+chpwd() {
+  log_debug "chpwd: Changing directory to ${PWD}"
+  ls -Alh --color=auto
+}
+
+export NVM_DIR="$HOME/.nvm"
+[ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"  # This loads nvm
+[ -s "$NVM_DIR/bash_completion" ] && \. "$NVM_DIR/bash_completion"  # This loads nvm bash_completion

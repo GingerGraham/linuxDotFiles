@@ -190,7 +190,7 @@ if command -v tofu &> /dev/null; then
   alias tffmt="tofu fmt"
   alias tfva="tofu validate"
   alias tfws="tofu workspace"
-  
+
   # Explicit OpenTofu aliases
   alias otf="tofu"
   alias otfi="tofu init"
@@ -229,7 +229,7 @@ if command -v terraform &> /dev/null; then
     alias tfva="terraform validate"
     alias tfws="terraform workspace"
   fi
-  
+
   # Explicit Terraform aliases (always available when terraform is installed)
   alias hctf="terraform"
   alias hctfi="terraform init"
@@ -295,7 +295,7 @@ if command -v cmatrix &> /dev/null; then
 fi
 
 if command -v sonar-scanner &> /dev/null; then
-  alias sq="sonar-scanner -Dsonar.token=$(secret-tool lookup service sonarqube account scanner)"
+  alias sq="sonar-scanner -Dsonar.token=$(secret-tool lookup service sonarqube account scanner) -X"
 fi
 
 if command -v get-my-functions &> /dev/null; then
@@ -307,4 +307,8 @@ fi
 if command -v wl-copy &> /dev/null; then
   alias copy="wl-copy"
   alias clip="wl-copy"
+fi
+
+if command -v uv &> /dev/null; then
+  alias install-specify="uv tool install specify-cli --force --from git+https://github.com/github/spec-kit.git"
 fi
