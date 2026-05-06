@@ -1,0 +1,160 @@
+# Bash Logger
+
+![GitHub Release](https://img.shields.io/github/v/release/GingerGraham/bash-logger?label=Latest%20Release)
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
+[![Release](https://github.com/GingerGraham/bash-logger/actions/workflows/release.yml/badge.svg?branch=main)](https://github.com/GingerGraham/bash-logger/actions/workflows/release.yml)
+[![Tests](https://github.com/GingerGraham/bash-logger/actions/workflows/tests.yml/badge.svg)](https://github.com/GingerGraham/bash-logger/actions/workflows/tests.yml)
+
+![GitHub Downloads (all assets, all releases)](https://img.shields.io/github/downloads/GingerGraham/bash-logger/total?label=All%20Downloads&logo=github)
+![GitHub Downloads (all assets, latest release)](https://img.shields.io/github/downloads/GingerGraham/bash-logger/latest/total?label=Latest%20Release%20Downloads&logo=github)
+![GitHub Repo stars](https://img.shields.io/github/stars/GingerGraham/bash-logger?style=social)
+
+![Logo](assets/images/logo-640x320.png)
+
+A flexible, reusable logging module for Bash scripts that provides standardized logging functionality with various configuration options.
+
+> [!NOTE]
+> This is a expansion of the originally published [bash_logging GitHub gist](https://gist.github.com/GingerGraham/99af97eed2cd89cd047a2088947a5405) published by [@GingerGraham](https://github.com/GingerGraham).
+
+## Primary artifact
+
+The core deliverable of this repository is **[logging.sh](logging.sh)**. It is intentionally kept
+as a single, self-contained (and yes, long) Bash file so you can drop it next to your
+scripts and `source` it without any packaging steps. Everything else in the repo - docs,
+demos, and pipeline scripts - exists to support using that file.
+
+## Features
+
+* Standard syslog log levels (DEBUG, INFO, WARN, ERROR, CRITICAL, etc.)
+* Console output with color-coding by severity
+* Configurable stdout/stderr output stream split
+* Optional file output
+* Optional systemd journal logging
+* Customizable log format
+* UTC or local time support
+* INI configuration file support
+* Runtime configuration changes
+* Special handling for sensitive data
+* Secure-by-default newline sanitization to prevent log injection
+* Secure-by-default ANSI code stripping to prevent terminal manipulation attacks
+* Configurable log line length limits for DoS resistance
+* TOCTOU race condition protection during log file creation
+
+## Quick Start
+
+```bash
+# Source the logging module
+source /path/to/logging.sh
+
+# Initialize the logger
+init_logger
+
+# Log messages
+log_info "Application started"
+log_error "Something went wrong"
+```
+
+See [Getting Started](docs/getting-started.md) for detailed installation and basic usage instructions.
+
+## Documentation
+
+### Core Documentation
+
+* [Getting Started](docs/getting-started.md) - Installation and basic usage
+* [Log Levels](docs/log-levels.md) - Understanding severity levels
+* [Initialization](docs/initialization.md) - Configuring the logger at startup
+* [Configuration](docs/configuration.md) - Using configuration files
+
+### Advanced Topics
+
+* [Output Streams](docs/output-streams.md) - Controlling stdout/stderr behavior
+* [Formatting](docs/formatting.md) - Customizing log message format
+* [Journal Logging](docs/journal-logging.md) - Integration with systemd journal
+* [Runtime Configuration](docs/runtime-configuration.md) - Changing settings on the fly
+* [Sensitive Data](docs/sensitive-data.md) - Handling sensitive information securely
+
+### Reference
+
+* **[API Reference](docs/api-reference.md)** - Complete function reference
+* [Examples](docs/examples.md) - Comprehensive usage examples
+* [Troubleshooting](docs/troubleshooting.md) - Common issues and solutions
+
+## Common Use Cases
+
+### Basic Script Logging
+
+```bash
+source /path/to/logging.sh
+init_logger
+log_info "Script starting"
+```
+
+See: [Getting Started](docs/getting-started.md)
+
+### Logging to File
+
+```bash
+init_logger --log "/var/log/myapp.log" --level INFO
+```
+
+See: [Initialization](docs/initialization.md)
+
+### Using Configuration Files
+
+```bash
+init_logger --config /etc/myapp/logging.conf
+```
+
+See: [Configuration](docs/configuration.md)
+
+### Journal Integration
+
+```bash
+init_logger --journal --tag "myapp" --facility "local0"
+```
+
+See: [Journal Logging](docs/journal-logging.md)
+
+## Testing
+
+The project includes a comprehensive test suite to verify all functionality. To run the tests:
+
+```bash
+make test
+# Or directly:
+cd tests && ./run_tests.sh
+```
+
+Additional testing tools are available via the Makefile:
+
+```bash
+make coverage        # Run tests with kcov code coverage
+make test-junit      # Generate JUnit XML report
+make sonar-analysis  # Full coverage + SonarQube analysis
+```
+
+> **Note:** Coverage and SonarQube targets require additional tools (kcov, sonar-scanner).
+> See [Testing Documentation](docs/testing.md#code-coverage-and-static-analysis) for setup details.
+
+See [tests/README.md](tests/README.md) and [Testing](docs/testing.md) for more information.
+
+## Contributing
+
+Contributions are welcome! Please see [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
+
+The project uses pre-commit hooks for code quality checks (ShellCheck, MarkdownLint, etc.).
+The CI lint workflow runs these same hooks, so tool versions are centralized in `.pre-commit-config.yaml`.
+See [docs/PRE-COMMIT.md](docs/PRE-COMMIT.md) for setup instructions.
+
+### Maintainers
+
+This project is currently maintained by [@GingerGraham](https://github.com/GingerGraham).
+
+### Development Workflow Transparency
+
+The maintainer uses a combination of GitHub Copilot and Claude to assist with development, code review, and test design/execution in this repository.
+Final decisions, validation, and responsibility for merged changes remain with the maintainer.
+
+## License
+
+This module is provided under the [MIT License](LICENSE).

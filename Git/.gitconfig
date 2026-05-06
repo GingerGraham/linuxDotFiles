@@ -25,7 +25,11 @@
 	ui = true
 
 [commit]
-	template = /home/gwatts/.gitmessage.txt
+    template = /home/gwatts/.gitmessage.txt
+    gpgsign = true
+
+[tag]
+    gpgsign = true
 
 [pull]
 	rebase = false
@@ -73,3 +77,9 @@
 		path = C:/Users/watts/Development/Personal/GitLab/.gitconfig-gitlab
 [gpg]
 	program = /usr/bin/gpg
+[credential "https://github.com"]
+	helper = 
+	helper = !/usr/bin/gh auth git-credential
+[credential "https://gist.github.com"]
+	helper = 
+	helper = !/usr/bin/gh auth git-credential
