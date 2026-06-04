@@ -17,3 +17,6 @@ fi
 if [ -f ~/.zshrc ]; then
   source ~/.zshrc
 fi
+
+# Added by Antigravity CLI installer
+export PATH="/home/gwatts/.local/bin:$PATH"

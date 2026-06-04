@@ -146,3 +146,7 @@ fi
 # if command -v oh-my-posh &> /dev/null; then
 #   source "${HOME}/.omp"
 # fi
+
+
+# Added by Antigravity CLI installer
+export PATH="/home/gwatts/.local/bin:$PATH"
